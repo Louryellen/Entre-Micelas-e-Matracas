@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena 1 — Laboratório da UFMA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <div class="title">Caso A — Igarapé antes do Bumba</div>
+    <div class="subtitle">Cena 1: Laboratório da UFMA</div>
+  </div>
+  <button class="btn" id="btnReiniciar">Reiniciar</button>
+</header>
+
+<main class="main">
+  <!-- HUD / dica -->
+  <div class="hud">
+    <div class="hint" id="hint">
+      💡 Clique nos itens necessários: jaleco, frascos de coleta, reagentes e equipamentos de campo.
+    </div>
+  </div>
+
+    <div class="scene" id="scene">
+    <!-- Fundo do laboratório -->
+    <img class="bg" src="assets/bg/cenário 1.png"
+         alt="Laboratório de química da UFMA" id="bg-lab"/>
+
+    <!-- Hotspots (áreas clicáveis) -->
+    <div id="hs-jaleco"      class="hotspot"></div>
+    <div id="hs-frascos"     class="hotspot"></div>
+    <div id="hs-reagentes"   class="hotspot"></div>
+    <div id="hs-checklist"   class="hotspot"></div>
+
+    <!-- Equipamentos de campo - um hotspot para cada item -->
+    <div id="hs-equip-prancheta" class="hotspot"></div>
+    <div id="hs-equip-frascos"   class="hotspot"></div>
+    <div id="hs-equip-medidor"   class="hotspot"></div>
+    <div id="hs-equip-termometro" class="hotspot"></div>
+  </div>
+
+  <!-- Pop-up de informação do item -->
+  <div class="info-popup-backdrop" id="infoBackdrop">
+    <div class="info-popup" id="infoPopup">
+      <div class="info-popup-header">
+        <span id="infoTitle"></span>
+        <button class="info-popup-close" id="infoClose">✕</button>
+      </div>
+      <div class="info-popup-body">
+        <p id="infoGeneral"></p>
+        <p id="infoUse"></p>
+      </div>
+    </div>
+  </div>
+
+
+<script type="module">
+  import { initCena1 } from "./engine.js";
+  initCena1();
+</script>
+</body>
+</html>

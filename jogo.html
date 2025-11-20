@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena 0 — Sala da Pesquisadora</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <div class="title">Caso A — Igarapé antes do Bumba</div>
+    <div class="subtitle">Cena 0: Sala da Pesquisadora</div>
+  </div>
+  <button class="btn" id="btnReiniciar">Reiniciar</button>
+</header>
+
+<main class="main">
+  <!-- HUD fora da cena (não cobre o PNG) -->
+  <div class="hud">
+    <div class="hint" id="hint">
+      💡 Clique no ícone próximo ao notebook para ler o e-mail. (Tecle G para ver áreas)
+    </div>
+  </div>
+
+  <div class="scene" id="scene">
+    <!-- Fundo da sala -->
+    <img class="bg" src="../../assets/bg/cenario_sala.png"
+         alt="Sala da pesquisadora com vista para o mar" id="bg"/>
+
+    <!-- Vídeo de transição (começa escondido) -->
+   <video id="introVideo" class="scene-video" playsinline>
+  <source src="../../assets/bg/animação.mp4" type="video/mp4">
+</video>
+
+
+    <!-- Hotspot clicável (área do ícone / perto do notebook) -->
+    <div id="hs-email" class="hotspot" title="Abrir e-mail"></div>
+
+    <!-- Ícone de e-mail (pixel art) -->
+    <img id="emailIcon" class="email-icon"
+         src="../../assets/bg/email.png"
+         alt="Abrir e-mail">
+
+    <!-- Janela do e-mail (renderizada sobre a cena) -->
+    <div class="pixel-win" id="emailWin" role="dialog" aria-modal="true">
+      <div class="pixel-title">
+        INBOX — UFMA
+        <span class="pixel-close" id="closeMail">✕</span>
+      </div>
+      <div class="pixel-body">
+        <p><strong>De:</strong> coord.extensao@ufma.br</p>
+        <p><strong>Assunto:</strong> Pedido urgente — possível impacto químico na água</p>
+        <p id="mailText"></p>
+        <div class="pixel-actions">
+          <button class="btn" id="acceptCase">ACEITAR INVESTIGAÇÃO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { initCena0 } from "./engine.js";
+  initCena0();
+</script>
+

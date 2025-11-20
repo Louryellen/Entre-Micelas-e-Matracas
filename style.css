@@ -1,0 +1,261 @@
+:root{
+  --bg:#0f1115; --text:#fff; --muted:#c7cde6; --primary:#6ea8fe;
+  --header-h:86px;
+}
+
+/* Tela cheia, sem rolagem */
+html,body{
+  height:100%; margin:0; overflow:hidden;
+  background:radial-gradient(1200px 800px at 20% -10%,#1b2440 0,#0f1115 50%);
+  color:var(--text);
+  font:500 16px/1.5 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+/* Header */
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 18px;
+  background:linear-gradient(180deg,#101521,#0d1220);
+  border-bottom:1px solid #222839;
+}
+header .title{font-weight:800}
+header .subtitle{color:var(--muted);font-size:13px}
+.btn{
+  background:var(--primary);
+  color:#06122a;
+  border:0;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+/* Área jogável: coluna = HUD em cima + cena preenchendo o resto */
+.main{
+  height:calc(100vh - var(--header-h));
+  padding:0 12px 12px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+/* HUD (faixa de texto) */
+.hud{
+  flex:0 0 auto;
+  display:flex;
+  justify-content:center;
+}
+
+.hud .hint{
+  position:static;
+  max-width:960px;
+  width:100%;
+  text-align:center;
+  background:#0e1425;
+  border:2px solid #2b395c;
+  border-radius:10px;
+  padding:6px 10px;
+  font-family:monospace;
+  color:#cfe2ff;
+  opacity:.96;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.hud .hint.hint--active{
+  background:#182036;      /* leve destaque */
+  transform:scale(1.02);
+}
+
+/* Cena ocupa todo o espaço restante */
+.scene{
+  position:relative;
+  flex:1 1 auto;           /* preenche o que sobrar da coluna */
+  min-height:0;            /* evita estouro em flexbox */
+  width:100%;
+  background:#0d1322;
+  border:1px solid #223054;
+  border-radius:12px;
+  box-shadow:0 10px 40px rgba(0,0,0,.35);
+  overflow:hidden;
+}
+
+/* Fundo pixel centralizado, sempre inteiro na cena */
+.scene img.bg{
+  position:absolute;
+  inset:0;
+  margin:auto;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;      /* mostra a arte inteira */
+  image-rendering:pixelated;
+  background:#0b0f18;
+}
+
+/* Área clicável (hotspot) – invisível, só pra clique */
+.hotspot{
+  position:absolute;
+  cursor:pointer;
+  border-radius:10px;
+  z-index:50;
+  background: rgba(255, 0, 0, 0.3);
+  outline: 2px solid red;
+}
+
+/* Ícone de e-mail em pixel art sobre o notebook */
+.email-icon{
+  position:absolute;
+  width:72px;
+  height:auto;
+  image-rendering:pixelated;
+  display:none;
+  pointer-events:none;
+  z-index:10;            /* fica acima do fundo, abaixo do vídeo */
+}
+
+/* Quando ativo (G pressionado) ele aparece e começa a pular */
+.email-icon.active{
+  display:block;
+  animation:bounce 0.6s ease-in-out infinite alternate;
+  filter:drop-shadow(0 0 8px rgba(110,168,254,0.8));
+}
+
+/* Animação de "pulo" chamando atenção */
+@keyframes bounce{
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+/* Janela de e-mail estilo pixel, posicionada SOBRE a tela ligada */
+.pixel-win{
+  position:fixed;
+  display:none;
+  flex-direction:column;
+  color:#fff;
+  background:#101522;
+  border:4px solid #2b395c;
+  border-radius:10px;
+  box-shadow:0 10px 40px rgba(0,0,0,.6);
+  image-rendering:pixelated;
+  z-index:20;
+}
+.pixel-title{
+  background:#0c1326;
+  border-bottom:4px solid #2b395c;
+  padding:6px 10px;
+  font-weight:900;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.pixel-body{
+  padding:10px 12px;
+  font-family:monospace;
+  line-height:1.6;
+}
+.pixel-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:8px;
+}
+.pixel-close{
+  cursor:pointer;
+  color:#9fb2ff;
+}
+.pixel-body p{
+  text-align: justify;
+  margin: 0 0 6px;
+}
+
+@media (max-width:920px){
+  header .title{font-size:16px}
+  header .subtitle{font-size:12px}
+}
+
+.scene-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none;
+  background:#000;
+  z-index:30;            /*  fica acima de tudo na cena */
+}
+/* Hotspots: agora garantidamente acima do fundo */
+.hotspot{
+  position:absolute;
+  cursor:pointer;
+  border-radius:10px;
+  z-index:50;
+  /* DEBUG: descomenta pra ver a área clicável
+  background: rgba(255,0,0,0.2);
+  outline: 2px solid red;
+  */
+}
+
+/* Pop-up de informação do item */
+.info-popup-backdrop{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0, 0, 0, 0.55);
+  z-index:120;
+}
+
+.info-popup-backdrop.visible{
+  display:flex;
+}
+
+.info-popup{
+  width: min(420px, 90vw);
+  background:#101522;
+  border-radius:16px;
+  border:2px solid #3c4c7a;
+  box-shadow:0 18px 60px rgba(0,0,0,0.7);
+  overflow:hidden;
+  font-family:Inter, system-ui, sans-serif;
+}
+
+.info-popup-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:10px 14px;
+  background:linear-gradient(135deg,#182338,#101522);
+  border-bottom:1px solid #2b395c;
+  font-weight:700;
+  font-size:15px;
+}
+
+.info-popup-close{
+  border:0;
+  background:transparent;
+  color:#cfd5ff;
+  font-size:18px;
+  cursor:pointer;
+}
+
+.info-popup-body{
+  padding:12px 16px 14px;
+  font-size:14px;
+  color:#e2e6ff;
+}
+
+.info-popup-body p{
+  margin:0 0 8px;
+  text-align:justify;
+}
+
+.info-popup-body p:last-child{
+  margin-bottom:0;
+}
+
