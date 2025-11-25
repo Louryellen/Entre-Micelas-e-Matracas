@@ -41,7 +41,7 @@
     <div id="hs-equip-termometro" class="hotspot"></div>
   </div>
 
-  <!-- Pop-up de informação do item -->
+    <!-- Pop-up de informação do item -->
   <div class="info-popup-backdrop" id="infoBackdrop">
     <div class="info-popup" id="infoPopup">
       <div class="info-popup-header">
@@ -51,9 +51,16 @@
       <div class="info-popup-body">
         <p id="infoGeneral"></p>
         <p id="infoUse"></p>
+
+        <!-- NOVO: botões de decisão -->
+        <div class="info-popup-actions">
+        <button class="btn" id="btnLevar">Levar para o campo</button>
+        <button class="btn" id="btnNaoLevar">Não levar</button>
+      </div>
       </div>
     </div>
   </div>
+</main> 
 
 
 <script type="module">

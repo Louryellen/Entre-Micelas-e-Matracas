@@ -94,7 +94,9 @@ export function initCena0(){
   }
 
   function goToLab(){
-    console.log('Fim do vídeo — ir para Cena 1 depois.');
+    // ajusta o caminho se cena1.html estiver em outra pasta
+    window.location.href = 'cena1.html';
+    console.log('Fim do vídeo — ir para Cena 1.');
   }
 
   function playIntroVideo(){
@@ -160,6 +162,10 @@ export function initCena1(){
   const infoUse     = $('#infoUse');
   const btnClose    = $('#infoClose');
 
+  // NOVO: botões de decisão
+  const btnLevar    = $('#btnLevar');
+  const btnNaoLevar = $('#btnNaoLevar');
+
   if(!hint || !scene || !bgLab || !jaleco || !frascos || !reagentes || !checklist
      || !equipPranch || !equipFrascos || !equipMedidor || !equipTermom
      || !backdrop || !popup){
@@ -171,8 +177,12 @@ export function initCena1(){
     '💡 Clique nos itens para conhecer cada material e montar o kit de análise.';
   hint.textContent = defaultHintText;
 
+  let itemAtual = null; // NOVO: qual item está aberto no popup agora
+
   // --- POPUP ---
-  function openInfo({title, general, use}){
+  function openInfo({title, general, use, key}){
+    itemAtual = key || null;
+
     infoTitle.textContent   = title;
     infoGeneral.textContent = general;
     infoUse.textContent     = use;
@@ -198,9 +208,16 @@ export function initCena1(){
   };
 
   function atualizarHint(){
-    const total = Object.keys(estado).length;
-    const pegos = Object.values(estado).filter(v=>v).length;
-    hint.textContent = `Itens coletados: ${pegos}/${total}. Clique nos itens para ver mais detalhes.`;
+    const total   = Object.keys(estado).length;
+    const acertos = Object.values(estado).filter(v=>v).length;
+
+    if (acertos === 0) {
+      hint.textContent = defaultHintText;
+    } else {
+      const pontos = acertos * 10; // 10 pontos por item correto levado
+      hint.textContent =
+        `Itens corretos selecionados: ${acertos}/${total} — Pontuação: ${pontos} pontos.`;
+    }
   }
 
   function marcar(chave){
@@ -214,76 +231,74 @@ export function initCena1(){
   // Coordenadas em FRAÇÃO da largura/altura da imagem (0 a 1)
   // Ajustadas "no olho" com base no print
   const MAP = {
-  // ---- Jaleco (OK) ----
-  jaleco: { 
-    x: 0.191, 
-    y: 0.20, 
-    w: 0.094, 
-    h: 0.41 
-}
-,
+    // ---- Jaleco (OK) ----
+    jaleco: {
+      x: 0.191,
+      y: 0.20,
+      w: 0.094,
+      h: 0.41
+    },
 
-  // ---- Frascos da mesa da esquerda ----
-  frascos: { 
-    x: 0.191, 
-    y: 0.63, 
-    w: 0.094, 
-    h: 0.15
-  },
+    // ---- Frascos da mesa da esquerda ----
+    frascos: {
+      x: 0.191,
+      y: 0.63,
+      w: 0.094,
+      h: 0.15
+    },
 
-  // ---- Reagentes (garrafas água + frasco branco na bancada do meio) ----
-  reagentes: { 
-    x: 0.29, 
-    y: 0.74, 
-    w: 0.140, 
-    h: 0.16 
-  },
+    // ---- Reagentes (garrafas água + frasco branco na bancada do meio) ----
+    reagentes: {
+      x: 0.29,
+      y: 0.74,
+      w: 0.140,
+      h: 0.16
+    },
 
-  // ---- Notebook com Checklist ----
-  checklist: { 
-    x: 0.45, 
-    y: 0.492, 
-    w: 0.120, 
-    h: 0.188 
-  },
+    // ---- Notebook com Checklist ----
+    checklist: {
+      x: 0.45,
+      y: 0.492,
+      w: 0.120,
+      h: 0.188
+    },
 
-  // ----------------------------------------------------
-  //         E Q U I P A M E N T O S   D E   C A M P O
-  // ----------------------------------------------------
+    // ----------------------------------------------------
+    //         E Q U I P A M E N T O S   D E   C A M P O
+    // ----------------------------------------------------
 
-  // Prancheta (lado esquerdo da bandeja)
-  prancheta: { 
-    x: 0.462, 
-    y: 0.733, 
-    w: 0.058, 
-    h: 0.198 
-  },
+    // Prancheta (lado esquerdo da bandeja)
+    prancheta: {
+      x: 0.462,
+      y: 0.733,
+      w: 0.058,
+      h: 0.198
+    },
 
-  // Frascos pequenos dentro da bandeja (centro)
-  equipFrascos: { 
-    x: 0.55, 
-    y: 0.810, 
-    w: 0.019, 
-    h: 0.122
-  },
+    // Frascos pequenos dentro da bandeja (centro)
+    equipFrascos: {
+      x: 0.55,
+      y: 0.810,
+      w: 0.019,
+      h: 0.122
+    },
 
-  // Medidor (objeto mais alto à direita)
-  medidor: { 
-    x: 0.586, 
-    y: 0.8233, 
-    w: 0.085, 
-    h: 0.111 
-  },
+    // Medidor (objeto mais alto à direita)
+    medidor: {
+      x: 0.586,
+      y: 0.8233,
+      w: 0.085,
+      h: 0.111
+    },
 
-  // Termômetro/copinho (parte frontal direita)
-  termometro: { 
-     x: 0.528, 
-    y: 0.765, 
-    w: 0.0119, 
-    h: 0.16
-  }
-};
-
+    // Termômetro/copinho (parte frontal direita)
+    termometro: {
+      x: 0.528,
+      y: 0.765,
+      w: 0.0119,
+      h: 0.16
+    }
+  };
 
   function applyHotspots(){
     const sceneRect = scene.getBoundingClientRect();
@@ -327,11 +342,30 @@ export function initCena1(){
   }
   window.addEventListener('resize', applyHotspots);
 
+  // ================= DECISÃO (LEVAR / NÃO LEVAR) =================
+
+  if (btnLevar && btnNaoLevar) {
+    btnLevar.addEventListener('click', () => {
+      if (itemAtual) {
+        // jogador escolheu LEVAR esse item → marca como correto
+        marcar(itemAtual);
+      }
+      itemAtual = null;
+      closeInfo();
+    });
+
+    btnNaoLevar.addEventListener('click', () => {
+      // não marca ponto, só fecha
+      itemAtual = null;
+      closeInfo();
+    });
+  }
+
   // ================= CLIQUES (com textos educativos) =================
 
   jaleco.addEventListener('click',()=>{
-    marcar('jaleco');
     openInfo({
+      key:'jaleco',
       title:'Jaleco de laboratório',
       general:'É um EPI que protege o corpo contra respingos de reagentes, sujeira e contaminações.',
       use:'Na análise do igarapé, o jaleco evita contato direto com a água possivelmente contaminada e com os reagentes usados nos testes.'
@@ -339,8 +373,8 @@ export function initCena1(){
   });
 
   frascos.addEventListener('click',()=>{
-    marcar('frascos');
     openInfo({
+      key:'frascos',
       title:'Frascos de coleta',
       general:'Frascos limpos, de vidro ou plástico adequado, usados para armazenar amostras de água.',
       use:'No igarapé, vão guardar a água coletada em vários pontos, preservando as características físico-químicas até a análise no laboratório.'
@@ -348,8 +382,8 @@ export function initCena1(){
   });
 
   reagentes.addEventListener('click',()=>{
-    marcar('reagentes');
     openInfo({
+      key:'reagentes',
       title:'Reagentes da análise',
       general:'Soluções químicas preparadas para reagir com substâncias presentes na água.',
       use:'Permitem determinar parâmetros como pH, alcalinidade, dureza ou demanda química de oxigênio, revelando contaminações ou alterações na qualidade da água.'
@@ -357,8 +391,8 @@ export function initCena1(){
   });
 
   checklist.addEventListener('click',()=>{
-    marcar('checklist');
     openInfo({
+      key:'checklist',
       title:'Notebook e checklist',
       general:'O notebook exibe uma lista com os materiais e passos necessários antes de sair para campo.',
       use:'Ajuda a verificar se EPIs, frascos, reagentes e equipamentos de campo foram separados corretamente antes de ir ao igarapé.'
@@ -366,8 +400,8 @@ export function initCena1(){
   });
 
   equipPranch.addEventListener('click',()=>{
-    marcar('equipPrancheta');
     openInfo({
+      key:'equipPrancheta',
       title:'Prancheta e ficha de campo',
       general:'Usada para registrar informações durante a coleta: data, hora, ponto de amostragem e observações visuais.',
       use:'Relaciona os resultados laboratoriais com o contexto de cada ponto do igarapé, o que é essencial para interpretar os dados.'
@@ -375,8 +409,8 @@ export function initCena1(){
   });
 
   equipFrascos.addEventListener('click',()=>{
-    marcar('equipFrascos');
     openInfo({
+      key:'equipFrascos',
       title:'Frascos e recipientes de campo',
       general:'Recipientes menores que auxiliam na coleta, divisão e preservação das amostras diretamente no local.',
       use:'Permitem pegar a água no ponto exato desejado, fazer pré-divisões e adicionar conservantes quando necessário.'
@@ -384,8 +418,8 @@ export function initCena1(){
   });
 
   equipMedidor.addEventListener('click',()=>{
-    marcar('equipMedidor');
     openInfo({
+      key:'equipMedidor',
       title:'Medidor portátil (pH/condutividade)',
       general:'Equipamento eletrônico usado para medições rápidas diretamente em campo.',
       use:'No igarapé, será usado para medir pH ou condutividade na hora da coleta, evitando mudanças que ocorreriam se a medição fosse feita apenas no laboratório.'
@@ -393,8 +427,8 @@ export function initCena1(){
   });
 
   equipTermom.addEventListener('click',()=>{
-    marcar('equipTermometro');
     openInfo({
+      key:'equipTermometro',
       title:'Termômetro / copo de amostra',
       general:'Instrumentos usados para medir a temperatura da água e realizar pequenas leituras ou testes rápidos.',
       use:'A temperatura influencia a solubilidade de gases, a atividade biológica e a toxicidade de poluentes, sendo um parâmetro importante na avaliação do igarapé.'
@@ -404,8 +438,9 @@ export function initCena1(){
   // reiniciar
   btnReiniciar?.addEventListener('click',()=>{
     Object.keys(estado).forEach(k=>estado[k]=false);
-    hint.textContent = defaultHintText;
+    itemAtual = null;
     closeInfo();
+    atualizarHint();
     applyHotspots();
   });
 }
