@@ -268,3 +268,13 @@ header .subtitle{color:var(--muted);font-size:13px}
   border: 1px solid rgb(250, 250, 250);
 }
 
+.mochila {
+  position: absolute;
+  right: 5%;        /* posição na cena – pode ajustar */
+  bottom: 5%;
+  width: 120px;     /* tamanho da mochila */
+  image-rendering: pixelated;
+  z-index: 30;      /* acima do fundo, abaixo dos hotspots (que usam 50) */
+  pointer-events: none;  /* se for só decorativa, não clicável */
+}
+
