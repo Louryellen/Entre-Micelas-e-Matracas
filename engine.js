@@ -135,6 +135,8 @@ export function initCena0(){
 
 // ====================== CENA 1 ==========================
 
+// ====================== CENA 1 ==========================
+
 export function initCena1(){
   const hint         = $('#hint');
   const btnReiniciar = $('#btnReiniciar');
@@ -154,21 +156,27 @@ export function initCena1(){
   const equipMedidor = $('#hs-equip-medidor');
   const equipTermom  = $('#hs-equip-termometro');
 
-  // popup
-  const backdrop = $('#infoBackdrop');
-  const popup    = $('#infoPopup');
+  // popup de informação
+  const backdrop    = $('#infoBackdrop');
+  const popup       = $('#infoPopup');
   const infoTitle   = $('#infoTitle');
   const infoGeneral = $('#infoGeneral');
   const infoUse     = $('#infoUse');
   const btnClose    = $('#infoClose');
 
-  // NOVO: botões de decisão
   const btnLevar    = $('#btnLevar');
   const btnNaoLevar = $('#btnNaoLevar');
 
+  // overlay de resultado / ranking
+  const overlayRes  = $('#resultadoOverlay');
+  const resPont     = $('#resultadoPontuacao');
+  const resRank     = $('#resultadoRanking');
+  const trofeuIcon  = $('#trofeuIcon');
+  const btnFecharRes= $('#btnFecharResultado');
+
   if(!hint || !scene || !bgLab || !jaleco || !frascos || !reagentes || !checklist
      || !equipPranch || !equipFrascos || !equipMedidor || !equipTermom
-     || !backdrop || !popup){
+     || !backdrop || !popup || !btnLevar || !btnNaoLevar){
     console.warn('Cena 1: elemento faltando.');
     return;
   }
@@ -177,10 +185,18 @@ export function initCena1(){
     '💡 Clique nos itens para conhecer cada material e montar o kit de análise.';
   hint.textContent = defaultHintText;
 
-  let itemAtual = null; // NOVO: qual item está aberto no popup agora
+  // Configuração de pontos
+  const PONTOS_POR_ITEM = 10;
+  const META_PONTOS     = 60;   // meta mínima para "passar"
+  let resultadoMostrado = false;
+
+  let itemAtual = null; // qual item está aberto no popup agora
 
   // --- POPUP ---
   function openInfo({title, general, use, key}){
+    // se o item já foi decidido (acerto ou erro), não abre de novo
+    if (key && (estado[key] || errados[key])) return;
+
     itemAtual = key || null;
 
     infoTitle.textContent   = title;
@@ -207,91 +223,154 @@ export function initCena1(){
     equipTermometro:false
   };
 
+  // itens que o jogador escolheu "não levar" (perdeu a chance)
+  const errados = {
+    jaleco:false,
+    frascos:false,
+    reagentes:false,
+    checklist:false,
+    equipPrancheta:false,
+    equipFrascos:false,
+    equipMedidor:false,
+    equipTermometro:false
+  };
+
+  // mapa pra travar os hotspots
+  const hotspotsMap = {
+    jaleco,
+    frascos,
+    reagentes,
+    checklist,
+    equipPrancheta: equipPranch,
+    equipFrascos,
+    equipMedidor,
+    equipTermometro: equipTermom
+  };
+
+  function travarHotspot(chave){
+    const el = hotspotsMap[chave];
+    if (!el) return;
+    el.style.pointerEvents = 'none';
+  }
+
   function atualizarHint(){
     const total   = Object.keys(estado).length;
     const acertos = Object.values(estado).filter(v=>v).length;
+    const erros   = Object.values(errados).filter(v=>v).length;
+    const decididos = acertos + erros;
+    const pontos = acertos * PONTOS_POR_ITEM;
 
-    if (acertos === 0) {
-      hint.textContent = defaultHintText;
-    } else {
-      const pontos = acertos * 10; // 10 pontos por item correto levado
+    if (decididos < total) {
       hint.textContent =
-        `Itens corretos selecionados: ${acertos}/${total} — Pontuação: ${pontos} pontos.`;
+        `Itens decididos: ${decididos}/${total} — Pontos: ${pontos}.`;
+    } else {
+      hint.textContent =
+        `Itens decididos: ${decididos}/${total} — Pontos finais: ${pontos}.`;
+      mostrarResultado(pontos);
     }
   }
 
-  function marcar(chave){
+  function marcarAcerto(chave){
     if(!estado[chave]){
       estado[chave] = true;
+      errados[chave] = false;
+      travarHotspot(chave);
       atualizarHint();
     }
   }
 
+  function marcarErro(chave){
+    if(!errados[chave] && !estado[chave]){
+      errados[chave] = true;
+      travarHotspot(chave);
+      atualizarHint();
+    }
+  }
+
+  // ========= RANKING + TROFÉU =========
+
+  function mostrarResultado(pontos){
+    if (!overlayRes || resultadoMostrado) return;
+    resultadoMostrado = true;
+
+    const total = Object.keys(estado).length;
+    const maxPontos = total * PONTOS_POR_ITEM;
+    const perc = pontos / maxPontos;
+
+    let ranking;
+    let texto;
+
+    // limpa classes antigas do troféu
+    trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
+
+    if (pontos >= META_PONTOS) {
+      ranking = 'Ouro';
+      texto   = 'Excelente! Você montou um kit muito completo para a investigação.';
+      trofeuIcon?.classList.add('trofeu-ouro');
+    } else if (perc >= 0.5) {
+      ranking = 'Prata';
+      texto   = 'Bom trabalho! Seu kit está razoável, mas ainda faltaram alguns itens importantes.';
+      trofeuIcon?.classList.add('trofeu-prata');
+    } else {
+      ranking = 'Bronze';
+      texto   = 'Você esqueceu vários itens essenciais. Que tal tentar novamente e melhorar o kit?';
+      trofeuIcon?.classList.add('trofeu-bronze');
+    }
+
+    if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
+    if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
+
+    overlayRes.classList.add('visible');
+  }
+
+  btnFecharRes?.addEventListener('click', () => {
+    overlayRes.classList.remove('visible');
+  });
+
   // ========= ALINHAMENTO AUTOMÁTICO DOS HOTSPOTS =========
-  // Coordenadas em FRAÇÃO da largura/altura da imagem (0 a 1)
-  // Ajustadas "no olho" com base no print
   const MAP = {
-    // ---- Jaleco (OK) ----
     jaleco: {
       x: 0.191,
       y: 0.20,
       w: 0.094,
       h: 0.41
     },
-
-    // ---- Frascos da mesa da esquerda ----
     frascos: {
       x: 0.191,
       y: 0.63,
       w: 0.094,
       h: 0.15
     },
-
-    // ---- Reagentes (garrafas água + frasco branco na bancada do meio) ----
     reagentes: {
       x: 0.29,
       y: 0.74,
       w: 0.140,
       h: 0.16
     },
-
-    // ---- Notebook com Checklist ----
     checklist: {
       x: 0.45,
       y: 0.492,
       w: 0.120,
       h: 0.188
     },
-
-    // ----------------------------------------------------
-    //         E Q U I P A M E N T O S   D E   C A M P O
-    // ----------------------------------------------------
-
-    // Prancheta (lado esquerdo da bandeja)
     prancheta: {
       x: 0.462,
       y: 0.733,
       w: 0.058,
       h: 0.198
     },
-
-    // Frascos pequenos dentro da bandeja (centro)
     equipFrascos: {
       x: 0.55,
       y: 0.810,
       w: 0.019,
       h: 0.122
     },
-
-    // Medidor (objeto mais alto à direita)
     medidor: {
       x: 0.586,
       y: 0.8233,
       w: 0.085,
       h: 0.111
     },
-
-    // Termômetro/copinho (parte frontal direita)
     termometro: {
       x: 0.528,
       y: 0.765,
@@ -334,7 +413,6 @@ export function initCena1(){
     place(equipTermom,  MAP.termometro);
   }
 
-  // aplica quando a imagem carregar e quando a janela mudar
   if(bgLab.complete){
     applyHotspots();
   }else{
@@ -342,24 +420,23 @@ export function initCena1(){
   }
   window.addEventListener('resize', applyHotspots);
 
-  // ================= DECISÃO (LEVAR / NÃO LEVAR) =================
+  // ============== DECISÃO: LEVAR / NÃO LEVAR ==============
 
-  if (btnLevar && btnNaoLevar) {
-    btnLevar.addEventListener('click', () => {
-      if (itemAtual) {
-        // jogador escolheu LEVAR esse item → marca como correto
-        marcar(itemAtual);
-      }
-      itemAtual = null;
-      closeInfo();
-    });
+  btnLevar.addEventListener('click', () => {
+    if (itemAtual) {
+      marcarAcerto(itemAtual);   // ganha pontos e trava o item
+    }
+    itemAtual = null;
+    closeInfo();
+  });
 
-    btnNaoLevar.addEventListener('click', () => {
-      // não marca ponto, só fecha
-      itemAtual = null;
-      closeInfo();
-    });
-  }
+  btnNaoLevar.addEventListener('click', () => {
+    if (itemAtual) {
+      marcarErro(itemAtual);     // perde a chance, trava o item
+    }
+    itemAtual = null;
+    closeInfo();
+  });
 
   // ================= CLIQUES (com textos educativos) =================
 
@@ -438,9 +515,15 @@ export function initCena1(){
   // reiniciar
   btnReiniciar?.addEventListener('click',()=>{
     Object.keys(estado).forEach(k=>estado[k]=false);
+    Object.keys(errados).forEach(k=>errados[k]=false);
+    Object.values(hotspotsMap).forEach(el=>{
+      el.style.pointerEvents = 'auto';
+    });
     itemAtual = null;
+    resultadoMostrado = false;
+    overlayRes?.classList.remove('visible');
+    hint.textContent = defaultHintText;
     closeInfo();
-    atualizarHint();
     applyHotspots();
   });
 }

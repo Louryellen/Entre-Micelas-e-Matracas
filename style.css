@@ -278,3 +278,67 @@ header .subtitle{color:var(--muted);font-size:13px}
   pointer-events: none;  /* se for só decorativa, não clicável */
 }
 
+/* ===== Overlay de resultado / ranking ===== */
+
+.resultado-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.resultado-overlay.visible {
+  display: flex;
+}
+
+.resultado-card {
+  background: #050b17;
+  color: #f9fafb;
+  padding: 1.5rem 2rem;
+  border-radius: 18px;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.resultado-card h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.3rem;
+}
+
+.resultado-card p {
+  margin: 0.25rem 0;
+}
+
+.trofeu-wrap {
+  margin: 1rem 0 1.25rem;
+}
+
+#trofeuIcon {
+  font-size: 3rem;
+  animation: trofeu-bounce 1.4s ease-in-out infinite;
+}
+
+/* Cores dos rankings */
+.trofeu-ouro {
+  color: #facc15;
+}
+
+.trofeu-prata {
+  color: #e5e7eb;
+}
+
+.trofeu-bronze {
+  color: #f97316;
+}
+
+/* Animação do troféu */
+@keyframes trofeu-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.05); }
+}
