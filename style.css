@@ -342,3 +342,73 @@ header .subtitle{color:var(--muted);font-size:13px}
   0%, 100% { transform: translateY(0) scale(1); }
   50%      { transform: translateY(-6px) scale(1.05); }
 }
+
+/* DEBUG: deixar todos os hotspots visíveis para ajuste */
+.hotspot {
+  border: 2px dashed rgba(255, 255, 0, 0.9);
+  background-color: rgba(255, 255, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.trofeu-wrap {
+  position: relative;        /* importante pra limitar o container */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
+}
+
+/* overlay (provavelmente você já tem algo assim) */
+.resultado-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;          /* ou flex, com .visible etc. */
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+/* card por cima dos fogos */
+.resultado-card {
+  position: relative;
+  z-index: 2;
+}
+
+/* fogos ocupando toda a tela do overlay */
+#fogosContainer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;             /* atrás do card, mas na frente do fundo */
+}
+
+/* partículas mais fortes e durando mais */
+.firework {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffd54f;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.95);
+  animation: explode 1.8s ease-out forwards;
+}
+
+/* animação de explosão com “estouro” e cauda */
+@keyframes explode {
+  0% {
+    transform: translate(0, 0) scale(0.3);
+    opacity: 1;
+  }
+  40% {
+    transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.6)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(1.2);
+    opacity: 0;
+  }
+}
+
+
+

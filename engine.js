@@ -128,12 +128,9 @@ export function initCena0(){
     closeMail();
     icon.classList.remove('active');
     hs.style.pointerEvents = 'auto';
-    if(bg) bg.style.display = 'block';
-    if(video) video.style.display = 'none';
+    if(bg) video.style.display = 'none';
   });
 }
-
-// ====================== CENA 1 ==========================
 
 // ====================== CENA 1 ==========================
 
@@ -156,6 +153,12 @@ export function initCena1(){
   const equipMedidor = $('#hs-equip-medidor');
   const equipTermom  = $('#hs-equip-termometro');
 
+  // NOVO: distrações
+  const residuos     = $('#hs-residuos');
+  const micro        = $('#hs-microondas');
+  const cafe         = $('#hs-cafe');
+  const plantas      = $('#hs-plantas');
+
   // popup de informação
   const backdrop    = $('#infoBackdrop');
   const popup       = $('#infoPopup');
@@ -168,15 +171,19 @@ export function initCena1(){
   const btnNaoLevar = $('#btnNaoLevar');
 
   // overlay de resultado / ranking
-  const overlayRes  = $('#resultadoOverlay');
-  const resPont     = $('#resultadoPontuacao');
-  const resRank     = $('#resultadoRanking');
-  const trofeuIcon  = $('#trofeuIcon');
-  const btnFecharRes= $('#btnFecharResultado');
+  const overlayRes   = $('#resultadoOverlay');
+  const resPont      = $('#resultadoPontuacao');
+  const resRank      = $('#resultadoRanking');
+  const trofeuIcon   = $('#trofeuIcon');
+  const btnFecharRes = $('#btnFecharResultado');
+
+  // container dos fogos
+  const fogosContainer = $('#fogosContainer');
 
   if(!hint || !scene || !bgLab || !jaleco || !frascos || !reagentes || !checklist
      || !equipPranch || !equipFrascos || !equipMedidor || !equipTermom
-     || !backdrop || !popup || !btnLevar || !btnNaoLevar){
+     || !backdrop || !popup || !btnLevar || !btnNaoLevar
+     || !residuos || !micro || !cafe || !plantas){
     console.warn('Cena 1: elemento faltando.');
     return;
   }
@@ -190,7 +197,60 @@ export function initCena1(){
   const META_PONTOS     = 60;   // meta mínima para "passar"
   let resultadoMostrado = false;
 
-  let itemAtual = null; // qual item está aberto no popup agora
+  // item atual aberto no popup
+  let itemAtual = null;
+
+  // loop dos fogos
+  let fogosLoopId = null;
+
+  // --- CONFIG: quais itens são necessários e quais são distrações ---
+  const configItens = {
+    // necessários (precisam ser LEVADOS)
+    jaleco:         { tipo: 'necessario' },
+    frascos:        { tipo: 'necessario' },
+    reagentes:      { tipo: 'necessario' },
+    checklist:      { tipo: 'necessario' },
+    equipPrancheta: { tipo: 'necessario' },
+    equipFrascos:   { tipo: 'necessario' },
+    equipMedidor:   { tipo: 'necessario' },
+    equipTermometro:{ tipo: 'necessario' },
+
+    // distrações (não devem ser levadas)
+    residuos:   { tipo: 'distracao' },
+    microondas: { tipo: 'distracao' },
+    cafe:       { tipo: 'distracao' },
+    plantas:    { tipo: 'distracao' }
+  };
+
+  // --- Estado (acertos e erros) ---
+  const estado  = {};
+  const errados = {};
+  Object.keys(configItens).forEach(k => {
+    estado[k]  = false;  // decisão correta
+    errados[k] = false;  // decisão errada
+  });
+
+  // mapa pra travar os hotspots
+  const hotspotsMap = {
+    jaleco,
+    frascos,
+    reagentes,
+    checklist,
+    equipPrancheta: equipPranch,
+    equipFrascos,
+    equipMedidor,
+    equipTermometro: equipTermom,
+    residuos,
+    microondas: micro,
+    cafe,
+    plantas
+  };
+
+  function travarHotspot(chave){
+    const el = hotspotsMap[chave];
+    if (!el) return;
+    el.style.pointerEvents = 'none';
+  }
 
   // --- POPUP ---
   function openInfo({title, general, use, key}){
@@ -204,61 +264,25 @@ export function initCena1(){
     infoUse.textContent     = use;
     backdrop.classList.add('visible');
   }
+
   function closeInfo(){
     backdrop.classList.remove('visible');
   }
-  backdrop.addEventListener('click', e => { if(e.target === backdrop) closeInfo(); });
+
+  backdrop.addEventListener('click', e => {
+    if(e.target === backdrop) closeInfo();
+  });
   btnClose.addEventListener('click', closeInfo);
-  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeInfo(); });
-
-  // --- Estado ---
-  const estado = {
-    jaleco:false,
-    frascos:false,
-    reagentes:false,
-    checklist:false,
-    equipPrancheta:false,
-    equipFrascos:false,
-    equipMedidor:false,
-    equipTermometro:false
-  };
-
-  // itens que o jogador escolheu "não levar" (perdeu a chance)
-  const errados = {
-    jaleco:false,
-    frascos:false,
-    reagentes:false,
-    checklist:false,
-    equipPrancheta:false,
-    equipFrascos:false,
-    equipMedidor:false,
-    equipTermometro:false
-  };
-
-  // mapa pra travar os hotspots
-  const hotspotsMap = {
-    jaleco,
-    frascos,
-    reagentes,
-    checklist,
-    equipPrancheta: equipPranch,
-    equipFrascos,
-    equipMedidor,
-    equipTermometro: equipTermom
-  };
-
-  function travarHotspot(chave){
-    const el = hotspotsMap[chave];
-    if (!el) return;
-    el.style.pointerEvents = 'none';
-  }
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') closeInfo();
+  });
 
   function atualizarHint(){
-    const total   = Object.keys(estado).length;
-    const acertos = Object.values(estado).filter(v=>v).length;
-    const erros   = Object.values(errados).filter(v=>v).length;
+    const total     = Object.keys(estado).length;
+    const acertos   = Object.values(estado).filter(v=>v).length;
+    const erros     = Object.values(errados).filter(v=>v).length;
     const decididos = acertos + erros;
-    const pontos = acertos * PONTOS_POR_ITEM;
+    const pontos    = acertos * PONTOS_POR_ITEM;
 
     if (decididos < total) {
       hint.textContent =
@@ -272,7 +296,7 @@ export function initCena1(){
 
   function marcarAcerto(chave){
     if(!estado[chave]){
-      estado[chave] = true;
+      estado[chave]  = true;
       errados[chave] = false;
       travarHotspot(chave);
       atualizarHint();
@@ -287,15 +311,76 @@ export function initCena1(){
     }
   }
 
+  // ========= FOGOS DE ARTIFÍCIO (quando rank Ouro) =========
+
+  function dispararFogos(){
+    if (!fogosContainer) return;
+
+    const explosoes  = 10;
+    const particulas = 24;
+
+    for (let e = 0; e < explosoes; e++) {
+      const centroX = 10 + Math.random() * 80; // 10% a 90% da tela
+      const centroY = 15 + Math.random() * 50; // 15% a 65% da tela
+      const atraso  = e * 120;                 // cada explosão um pouco depois
+
+      setTimeout(() => {
+        for (let i = 0; i < particulas; i++) {
+          const p = document.createElement('div');
+          p.className = 'firework';
+
+          const angulo = (Math.PI * 2 * i) / particulas;
+          const dist   = 90 + Math.random() * 90; // raio maior
+
+          const dx = Math.cos(angulo) * dist;
+          const dy = Math.sin(angulo) * dist;
+
+          p.style.left = centroX + '%';
+          p.style.top  = centroY + '%';
+          p.style.setProperty('--dx', dx + 'px');
+          p.style.setProperty('--dy', dy + 'px');
+
+          const cores = ['#ffd54f', '#ff8a65', '#ce93d8', '#4fc3f7', '#a5d6a7'];
+          p.style.backgroundColor =
+            cores[Math.floor(Math.random() * cores.length)];
+
+          fogosContainer.appendChild(p);
+
+          p.addEventListener('animationend', () => {
+            p.remove();
+          });
+        }
+      }, atraso);
+    }
+  }
+
+  function iniciarFogosLoop(){
+    if (!fogosContainer) return;
+    if (fogosLoopId !== null) return; // já está rodando
+
+    dispararFogos(); // primeira rodada
+    fogosLoopId = setInterval(dispararFogos, 2500); // repete
+  }
+
+  function pararFogosLoop(){
+    if (fogosLoopId !== null) {
+      clearInterval(fogosLoopId);
+      fogosLoopId = null;
+    }
+    if (fogosContainer) {
+      fogosContainer.innerHTML = '';
+    }
+  }
+
   // ========= RANKING + TROFÉU =========
 
   function mostrarResultado(pontos){
     if (!overlayRes || resultadoMostrado) return;
     resultadoMostrado = true;
 
-    const total = Object.keys(estado).length;
+    const total     = Object.keys(estado).length;
     const maxPontos = total * PONTOS_POR_ITEM;
-    const perc = pontos / maxPontos;
+    const perc      = pontos / maxPontos;
 
     let ranking;
     let texto;
@@ -307,6 +392,7 @@ export function initCena1(){
       ranking = 'Ouro';
       texto   = 'Excelente! Você montou um kit muito completo para a investigação.';
       trofeuIcon?.classList.add('trofeu-ouro');
+      iniciarFogosLoop(); // loop de fogos no Ouro
     } else if (perc >= 0.5) {
       ranking = 'Prata';
       texto   = 'Bom trabalho! Seu kit está razoável, mas ainda faltaram alguns itens importantes.';
@@ -325,33 +411,39 @@ export function initCena1(){
 
   btnFecharRes?.addEventListener('click', () => {
     overlayRes.classList.remove('visible');
+    pararFogosLoop();
   });
 
-  // ========= ALINHAMENTO AUTOMÁTICO DOS HOTSPOTS =========
-  const MAP = {
+  // ========= ALINHAMENTO AUTOMÁTICO DOS HOTSPOTS (com "media query") =========
+
+  // até 1400px de largura considero "tela menor" (notebook)
+  const mqSmall = window.matchMedia('(max-width: 1400px)');
+
+  // mapa para MONITOR MAIOR (onde já está certo)
+  const MAP_LARGE = {
     jaleco: {
-      x: 0.191,
+      x: 0.210,
       y: 0.20,
       w: 0.094,
       h: 0.41
     },
     frascos: {
-      x: 0.191,
+      x: 0.197,
       y: 0.63,
-      w: 0.094,
+      w: 0.099,
       h: 0.15
     },
     reagentes: {
-      x: 0.29,
+      x: 0.30,
       y: 0.74,
       w: 0.140,
       h: 0.16
     },
     checklist: {
-      x: 0.45,
+      x: 0.46,
       y: 0.492,
-      w: 0.120,
-      h: 0.188
+      w: 0.102,
+      h: 0.18
     },
     prancheta: {
       x: 0.462,
@@ -376,15 +468,56 @@ export function initCena1(){
       y: 0.765,
       w: 0.0119,
       h: 0.16
+    },
+
+    residuos: {
+      x: 0.32,
+      y: 0.12,
+      w: 0.12,
+      h: 0.13
+    },
+    microondas: {
+      x: 0.37,
+      y: 0.41,
+      w: 0.081,
+      h: 0.18
+    },
+    cafe: {
+      x: 0.61,
+      y: 0.57,
+      w: 0.041,
+      h: 0.12
+    },
+    plantas: {
+      x: 0.68,
+      y: 0.55,
+      w: 0.09,
+      h: 0.14
     }
   };
+
+  // mapa para TELA MENOR (notebook) 
+  const MAP_SMALL = {
+    ...MAP_LARGE,
+    jaleco: {
+      x: 0.195,
+      y: 0.21,
+      w: 0.094,
+      h: 0.41
+    }
+  };
+
+  function getCurrentMap(){
+    return mqSmall.matches ? MAP_SMALL : MAP_LARGE;
+  }
 
   function applyHotspots(){
     const sceneRect = scene.getBoundingClientRect();
     const imgRect   = bgLab.getBoundingClientRect();
-
     const imgW = imgRect.width;
     const imgH = imgRect.height;
+
+    const MAP = getCurrentMap(); // pega o mapa de acordo com o tamanho da tela
 
     function place(el, d){
       const pxLeft = (imgRect.left - sceneRect.left) + d.x * imgW;
@@ -411,6 +544,11 @@ export function initCena1(){
     place(equipFrascos, MAP.equipFrascos);
     place(equipMedidor, MAP.medidor);
     place(equipTermom,  MAP.termometro);
+
+    place(residuos,   MAP.residuos);
+    place(micro,      MAP.microondas);
+    place(cafe,       MAP.cafe);
+    place(plantas,    MAP.plantas);
   }
 
   if(bgLab.complete){
@@ -419,12 +557,18 @@ export function initCena1(){
     bgLab.addEventListener('load', applyHotspots, { once:true });
   }
   window.addEventListener('resize', applyHotspots);
+  mqSmall.addEventListener('change', applyHotspots);
 
   // ============== DECISÃO: LEVAR / NÃO LEVAR ==============
 
   btnLevar.addEventListener('click', () => {
     if (itemAtual) {
-      marcarAcerto(itemAtual);   // ganha pontos e trava o item
+      const cfg = configItens[itemAtual];
+      if (cfg?.tipo === 'distracao') {
+        marcarErro(itemAtual);
+      } else {
+        marcarAcerto(itemAtual);
+      }
     }
     itemAtual = null;
     closeInfo();
@@ -432,7 +576,12 @@ export function initCena1(){
 
   btnNaoLevar.addEventListener('click', () => {
     if (itemAtual) {
-      marcarErro(itemAtual);     // perde a chance, trava o item
+      const cfg = configItens[itemAtual];
+      if (cfg?.tipo === 'distracao') {
+        marcarAcerto(itemAtual);
+      } else {
+        marcarErro(itemAtual);
+      }
     }
     itemAtual = null;
     closeInfo();
@@ -512,6 +661,44 @@ export function initCena1(){
     });
   });
 
+  // NOVO: distrações (descrições mais neutras)
+
+  residuos.addEventListener('click', () => {
+    openInfo({
+      key:'residuos',
+      title:'Frascos com soluções e resíduos',
+      general:'Conjunto de frascos que guardam soluções já utilizadas ou sobras de experimentos anteriores, organizados na bancada do laboratório.',
+      use:'Fazem parte da rotina de registro e armazenamento temporário de materiais que já passaram por análise, enquanto outras atividades seguem acontecendo no laboratório.'
+    });
+  });
+
+  micro.addEventListener('click', () => {
+    openInfo({
+      key:'microondas',
+      title:'Forno de micro-ondas do laboratório',
+      general:'Equipamento elétrico utilizado em alguns protocolos para aquecer soluções, vidrarias ou materiais, e que costuma ficar instalado em um ponto fixo do laboratório.',
+      use:'É acionado em procedimentos específicos que acontecem ali mesmo na bancada ou em áreas internas do laboratório, integrado ao dia a dia das análises.'
+    });
+  });
+
+  cafe.addEventListener('click', () => {
+    openInfo({
+      key:'cafe',
+      title:'Caneca de café da pesquisadora',
+      general:'Caneca pessoal que costuma acompanhar a pesquisadora nas pausas entre uma etapa e outra do trabalho experimental.',
+      use:'Ajuda a manter o foco e o bem-estar durante o planejamento e a interpretação dos resultados, geralmente ficando próxima aos materiais de estudo no laboratório.'
+    });
+  });
+
+  plantas.addEventListener('click', () => {
+    openInfo({
+      key:'plantas',
+      title:'Plantas da bancada',
+      general:'Vasos decorativos que deixam o ambiente de laboratório mais agradável, trazendo um pouco de verde para perto dos equipamentos.',
+      use:'Contribuem para tornar a rotina científica mais acolhedora e humanizada, compondo o cenário em torno da área onde as análises são realizadas.'
+    });
+  });
+
   // reiniciar
   btnReiniciar?.addEventListener('click',()=>{
     Object.keys(estado).forEach(k=>estado[k]=false);
@@ -525,5 +712,6 @@ export function initCena1(){
     hint.textContent = defaultHintText;
     closeInfo();
     applyHotspots();
+    pararFogosLoop();
   });
 }

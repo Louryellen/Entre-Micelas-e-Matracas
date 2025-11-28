@@ -22,22 +22,28 @@
       💡 Clique nos itens necessários: jaleco, frascos de coleta, reagentes e equipamentos de campo.
     </div>
   </div>
-    <div class="scene" id="scene">
+ <div class="scene" id="scene">
     <!-- Fundo do laboratório -->
     <img class="bg" src="assets/bg/cenário 1.png"
-         alt="Laboratório de química da UFMA" id="bg-lab"/>
+        alt="Laboratório de química da UFMA" id="bg-lab"/>
 
-    <!-- Hotspots (áreas clicáveis) -->
+    <!-- Hotspots principais -->
     <div id="hs-jaleco"      class="hotspot"></div>
     <div id="hs-frascos"     class="hotspot"></div>
     <div id="hs-reagentes"   class="hotspot"></div>
     <div id="hs-checklist"   class="hotspot"></div>
 
-    <!-- Equipamentos de campo - um hotspot para cada item -->
-    <div id="hs-equip-prancheta" class="hotspot"></div>
-    <div id="hs-equip-frascos"   class="hotspot"></div>
-    <div id="hs-equip-medidor"   class="hotspot"></div>
+    <!-- Equipamentos de campo -->
+    <div id="hs-equip-prancheta"  class="hotspot"></div>
+    <div id="hs-equip-frascos"    class="hotspot"></div>
+    <div id="hs-equip-medidor"    class="hotspot"></div>
     <div id="hs-equip-termometro" class="hotspot"></div>
+
+    <!-- NOVO: distrações do laboratório -->
+    <div id="hs-residuos"   class="hotspot"></div>  <!-- frascos da prateleira -->
+    <div id="hs-microondas" class="hotspot"></div>
+    <div id="hs-cafe"       class="hotspot"></div>
+    <div id="hs-plantas"    class="hotspot"></div>
   </div>
 
     <!-- Pop-up de informação do item -->
@@ -59,8 +65,13 @@
       </div>
     </div>
   </div>
-    <!-- Overlay de resultado / ranking -->
+
+     <!-- Overlay de resultado / ranking -->
   <div class="resultado-overlay" id="resultadoOverlay">
+
+    <!-- Fogos ocupando toda a área do overlay -->
+    <div id="fogosContainer"></div>
+
     <div class="resultado-card">
       <h2>Preparação para o campo</h2>
       <p id="resultadoPontuacao"></p>
@@ -73,6 +84,7 @@
       <button class="btn" id="btnFecharResultado">Fechar</button>
     </div>
   </div>
+
 </main>   
 
 
@@ -81,4 +93,4 @@
   initCena1();
 </script>
 </body>
-</html>
+</html>  
