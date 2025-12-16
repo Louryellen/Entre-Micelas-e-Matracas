@@ -22,10 +22,15 @@
       💡 Clique nos itens necessários: jaleco, frascos de coleta, reagentes e equipamentos de campo.
     </div>
   </div>
- <div class="scene" id="scene">
+
+  <div class="scene" id="scene">
     <!-- Fundo do laboratório -->
-    <img class="bg" src="assets/bg/cenário 1.png"
-        alt="Laboratório de química da UFMA" id="bg-lab"/>
+    <img
+      class="bg"
+      src="assets/bg/cenário 1.png"
+      alt="Laboratório de química da UFMA"
+      id="bg-lab"
+    />
 
     <!-- Hotspots principais -->
     <div id="hs-jaleco"      class="hotspot"></div>
@@ -44,9 +49,14 @@
     <div id="hs-microondas" class="hotspot"></div>
     <div id="hs-cafe"       class="hotspot"></div>
     <div id="hs-plantas"    class="hotspot"></div>
+
+    <!-- NOVO: vídeo de transição para a investigação -->
+    <video id="viagemVideo" class="scene-video">
+      <source src="assets/viagem.mp4" type="video/mp4" />
+    </video>
   </div>
 
-    <!-- Pop-up de informação do item -->
+  <!-- Pop-up de informação do item -->
   <div class="info-popup-backdrop" id="infoBackdrop">
     <div class="info-popup" id="infoPopup">
       <div class="info-popup-header">
@@ -57,22 +67,21 @@
         <p id="infoGeneral"></p>
         <p id="infoUse"></p>
 
-        <!-- NOVO: botões de decisão -->
+        <!-- Botões de decisão -->
         <div class="info-popup-actions">
-        <button class="btn" id="btnLevar">Levar para o campo</button>
-        <button class="btn" id="btnNaoLevar">Não levar</button>
-      </div>
+          <button class="btn" id="btnLevar">Levar para o campo</button>
+          <button class="btn" id="btnNaoLevar">Não levar</button>
+        </div>
       </div>
     </div>
   </div>
 
-     <!-- Overlay de resultado / ranking -->
+  <!-- Overlay de resultado / ranking -->
   <div class="resultado-overlay" id="resultadoOverlay">
-
     <!-- Fogos ocupando toda a área do overlay -->
     <div id="fogosContainer"></div>
 
-       <div class="resultado-card">
+    <div class="resultado-card">
       <h2>Preparação para o campo</h2>
       <p id="resultadoPontuacao"></p>
       <p id="resultadoRanking"></p>
@@ -81,20 +90,18 @@
         <span id="trofeuIcon">🏆</span>
       </div>
 
-      <!-- NOVO: grupo de botões -->
+      <!-- Grupo de botões -->
       <div class="resultado-actions">
         <button class="btn" id="btnFecharResultado">Fechar</button>
         <button class="btn" id="btnIrInvestigacao">Ir para a investigação</button>
       </div>
     </div>
-
-
-</main>   
-
+  </div>
+</main>
 
 <script type="module">
   import { initCena1 } from "./engine.js";
   initCena1();
 </script>
 </body>
-</html>  
+</html>

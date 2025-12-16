@@ -1,14 +1,84 @@
-<!DOCTYPE html>
-<html lang pt-br>
-<div class="scene" id="scene">
-    <!-- Fundo da sala -->
-    <img class="bg" src="assets/imagem jogo dos 7 erros.jpg"
-         alt="Sala da pesquisadora com vista para o mar" id="bg"/>
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena 2 — Jogo dos 7 Erros</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <div class="title">Entre Micelas e Matracas</div>
+    <div class="subtitle">Cena 2: Jogo dos 7 Erros</div>
+  </div>
+  <button class="btn" id="btnReiniciar">Reiniciar</button>
+</header>
 
+<main class="main">
+  <!-- HUD / dica -->
+  <div class="hud">
+    <div class="hint" id="hint">
+      💡 Observe a cena e encontre os 7 erros químico-ambientais no igarapé.
+    </div>
+  </div>
 
+  <div class="scene" id="scene">
+    <!-- Fundo do igarapé -->
+    <img
+      class="bg"
+      src="assets/imagem jogo dos 7 erros.jpg"
+      alt="Cena do igarapé com elementos para o jogo dos 7 erros"
+      id="bg"
+    />
+  </div>
+</main>
 
+<!-- POPUP de explicação do erro -->
+<div class="info-popup-backdrop" id="erroBackdrop" aria-hidden="true">
+  <div class="info-popup" role="dialog" aria-modal="true" aria-labelledby="erroTitle">
+    <div class="info-popup-header">
+      <div id="erroTitle">Erro</div>
+      <button class="info-popup-close" id="erroClose" aria-label="Fechar">✕</button>
+    </div>
 
+    <div class="info-popup-body">
+      <p id="erroDesc"></p>
+      <p id="erroImpact"></p>
+      <p id="erroAcao"></p>
 
+      <div class="info-popup-actions">
+        <button class="btn" id="erroOk">Marcar e continuar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- RESULTADO / RANKING -->
+<div class="resultado-overlay" id="resultadoOverlay">
+  <!-- fogos fora da caixa, cobrindo o overlay -->
+  <div id="fogosContainer" aria-hidden="true"></div>
 
+  <div class="resultado-card" role="dialog" aria-modal="true" aria-label="Resultado da Investigação">
+    <h2>Resultado da Investigação</h2>
+
+    <div class="trofeu-wrap">
+      <div id="trofeuIcon">🏆</div>
+    </div>
+
+    <p id="resultadoPontuacao"></p>
+    <p id="resultadoRanking"></p>
+
+    <div class="resultado-actions">
+      <button class="btn btn-ghost" id="btnFecharResultado">Tentar novamente</button>
+      <button class="btn" id="btnIrProximaFase">Próxima fase</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initCena2 } from "./engine.js";
+  window.addEventListener('load', initCena2);
+</script>
+</body>
 </html>

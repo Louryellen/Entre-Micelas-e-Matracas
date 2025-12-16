@@ -1,15 +1,13 @@
-// ===== util =====
-const $  = sel => document.querySelector(sel);
+const $ = sel => document.querySelector(sel);
 
-// ajusta a var --header-h conforme o header real
 function fitHeader(){
   const h = document.querySelector('header')?.offsetHeight || 86;
   document.documentElement.style.setProperty('--header-h', h + 'px');
 }
+
 window.addEventListener('load', fitHeader);
 window.addEventListener('resize', fitHeader);
 
-// efeito máquina de escrever
 export function typeInto(node, text, speed = 18, done){
   node.textContent = "";
   let i = 0;
@@ -18,27 +16,23 @@ export function typeInto(node, text, speed = 18, done){
       node.textContent = text.slice(0, i++);
       setTimeout(tick, speed);
     } else {
-      done && done();
+      if (done) done();
     }
   })();
 }
 
-// ===== alterna ícone com a tecla G =====
 (function(){
   let show = false;
   document.addEventListener('keydown', e => {
     if(e.key.toLowerCase() === 'g'){
       show = !show;
-
       const icon = document.getElementById('emailIcon');
       if(!icon) return;
-
       icon.classList.toggle('active', show);
     }
   });
 })();
 
-// ====================== CENA 0 ==========================
 export function initCena0(){
   const hs    = $('#hs-email');
   const icon  = $('#emailIcon');
@@ -49,7 +43,6 @@ export function initCena0(){
 
   if(!hs || !icon || !hint || !mail) return;
 
-  // Hotspot
   Object.assign(hs.style, {
     position:'absolute',
     left:'59%',
@@ -58,7 +51,6 @@ export function initCena0(){
     height:'9%'
   });
 
-  // Ícone do e-mail
   Object.assign(icon.style, {
     position:'absolute',
     left:'59.5%',
@@ -74,7 +66,8 @@ export function initCena0(){
     hint.style.display = 'none';
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const W = 520, H = 330;
+    const W = 520;
+    const H = 330;
 
     Object.assign(mail.style, {
       left:(vw - W)/2 + 460 + 'px',
@@ -94,23 +87,18 @@ export function initCena0(){
   }
 
   function goToLab(){
-    // ajusta o caminho se cena1.html estiver em outra pasta
     window.location.href = 'cena1.html';
-    console.log('Fim do vídeo — ir para Cena 1.');
   }
 
   function playIntroVideo(){
     if(bg) bg.style.display = 'none';
     hs.style.pointerEvents = 'none';
 
-    if(!video){
-      console.warn('Vídeo introIntro não encontrado');
-      return;
-    }
+    if(!video) return;
 
     video.style.display = 'block';
     video.currentTime = 0;
-    video.play().catch(e => console.warn(e));
+    video.play().catch(()=>{});
 
     video.addEventListener('ended', goToLab, { once:true });
   }
@@ -132,8 +120,6 @@ export function initCena0(){
   });
 }
 
-// ====================== CENA 1 ==========================
-
 export function initCena1(){
   const hint         = $('#hint');
   const btnReiniciar = $('#btnReiniciar');
@@ -141,25 +127,21 @@ export function initCena1(){
   const scene        = $('#scene');
   const bgLab        = $('#bg-lab');
 
-  // hotspots principais
   const jaleco       = $('#hs-jaleco');
   const frascos      = $('#hs-frascos');
   const reagentes    = $('#hs-reagentes');
   const checklist    = $('#hs-checklist');
 
-  // equipamentos
   const equipPranch  = $('#hs-equip-prancheta');
   const equipFrascos = $('#hs-equip-frascos');
   const equipMedidor = $('#hs-equip-medidor');
   const equipTermom  = $('#hs-equip-termometro');
 
-  // NOVO: distrações
   const residuos     = $('#hs-residuos');
   const micro        = $('#hs-microondas');
   const cafe         = $('#hs-cafe');
   const plantas      = $('#hs-plantas');
 
-  // popup de informação
   const backdrop    = $('#infoBackdrop');
   const popup       = $('#infoPopup');
   const infoTitle   = $('#infoTitle');
@@ -170,21 +152,21 @@ export function initCena1(){
   const btnLevar    = $('#btnLevar');
   const btnNaoLevar = $('#btnNaoLevar');
 
-  // overlay de resultado / ranking
-  const overlayRes   = $('#resultadoOverlay');
-  const resPont      = $('#resultadoPontuacao');
-  const resRank      = $('#resultadoRanking');
-  const trofeuIcon   = $('#trofeuIcon');
-  const btnFecharRes = $('#btnFecharResultado');
+  const overlayRes        = $('#resultadoOverlay');
+  const resPont           = $('#resultadoPontuacao');
+  const resRank           = $('#resultadoRanking');
+  const trofeuIcon        = $('#trofeuIcon');
+  const btnFecharRes      = $('#btnFecharResultado');
+  const btnIrInvestigacao = $('#btnIrInvestigacao');
 
-  // container dos fogos
+  const videoViagem       = $('#viagemVideo');
+
   const fogosContainer = $('#fogosContainer');
 
   if(!hint || !scene || !bgLab || !jaleco || !frascos || !reagentes || !checklist
      || !equipPranch || !equipFrascos || !equipMedidor || !equipTermom
      || !backdrop || !popup || !btnLevar || !btnNaoLevar
      || !residuos || !micro || !cafe || !plantas){
-    console.warn('Cena 1: elemento faltando.');
     return;
   }
 
@@ -192,20 +174,15 @@ export function initCena1(){
     '💡 Clique nos itens para conhecer cada material e montar o kit de análise.';
   hint.textContent = defaultHintText;
 
-  // Configuração de pontos
   const PONTOS_POR_ITEM = 10;
-  const META_PONTOS     = 60;   // meta mínima para "passar"
+  const META_PONTOS     = 60;
   let resultadoMostrado = false;
 
-  // item atual aberto no popup
   let itemAtual = null;
 
-  // loop dos fogos
   let fogosLoopId = null;
 
-  // --- CONFIG: quais itens são necessários e quais são distrações ---
   const configItens = {
-    // necessários (precisam ser LEVADOS)
     jaleco:         { tipo: 'necessario' },
     frascos:        { tipo: 'necessario' },
     reagentes:      { tipo: 'necessario' },
@@ -214,23 +191,19 @@ export function initCena1(){
     equipFrascos:   { tipo: 'necessario' },
     equipMedidor:   { tipo: 'necessario' },
     equipTermometro:{ tipo: 'necessario' },
-
-    // distrações (não devem ser levadas)
     residuos:   { tipo: 'distracao' },
     microondas: { tipo: 'distracao' },
     cafe:       { tipo: 'distracao' },
     plantas:    { tipo: 'distracao' }
   };
 
-  // --- Estado (acertos e erros) ---
   const estado  = {};
   const errados = {};
   Object.keys(configItens).forEach(k => {
-    estado[k]  = false;  // decisão correta
-    errados[k] = false;  // decisão errada
+    estado[k]  = false;
+    errados[k] = false;
   });
 
-  // mapa pra travar os hotspots
   const hotspotsMap = {
     jaleco,
     frascos,
@@ -252,9 +225,12 @@ export function initCena1(){
     el.style.pointerEvents = 'none';
   }
 
-  // --- POPUP ---
-  function openInfo({title, general, use, key}){
-    // se o item já foi decidido (acerto ou erro), não abre de novo
+  function openInfo(obj){
+    const title   = obj.title;
+    const general = obj.general;
+    const use     = obj.use;
+    const key     = obj.key;
+
     if (key && (estado[key] || errados[key])) return;
 
     itemAtual = key || null;
@@ -311,8 +287,6 @@ export function initCena1(){
     }
   }
 
-  // ========= FOGOS DE ARTIFÍCIO (quando rank Ouro) =========
-
   function dispararFogos(){
     if (!fogosContainer) return;
 
@@ -320,9 +294,9 @@ export function initCena1(){
     const particulas = 24;
 
     for (let e = 0; e < explosoes; e++) {
-      const centroX = 10 + Math.random() * 80; // 10% a 90% da tela
-      const centroY = 15 + Math.random() * 50; // 15% a 65% da tela
-      const atraso  = e * 120;                 // cada explosão um pouco depois
+      const centroX = 10 + Math.random() * 80;
+      const centroY = 15 + Math.random() * 50;
+      const atraso  = e * 120;
 
       setTimeout(() => {
         for (let i = 0; i < particulas; i++) {
@@ -330,7 +304,7 @@ export function initCena1(){
           p.className = 'firework';
 
           const angulo = (Math.PI * 2 * i) / particulas;
-          const dist   = 90 + Math.random() * 90; // raio maior
+          const dist   = 90 + Math.random() * 90;
 
           const dx = Math.cos(angulo) * dist;
           const dy = Math.sin(angulo) * dist;
@@ -356,10 +330,10 @@ export function initCena1(){
 
   function iniciarFogosLoop(){
     if (!fogosContainer) return;
-    if (fogosLoopId !== null) return; // já está rodando
+    if (fogosLoopId !== null) return;
 
-    dispararFogos(); // primeira rodada
-    fogosLoopId = setInterval(dispararFogos, 2500); // repete
+    dispararFogos();
+    fogosLoopId = setInterval(dispararFogos, 2500);
   }
 
   function pararFogosLoop(){
@@ -372,8 +346,6 @@ export function initCena1(){
     }
   }
 
-  // ========= RANKING + TROFÉU =========
-
   function mostrarResultado(pontos){
     if (!overlayRes || resultadoMostrado) return;
     resultadoMostrado = true;
@@ -385,14 +357,13 @@ export function initCena1(){
     let ranking;
     let texto;
 
-    // limpa classes antigas do troféu
     trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
 
     if (pontos >= META_PONTOS) {
       ranking = 'Ouro';
       texto   = 'Excelente! Você montou um kit muito completo para a investigação.';
       trofeuIcon?.classList.add('trofeu-ouro');
-      iniciarFogosLoop(); // loop de fogos no Ouro
+      iniciarFogosLoop();
     } else if (perc >= 0.5) {
       ranking = 'Prata';
       texto   = 'Bom trabalho! Seu kit está razoável, mas ainda faltaram alguns itens importantes.';
@@ -414,96 +385,64 @@ export function initCena1(){
     pararFogosLoop();
   });
 
-  // ========= ALINHAMENTO AUTOMÁTICO DOS HOTSPOTS (com "media query") =========
+  function tocarVideoViagem() {
+    overlayRes?.classList.remove('visible');
+    pararFogosLoop();
 
-  // até 1400px de largura considero "tela menor" (notebook)
+    if (scene) {
+      scene.style.pointerEvents = 'none';
+    }
+
+    Object.values(hotspotsMap).forEach(el => {
+      el.style.opacity = '0';
+    });
+
+    if (!videoViagem) {
+      window.location.href = 'cena2.html';
+      return;
+    }
+
+    videoViagem.style.display = 'block';
+    videoViagem.currentTime = 0;
+
+    const playPromise = videoViagem.play();
+    if (playPromise && typeof playPromise.then === 'function') {
+      playPromise.catch(() => {
+        window.location.href = 'cena2.html';
+      });
+    }
+
+    videoViagem.addEventListener('ended', () => {
+      window.location.href = 'cena2.html';
+    }, { once:true });
+  }
+
+  btnIrInvestigacao?.addEventListener('click', tocarVideoViagem);
+
   const mqSmall = window.matchMedia('(max-width: 1400px)');
 
-  // mapa para MONITOR MAIOR (onde já está certo)
   const MAP_LARGE = {
-    jaleco: {
-      x: 0.210,
-      y: 0.20,
-      w: 0.094,
-      h: 0.41
-    },
-    frascos: {
-      x: 0.197,
-      y: 0.63,
-      w: 0.099,
-      h: 0.15
-    },
-    reagentes: {
-      x: 0.30,
-      y: 0.74,
-      w: 0.140,
-      h: 0.16
-    },
-    checklist: {
-      x: 0.46,
-      y: 0.492,
-      w: 0.102,
-      h: 0.18
-    },
-    prancheta: {
-      x: 0.462,
-      y: 0.733,
-      w: 0.058,
-      h: 0.198
-    },
-    equipFrascos: {
-      x: 0.55,
-      y: 0.810,
-      w: 0.019,
-      h: 0.122
-    },
-    medidor: {
-      x: 0.586,
-      y: 0.8233,
-      w: 0.085,
-      h: 0.111
-    },
-    termometro: {
-      x: 0.528,
-      y: 0.765,
-      w: 0.0119,
-      h: 0.16
-    },
-
-    residuos: {
-      x: 0.32,
-      y: 0.12,
-      w: 0.12,
-      h: 0.13
-    },
-    microondas: {
-      x: 0.37,
-      y: 0.41,
-      w: 0.081,
-      h: 0.18
-    },
-    cafe: {
-      x: 0.61,
-      y: 0.57,
-      w: 0.041,
-      h: 0.12
-    },
-    plantas: {
-      x: 0.68,
-      y: 0.55,
-      w: 0.09,
-      h: 0.14
-    }
+    jaleco:      { x:0.210, y:0.20,  w:0.094,  h:0.41 },
+    frascos:     { x:0.197, y:0.63,  w:0.099,  h:0.15 },
+    reagentes:   { x:0.30,  y:0.74,  w:0.140,  h:0.16 },
+    checklist:   { x:0.46,  y:0.492, w:0.102,  h:0.18 },
+    prancheta:   { x:0.462, y:0.733, w:0.058,  h:0.198 },
+    equipFrascos:{ x:0.55,  y:0.810, w:0.019,  h:0.122 },
+    medidor:     { x:0.586, y:0.8233,w:0.085,  h:0.111 },
+    termometro:  { x:0.528, y:0.765, w:0.0119, h:0.16 },
+    residuos:    { x:0.32,  y:0.12,  w:0.12,   h:0.13 },
+    microondas:  { x:0.37,  y:0.41,  w:0.081,  h:0.18 },
+    cafe:        { x:0.61,  y:0.57,  w:0.041,  h:0.12 },
+    plantas:     { x:0.68,  y:0.55,  w:0.09,   h:0.14 }
   };
 
-  // mapa para TELA MENOR (notebook) 
   const MAP_SMALL = {
     ...MAP_LARGE,
     jaleco: {
-      x: 0.195,
-      y: 0.21,
-      w: 0.094,
-      h: 0.41
+      x:0.195,
+      y:0.21,
+      w:0.094,
+      h:0.41
     }
   };
 
@@ -517,7 +456,7 @@ export function initCena1(){
     const imgW = imgRect.width;
     const imgH = imgRect.height;
 
-    const MAP = getCurrentMap(); // pega o mapa de acordo com o tamanho da tela
+    const MAP = getCurrentMap();
 
     function place(el, d){
       const pxLeft = (imgRect.left - sceneRect.left) + d.x * imgW;
@@ -559,12 +498,10 @@ export function initCena1(){
   window.addEventListener('resize', applyHotspots);
   mqSmall.addEventListener('change', applyHotspots);
 
-  // ============== DECISÃO: LEVAR / NÃO LEVAR ==============
-
   btnLevar.addEventListener('click', () => {
     if (itemAtual) {
       const cfg = configItens[itemAtual];
-      if (cfg?.tipo === 'distracao') {
+      if (cfg && cfg.tipo === 'distracao') {
         marcarErro(itemAtual);
       } else {
         marcarAcerto(itemAtual);
@@ -577,7 +514,7 @@ export function initCena1(){
   btnNaoLevar.addEventListener('click', () => {
     if (itemAtual) {
       const cfg = configItens[itemAtual];
-      if (cfg?.tipo === 'distracao') {
+      if (cfg && cfg.tipo === 'distracao') {
         marcarAcerto(itemAtual);
       } else {
         marcarErro(itemAtual);
@@ -586,8 +523,6 @@ export function initCena1(){
     itemAtual = null;
     closeInfo();
   });
-
-  // ================= CLIQUES (com textos educativos) =================
 
   jaleco.addEventListener('click',()=>{
     openInfo({
@@ -661,8 +596,6 @@ export function initCena1(){
     });
   });
 
-  // NOVO: distrações (descrições mais neutras)
-
   residuos.addEventListener('click', () => {
     openInfo({
       key:'residuos',
@@ -699,12 +632,12 @@ export function initCena1(){
     });
   });
 
-  // reiniciar
   btnReiniciar?.addEventListener('click',()=>{
     Object.keys(estado).forEach(k=>estado[k]=false);
     Object.keys(errados).forEach(k=>errados[k]=false);
     Object.values(hotspotsMap).forEach(el=>{
       el.style.pointerEvents = 'auto';
+      el.style.opacity = '';
     });
     itemAtual = null;
     resultadoMostrado = false;
@@ -715,3 +648,386 @@ export function initCena1(){
     pararFogosLoop();
   });
 }
+
+export function initCena2() {
+  const hint         = $('#hint');
+  const btnReiniciar = $('#btnReiniciar');
+  const scene        = $('#scene');
+  const bg           = $('#bg');
+
+  if (!hint || !scene || !bg) return;
+
+  // Debug: tecla H mostra/esconde hotspots
+  function onKeyDebug(e){
+    if (e.key.toLowerCase() === 'h') {
+      document.body.classList.toggle('debug-hotspots');
+    }
+  }
+  document.addEventListener('keydown', onKeyDebug);
+
+  const defaultHintText =
+    '💡 Observe a cena e encontre os 7 erros químico-ambientais no igarapé.';
+  hint.textContent = defaultHintText;
+
+  // ===== Modal de explicação =====
+  const erroBackdrop = document.getElementById('erroBackdrop');
+  const erroTitle    = document.getElementById('erroTitle');
+  const erroDesc     = document.getElementById('erroDesc');
+  const erroImpact   = document.getElementById('erroImpact');
+  const erroAcao     = document.getElementById('erroAcao');
+  const erroClose    = document.getElementById('erroClose');
+  const erroOk       = document.getElementById('erroOk');
+
+  // ===== Resultado / ranking =====
+  const overlayRes     = document.getElementById('resultadoOverlay');
+  const resPont        = document.getElementById('resultadoPontuacao');
+  const resRank        = document.getElementById('resultadoRanking');
+  const trofeuIcon     = document.getElementById('trofeuIcon');
+  const btnFecharRes   = document.getElementById('btnFecharResultado');
+  const btnNext        = document.getElementById('btnIrProximaFase');
+  const fogosContainer = document.getElementById('fogosContainer');
+
+  const PROXIMA_FASE_URL = 'cena3.html'; // ajuste
+
+  const INFO_ERROS = {
+    erro1: {
+      title: 'Erro 1 — Óleo despejado no igarapé',
+      desc:  'A presença de óleo na água indica descarte irregular de resíduos oleosos (ex.: óleo de cozinha, lubrificantes), formando uma película superficial.',
+      impact:'A película reduz a troca gasosa com o ar, pode intoxicar organismos aquáticos e agrava o mau cheiro e a degradação da qualidade da água.',
+      acao:  'Ação: conter/recolher o óleo (barreiras/absorventes), orientar a comunidade sobre descarte correto e acionar coleta/ponto de entrega (logística reversa).'
+    },
+    erro2: {
+      title: 'Erro 2 — Lavagem de roupas no igarapé',
+      desc:  'Lavar roupa no igarapé lança tensoativos e aditivos diretamente na água.',
+      impact:'Degrada a qualidade da água e favorece desequilíbrios no ecossistema.',
+      acao:  'Usar tanque/área adequada e reforçar educação ambiental e soluções de saneamento.'
+    },
+    erro3: {
+      title: 'Erro 3 — Eutrofização / alteração visível',
+      desc:  'Indica excesso de nutrientes (N e P) e crescimento intenso de algas/micro-organismos.',
+      impact:'A decomposição consome O₂ e pode gerar anoxia e mortandade de peixes.',
+      acao:  'Investigar fontes (esgoto/fertilizantes), monitorar OD, pH, turbidez, DBO, N e P.'
+    },
+    erro4: {
+      title: 'Erro 4 — Banho em água possivelmente contaminada',
+      desc:  'Contato direto com água contaminada expõe a riscos químicos e microbiológicos.',
+      impact:'Pode causar dermatites, gastroenterites e outras doenças de veiculação hídrica.',
+      acao:  'Sinalizar risco, fazer análise microbiológica e encaminhar ações de saneamento.'
+    },
+    erro5: {
+      title: 'Erro 5 — Lixo/garrafas no curso d’água',
+      desc:  'Resíduos sólidos na água indicam descarte irregular e poluição física/química.',
+      impact:'Gera microplásticos, dano à fauna e liberação de contaminantes ao longo do tempo.',
+      acao:  'Remoção, pontos de coleta e ações educativas + fiscalização comunitária.'
+    },
+    erro6: {
+      title: 'Erro 6 — Resíduos no solo (próximo ao igarapé)',
+      desc:  'Resíduos no solo podem lixiviar contaminantes para a água e lençol freático.',
+      impact:'Contamina solo e água ao longo do tempo, com risco crônico para a biota e humanos.',
+      acao:  'Recolhimento e descarte correto/logística reversa; evitar áreas de drenagem.'
+    },
+    erro7: {
+      title: 'Erro 7 — Peixe morto/boiando',
+      desc:  'Peixe morto é bioindicador de estresse ambiental (OD baixo, toxicidade, pH etc.).',
+      impact:'Sinaliza desequilíbrio ecológico e possível contaminação/anoxia localizada.',
+      acao:  'Medir OD, pH, temperatura, condutividade e rastrear fontes de poluição.'
+    }
+  };
+
+  const PESO_ERRO = { erro1:1, erro2:1, erro3:1, erro4:1, erro5:1, erro6:1, erro7:1 };
+  const TOTAL_ERROS = Object.keys(PESO_ERRO).length;
+  const PONTOS_POR_ERRO = 10;
+
+  let pontos = 0;
+  let resultadoMostrado = false;
+  let errosEncontrados = 0;
+
+  // ✅ precisa ser LET para reiniciar no "tentar novamente"
+  let startTime = performance.now();
+  let misclicks = 0;
+
+  const errosClicados = new Set();
+  const hotspots = {};
+
+  const MAP_ERROS = {
+    erro1: { x: 0.245,  y: 0.47,  w: 0.135, h: 0.24  },
+    erro2: { x: 0.39,   y: 0.58,  w: 0.09,  h: 0.21  },
+    erro3: { x: 0.42,   y: 0.44,  w: 0.14,  h: 0.07  },
+    erro4: { x: 0.50,   y: 0.59,  w: 0.075, h: 0.21  },
+    erro5: { x: 0.635,  y: 0.55,  w: 0.125, h: 0.145 },
+    erro6: { x: 0.415,  y: 0.85,  w: 0.18,  h: 0.14  },
+    erro7: { x: 0.499,  y: 0.505, w: 0.06,  h: 0.05  },
+  };
+
+  function atualizarHint() {
+    hint.textContent =
+      `Erros encontrados: ${errosEncontrados}/${TOTAL_ERROS}. Clique nos pontos problemáticos do igarapé.`;
+  }
+
+  // ===== Modal =====
+  let erroPendente = null;
+  let eventoPendente = null;
+
+  function abrirModalErro(id, ev){
+    const info = INFO_ERROS[id];
+    if (!erroBackdrop || !info) {
+      marcarErro(id, ev);
+      return;
+    }
+
+    erroPendente = id;
+    eventoPendente = ev;
+
+    erroTitle.textContent  = info.title;
+    erroDesc.textContent   = info.desc;
+    erroImpact.textContent = `Impacto: ${info.impact}`;
+    erroAcao.textContent   = `O que fazer: ${info.acao}`;
+
+    erroBackdrop.classList.add('visible');
+  }
+
+  function fecharModalErro(){
+    erroBackdrop?.classList.remove('visible');
+    erroPendente = null;
+    eventoPendente = null;
+  }
+
+  function confirmarErroModal(){
+    if (!erroPendente) return;
+    marcarErro(erroPendente, eventoPendente);
+    fecharModalErro();
+  }
+
+  erroClose?.addEventListener('click', fecharModalErro);
+  erroBackdrop?.addEventListener('click', (e) => {
+    if (e.target === erroBackdrop) fecharModalErro();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') fecharModalErro();
+  });
+  erroOk?.addEventListener('click', confirmarErroModal);
+
+  // ===== Marcar erro (X + trava hotspot) =====
+  function marcarErro(erroId, ev) {
+    if (errosClicados.has(erroId)) return;
+
+    errosClicados.add(erroId);
+    errosEncontrados += 1;
+
+    pontos += (PESO_ERRO[erroId] || 1) * PONTOS_POR_ERRO;
+
+    const hs = hotspots[erroId];
+    if (hs) {
+      const xNode = document.createElement('div');
+      xNode.className = 'erro-x';
+      xNode.textContent = 'X';
+      hs.appendChild(xNode);
+
+      const rect = hs.getBoundingClientRect();
+      const cx = ev ? (ev.clientX - rect.left) : rect.width / 2;
+      const cy = ev ? (ev.clientY - rect.top)  : rect.height / 2;
+
+      // ✅ centraliza depois do layout
+      requestAnimationFrame(() => {
+        const w = xNode.offsetWidth || 0;
+        const h = xNode.offsetHeight || 0;
+        xNode.style.left = (cx - w / 2) + 'px';
+        xNode.style.top  = (cy - h / 2) + 'px';
+      });
+
+      hs.style.pointerEvents = 'none';
+    }
+
+    atualizarHint();
+
+    if (errosEncontrados >= TOTAL_ERROS) {
+      mostrarResultado();
+    }
+  }
+
+  function handleClick(erroId, ev) {
+    if (errosClicados.has(erroId)) return;
+    abrirModalErro(erroId, ev);
+  }
+
+  // ✅ conta clique fora com closest (evita falso misclick)
+  function onSceneClick(e){
+    if (resultadoMostrado) return;
+    if (erroBackdrop?.classList.contains('visible')) return;
+
+    const isHotspot = !!e.target.closest?.('.hs-erro');
+    if (!isHotspot) misclicks += 1;
+  }
+  scene.addEventListener('click', onSceneClick);
+
+  // ===== Hotspots responsivos =====
+  function aplicarHotspots() {
+    const sceneRect = scene.getBoundingClientRect();
+    const imgRect   = bg.getBoundingClientRect();
+    const imgW = imgRect.width;
+    const imgH = imgRect.height;
+
+    Object.entries(MAP_ERROS).forEach(([id, d]) => {
+      let el = hotspots[id];
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'hotspot hs-erro';
+        el.dataset.erroId = id;
+        hotspots[id] = el;
+        scene.appendChild(el);
+        el.addEventListener('click', ev => handleClick(id, ev));
+      }
+
+      const pxLeft = (imgRect.left - sceneRect.left) + d.x * imgW;
+      const pxTop  = (imgRect.top  - sceneRect.top)  + d.y * imgH;
+
+      Object.assign(el.style, {
+        position: 'absolute',
+        left:   pxLeft + 'px',
+        top:    pxTop  + 'px',
+        width:  (d.w * imgW) + 'px',
+        height: (d.h * imgH) + 'px',
+        zIndex: 50,
+        pointerEvents: errosClicados.has(id) ? 'none' : 'auto'
+      });
+    });
+  }
+
+  if (bg.complete && bg.naturalWidth > 0) aplicarHotspots();
+  else bg.addEventListener('load', aplicarHotspots, { once:true });
+  window.addEventListener('resize', aplicarHotspots);
+
+  // ===== Fogos (só Ouro) =====
+  let fogosLoopId = null;
+
+  function dispararFogos(){
+    if (!fogosContainer) return;
+
+    const explosoes = 10;
+    const particulas = 24;
+
+    for (let e = 0; e < explosoes; e++) {
+      const centroX = 10 + Math.random() * 80;
+      const centroY = 15 + Math.random() * 50;
+      const atraso  = e * 120;
+
+      setTimeout(() => {
+        for (let i = 0; i < particulas; i++) {
+          const p = document.createElement('div');
+          p.className = 'firework';
+
+          const angulo = (Math.PI * 2 * i) / particulas;
+          const dist   = 90 + Math.random() * 90;
+
+          p.style.left = centroX + '%';
+          p.style.top  = centroY + '%';
+          p.style.setProperty('--dx', (Math.cos(angulo) * dist) + 'px');
+          p.style.setProperty('--dy', (Math.sin(angulo) * dist) + 'px');
+
+          fogosContainer.appendChild(p);
+          p.addEventListener('animationend', () => p.remove());
+        }
+      }, atraso);
+    }
+  }
+
+  function iniciarFogosLoop(){
+    if (!fogosContainer || fogosLoopId !== null) return;
+    dispararFogos();
+    fogosLoopId = setInterval(dispararFogos, 2500);
+  }
+
+  function pararFogosLoop(){
+    if (fogosLoopId !== null) {
+      clearInterval(fogosLoopId);
+      fogosLoopId = null;
+    }
+    if (fogosContainer) fogosContainer.innerHTML = '';
+  }
+
+  function mostrarResultado(){
+    if (!overlayRes || resultadoMostrado) return;
+    resultadoMostrado = true;
+
+    const endTime = performance.now();
+    const seconds = Math.max(1, Math.round((endTime - startTime) / 1000));
+    const maxPontos = TOTAL_ERROS * PONTOS_POR_ERRO;
+
+    let ranking = 'Bronze';
+    let texto = `Tempo: ${seconds}s • Cliques fora: ${misclicks}.`;
+
+    trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
+
+    if (misclicks <= 2 && seconds <= 90) {
+      ranking = 'Ouro';
+      texto = `Excelente! ${texto}`;
+      trofeuIcon?.classList.add('trofeu-ouro');
+      iniciarFogosLoop(); // ✅ só Ouro
+    } else if (misclicks <= 5 && seconds <= 150) {
+      ranking = 'Prata';
+      texto = `Muito bom! ${texto}`;
+      trofeuIcon?.classList.add('trofeu-prata');
+      pararFogosLoop(); // segurança
+    } else {
+      ranking = 'Bronze';
+      texto = `Concluído! ${texto}`;
+      trofeuIcon?.classList.add('trofeu-bronze');
+      pararFogosLoop(); // segurança
+    }
+
+    if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
+    if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
+
+    overlayRes.classList.add('visible');
+  }
+
+  function fadeAndGo(url){
+    const fade = document.createElement('div');
+    Object.assign(fade.style, {
+      position:'fixed', inset:'0', background:'#000',
+      opacity:'0', transition:'opacity 650ms ease',
+      zIndex:'400', pointerEvents:'none'
+    });
+    document.body.appendChild(fade);
+    requestAnimationFrame(() => fade.style.opacity = '1');
+    setTimeout(() => window.location.href = url, 680);
+  }
+
+  function irProximaFase(){
+    overlayRes?.classList.remove('visible');
+    pararFogosLoop();
+    fadeAndGo(PROXIMA_FASE_URL);
+  }
+  btnNext?.addEventListener('click', irProximaFase);
+
+  function resetCena2(){
+    pontos = 0;
+    resultadoMostrado = false;
+    errosEncontrados = 0;
+    misclicks = 0;
+    errosClicados.clear();
+
+    // ✅ reinicia o cronômetro no "tentar novamente"
+    startTime = performance.now();
+
+    hint.textContent = defaultHintText;
+
+    Object.values(hotspots).forEach(hs => {
+      hs.style.pointerEvents = 'auto';
+      hs.querySelectorAll('.erro-x').forEach(x => x.remove());
+    });
+
+    overlayRes?.classList.remove('visible');
+    pararFogosLoop();
+    fecharModalErro();
+
+    aplicarHotspots();
+    atualizarHint();
+  }
+
+  btnFecharRes?.addEventListener('click', resetCena2);
+  btnReiniciar?.addEventListener('click', resetCena2);
+
+  atualizarHint();
+}
+

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena — Bancada (Protótipo Drag)</title>
+
+  <link rel="stylesheet" href="bancada.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<header id="appHeader">
+  <div>
+    <div class="title">Entre Micelas e Matracas</div>
+    <div class="subtitle">Cena: Bancada — Protótipo Drag</div>
+  </div>
+  <button class="btn" id="btnReset" type="button">Reiniciar</button>
+</header>
+
+<main class="main">
+  <div class="hud">
+    <div class="hint" id="hint">
+      <span id="hintText">Arraste a SONDA para a zona pedida. Aguarde estabilizar e confirme no aparelho.</span>
+    </div>
+  </div>
+
+  <section class="scene" id="scene" aria-label="Cena da bancada">
+    <div class="stage" id="stage">
+      <img class="bg" id="bg" src="figuras/bancada.png" alt="Bancada ao ar livre (cozy)">
+
+      <!-- ZONAS -->
+      <div class="zone" data-zone="rinse" style="--x:30;--y:51;--w:8.5;--h:12;">
+        <span class="zlabel">Água destilada</span>
+        <img class="aguadest" src="figuras/aguadest.png" alt="aguadest">
+      </div>
+
+      <div class="zone" data-zone="ph7" style="--x:62;--y:28;--w:7;--h:12;">
+        <span class="zlabel">pH 7.00</span>
+        <img class="ph7" src="figuras/ph7.png" alt="ph7" alt="ph7">
+      </div>
+
+      <div class="zone" data-zone="ph4" style="--x:70;--y:28;--w:7;--h:12;">
+        <span class="zlabel">pH 4.01</span>
+        <img class="ph4" src="figuras/ph4.png" alt="ph4">
+      </div>
+
+      <div class="zone" data-zone="ec1413" style="--x:78;--y:28;--w:7;--h:12;">
+        <span class="zlabel">1413 (µS/cm)</span>
+        <img class="cond" src="figuras/cond.png" alt="cond">
+      </div>
+
+      <div class="zone" data-zone="sample1" style="--x:52;--y:51;--w:7;--h:12;">
+        <span class="zlabel">Amostra 1</span>
+        <img class="am1" src="figuras/amostra1.png" alt="am1">
+      </div>
+
+      <div class="zone" data-zone="sample2" style="--x:62;--y:51;--w:7;--h:12;">
+        <span class="zlabel">Amostra 2</span>
+        <img class="am2" src="figuras/amostra2.png" alt="am2">
+      </div>
+
+      <div class="zone" data-zone="sample3" style="--x:72;--y:51;--w:7;--h:12;">
+        <span class="zlabel">Amostra 3</span>
+        <img class="am3" src="figuras/amostra3.png" alt="am3">
+      </div>
+
+      <!-- HOTSPOT (hitbox) - só a zona -->
+      <div class="zone zone-waste" data-zone="waste" style="--x:67;--y:65;--w:6.5;--h:12;">
+        <span class="zlabel">Descarte</span>
+      </div>
+
+      <!-- PNG (sprite) - fora da zona -->
+      <img class="sprite sprite-waste" src="figuras/descarte.png" alt="Descarte">
+
+
+      <img id="probe" class="probe" src="figuras/sonda.png" draggable="false">
+    </div>
+
+    <div class="multi">
+      <img class="multi-img" src="figuras/multi.png">
+    </div>
+
+    <div class="protocol" id="protocol">
+      <div class="device-screen">
+        <div class="screen-ui">
+          <div class="screen-top">
+            <div class="panel-title">PROTOCOLO</div>
+            <div class="rep" id="repInfo">Réplica: 0/3</div>
+          </div>
+
+          <div class="step" id="stepText"></div>
+
+          <div class="meter">
+            <div class="meter-top">
+              <div class="meter-title">Estabilidade</div>
+              <div class="meter-val" id="stabPct">0%</div>
+            </div>
+            <div class="track"><div class="bar" id="stabBar"></div></div>
+            <div class="meter-sub" id="stabLabel"></div>
+          </div>
+
+          <div class="readout">
+            <div class="rline"><span>pH</span><strong id="outPH">—</strong></div>
+            <div class="rline"><span>Condutividade</span><strong id="outEC">—</strong></div>
+            <div class="rline"><span>T (°C)</span><strong id="outT">—</strong></div>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn primary" id="btnAction" disabled>CONFIRMAR</button>
+            <button class="btn" id="btnRecenter">Recolher</button>
+          </div>
+
+          <div class="score" id="scoreText">Pontuação: 0</div>
+
+          <div class="diag" id="diagBox" hidden>
+            <div class="panel-title">Diagnóstico</div>
+            <div class="diag-txt" id="diagPrompt"></div>
+            <div class="btn-row">
+              <button class="btn" data-diag="ok">OK</button>
+              <button class="btn" data-diag="suspeito">SUSPEITO</button>
+              <button class="btn" data-diag="critico">CRÍTICO</button>
+            </div>
+            <div class="diag-res" id="diagResult"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="bancada.js"></script>
+</body>
+</html>
