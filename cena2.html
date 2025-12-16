@@ -78,7 +78,17 @@
 
 <script type="module">
   import { initCena2 } from "./engine.js";
-  window.addEventListener('load', initCena2);
+
+  window.addEventListener("load", () => {
+    initCena2();
+
+    const btn = document.querySelector("#btnIrProximaFase");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        window.location.href = "cena-multiparametro.html";
+      });
+    }
+  });
 </script>
 </body>
 </html>

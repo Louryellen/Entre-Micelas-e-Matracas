@@ -1,10 +1,10 @@
+// engine.js
 const $ = sel => document.querySelector(sel);
 
 function fitHeader(){
   const h = document.querySelector('header')?.offsetHeight || 86;
   document.documentElement.style.setProperty('--header-h', h + 'px');
 }
-
 window.addEventListener('load', fitHeader);
 window.addEventListener('resize', fitHeader);
 
@@ -21,6 +21,7 @@ export function typeInto(node, text, speed = 18, done){
   })();
 }
 
+// Debug email icon (Cena 0)
 (function(){
   let show = false;
   document.addEventListener('keydown', e => {
@@ -33,6 +34,9 @@ export function typeInto(node, text, speed = 18, done){
   });
 })();
 
+// =====================
+// CENA 0
+// =====================
 export function initCena0(){
   const hs    = $('#hs-email');
   const icon  = $('#emailIcon');
@@ -98,28 +102,59 @@ export function initCena0(){
 
     video.style.display = 'block';
     video.currentTime = 0;
-    video.play().catch(()=>{});
+    video.playsInline = true;
+
+    // tenta com som; se bloquear, cai para mutado
+    video.muted = false;
+    video.volume = 1;
+
+    const p = video.play();
+    if (p?.catch) {
+      p.catch(() => {
+        video.muted = true;
+        video.play().catch(()=>{});
+        // dica para o usuário destravar som
+        hint.style.display = '';
+        hint.textContent = '🔊 Vídeo sem som por bloqueio do navegador. Clique no vídeo para ativar o áudio.';
+        video.addEventListener('click', async () => {
+          video.muted = false;
+          try { await video.play(); } catch {}
+        }, { once:true });
+      });
+    }
 
     video.addEventListener('ended', goToLab, { once:true });
   }
 
   hs.addEventListener('click', openMail);
-  $('#closeMail').addEventListener('click', closeMail);
+  $('#closeMail')?.addEventListener('click', closeMail);
 
-  $('#acceptCase').addEventListener('click', () => {
+  $('#acceptCase')?.addEventListener('click', () => {
     closeMail();
     playIntroVideo();
   });
 
   $('#btnReiniciar')?.addEventListener('click', () => {
     hint.style.display = '';
+    hint.textContent = '💡 Clique no ícone próximo ao notebook para ler o e-mail. (Tecle G para ver áreas)!!!';
     closeMail();
     icon.classList.remove('active');
     hs.style.pointerEvents = 'auto';
-    if(bg) video.style.display = 'none';
+
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+      video.style.display = 'none';
+      video.muted = false;
+      video.volume = 1;
+    }
+    if(bg) bg.style.display = '';
   });
 }
 
+// =====================
+// CENA 1
+// =====================
 export function initCena1(){
   const hint         = $('#hint');
   const btnReiniciar = $('#btnReiniciar');
@@ -159,7 +194,9 @@ export function initCena1(){
   const btnFecharRes      = $('#btnFecharResultado');
   const btnIrInvestigacao = $('#btnIrInvestigacao');
 
-  const videoViagem       = $('#viagemVideo');
+  // vídeos (IDs do HTML)
+  const videoViagem   = $('#viagemVideo');
+  const videoVilarejo = $('#vilarejoVideo');
 
   const fogosContainer = $('#fogosContainer');
 
@@ -226,11 +263,7 @@ export function initCena1(){
   }
 
   function openInfo(obj){
-    const title   = obj.title;
-    const general = obj.general;
-    const use     = obj.use;
-    const key     = obj.key;
-
+    const { title, general, use, key } = obj;
     if (key && (estado[key] || errados[key])) return;
 
     itemAtual = key || null;
@@ -319,10 +352,7 @@ export function initCena1(){
             cores[Math.floor(Math.random() * cores.length)];
 
           fogosContainer.appendChild(p);
-
-          p.addEventListener('animationend', () => {
-            p.remove();
-          });
+          p.addEventListener('animationend', () => p.remove());
         }
       }, atraso);
     }
@@ -341,9 +371,7 @@ export function initCena1(){
       clearInterval(fogosLoopId);
       fogosLoopId = null;
     }
-    if (fogosContainer) {
-      fogosContainer.innerHTML = '';
-    }
+    if (fogosContainer) fogosContainer.innerHTML = '';
   }
 
   function mostrarResultado(pontos){
@@ -385,16 +413,43 @@ export function initCena1(){
     pararFogosLoop();
   });
 
-  function tocarVideoViagem() {
+  // ========= VÍDEOS EM SEQUÊNCIA (COM SOM + FALLBACK) =========
+  async function playWithSound(videoEl){
+    if (!videoEl) return false;
+
+    videoEl.playsInline = true;
+    videoEl.muted = false;
+    videoEl.volume = 1;
+
+    try {
+      await videoEl.play(); // tenta com som
+      return true;
+    } catch (e) {
+      // fallback: toca mutado para não travar
+      videoEl.muted = true;
+      try { await videoEl.play(); } catch {}
+
+      hint.textContent = '🔊 Vídeo tocando sem som por bloqueio do navegador. Clique no vídeo para ativar o áudio.';
+      videoEl.addEventListener('click', async () => {
+        videoEl.muted = false;
+        try {
+          await videoEl.play();
+          hint.textContent = defaultHintText;
+        } catch {}
+      }, { once:true });
+
+      return false;
+    }
+  }
+
+  async function tocarSequenciaDeVideos(){
     overlayRes?.classList.remove('visible');
     pararFogosLoop();
 
-    if (scene) {
-      scene.style.pointerEvents = 'none';
-    }
-
+    scene.style.pointerEvents = 'none';
     Object.values(hotspotsMap).forEach(el => {
       el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
     });
 
     if (!videoViagem) {
@@ -402,23 +457,34 @@ export function initCena1(){
       return;
     }
 
+    // vídeo 1
     videoViagem.style.display = 'block';
     videoViagem.currentTime = 0;
+    await playWithSound(videoViagem);
 
-    const playPromise = videoViagem.play();
-    if (playPromise && typeof playPromise.then === 'function') {
-      playPromise.catch(() => {
+    videoViagem.addEventListener('ended', async () => {
+      videoViagem.style.display = 'none';
+
+      if (!videoVilarejo) {
         window.location.href = 'cena2.html';
-      });
-    }
+        return;
+      }
 
-    videoViagem.addEventListener('ended', () => {
-      window.location.href = 'cena2.html';
+      // vídeo 2
+      videoVilarejo.style.display = 'block';
+      videoVilarejo.currentTime = 0;
+      await playWithSound(videoVilarejo);
+
+      videoVilarejo.addEventListener('ended', () => {
+        window.location.href = 'cena2.html';
+      }, { once:true });
+
     }, { once:true });
   }
 
-  btnIrInvestigacao?.addEventListener('click', tocarVideoViagem);
+  btnIrInvestigacao?.addEventListener('click', tocarSequenciaDeVideos);
 
+  // ========= HOTSPOTS RESPONSIVOS =========
   const mqSmall = window.matchMedia('(max-width: 1400px)');
 
   const MAP_LARGE = {
@@ -438,12 +504,7 @@ export function initCena1(){
 
   const MAP_SMALL = {
     ...MAP_LARGE,
-    jaleco: {
-      x:0.195,
-      y:0.21,
-      w:0.094,
-      h:0.41
-    }
+    jaleco: { x:0.195, y:0.21, w:0.094, h:0.41 }
   };
 
   function getCurrentMap(){
@@ -490,22 +551,18 @@ export function initCena1(){
     place(plantas,    MAP.plantas);
   }
 
-  if(bgLab.complete){
-    applyHotspots();
-  }else{
-    bgLab.addEventListener('load', applyHotspots, { once:true });
-  }
+  if(bgLab.complete) applyHotspots();
+  else bgLab.addEventListener('load', applyHotspots, { once:true });
+
   window.addEventListener('resize', applyHotspots);
   mqSmall.addEventListener('change', applyHotspots);
 
+  // ========= BOTÕES POPUP =========
   btnLevar.addEventListener('click', () => {
     if (itemAtual) {
       const cfg = configItens[itemAtual];
-      if (cfg && cfg.tipo === 'distracao') {
-        marcarErro(itemAtual);
-      } else {
-        marcarAcerto(itemAtual);
-      }
+      if (cfg && cfg.tipo === 'distracao') marcarErro(itemAtual);
+      else marcarAcerto(itemAtual);
     }
     itemAtual = null;
     closeInfo();
@@ -514,141 +571,140 @@ export function initCena1(){
   btnNaoLevar.addEventListener('click', () => {
     if (itemAtual) {
       const cfg = configItens[itemAtual];
-      if (cfg && cfg.tipo === 'distracao') {
-        marcarAcerto(itemAtual);
-      } else {
-        marcarErro(itemAtual);
-      }
+      if (cfg && cfg.tipo === 'distracao') marcarAcerto(itemAtual);
+      else marcarErro(itemAtual);
     }
     itemAtual = null;
     closeInfo();
   });
 
-  jaleco.addEventListener('click',()=>{
-    openInfo({
-      key:'jaleco',
-      title:'Jaleco de laboratório',
-      general:'É um EPI que protege o corpo contra respingos de reagentes, sujeira e contaminações.',
-      use:'Na análise do igarapé, o jaleco evita contato direto com a água possivelmente contaminada e com os reagentes usados nos testes.'
-    });
-  });
+  // ========= CLICKS / INFO =========
+  jaleco.addEventListener('click',()=> openInfo({
+    key:'jaleco',
+    title:'Jaleco de laboratório',
+    general:'É um EPI que protege o corpo contra respingos de reagentes, sujeira e contaminações.',
+    use:'Na análise do igarapé, o jaleco evita contato direto com a água possivelmente contaminada e com os reagentes usados nos testes.'
+  }));
 
-  frascos.addEventListener('click',()=>{
-    openInfo({
-      key:'frascos',
-      title:'Frascos de coleta',
-      general:'Frascos limpos, de vidro ou plástico adequado, usados para armazenar amostras de água.',
-      use:'No igarapé, vão guardar a água coletada em vários pontos, preservando as características físico-químicas até a análise no laboratório.'
-    });
-  });
+  frascos.addEventListener('click',()=> openInfo({
+    key:'frascos',
+    title:'Frascos de coleta',
+    general:'Frascos limpos, de vidro ou plástico adequado, usados para armazenar amostras de água.',
+    use:'No igarapé, vão guardar a água coletada em vários pontos, preservando as características físico-químicas até a análise no laboratório.'
+  }));
 
-  reagentes.addEventListener('click',()=>{
-    openInfo({
-      key:'reagentes',
-      title:'Reagentes da análise',
-      general:'Soluções químicas preparadas para reagir com substâncias presentes na água.',
-      use:'Permitem determinar parâmetros como pH, alcalinidade, dureza ou demanda química de oxigênio, revelando contaminações ou alterações na qualidade da água.'
-    });
-  });
+  reagentes.addEventListener('click',()=> openInfo({
+    key:'reagentes',
+    title:'Reagentes da análise',
+    general:'Soluções químicas preparadas para reagir com substâncias presentes na água.',
+    use:'Permitem determinar parâmetros como pH, alcalinidade, dureza ou demanda química de oxigênio, revelando contaminações ou alterações na qualidade da água.'
+  }));
 
-  checklist.addEventListener('click',()=>{
-    openInfo({
-      key:'checklist',
-      title:'Notebook e checklist',
-      general:'O notebook exibe uma lista com os materiais e passos necessários antes de sair para campo.',
-      use:'Ajuda a verificar se EPIs, frascos, reagentes e equipamentos de campo foram separados corretamente antes de ir ao igarapé.'
-    });
-  });
+  checklist.addEventListener('click',()=> openInfo({
+    key:'checklist',
+    title:'Notebook e checklist',
+    general:'O notebook exibe uma lista com os materiais e passos necessários antes de sair para campo.',
+    use:'Ajuda a verificar se EPIs, frascos, reagentes e equipamentos de campo foram separados corretamente antes de ir ao igarapé.'
+  }));
 
-  equipPranch.addEventListener('click',()=>{
-    openInfo({
-      key:'equipPrancheta',
-      title:'Prancheta e ficha de campo',
-      general:'Usada para registrar informações durante a coleta: data, hora, ponto de amostragem e observações visuais.',
-      use:'Relaciona os resultados laboratoriais com o contexto de cada ponto do igarapé, o que é essencial para interpretar os dados.'
-    });
-  });
+  equipPranch.addEventListener('click',()=> openInfo({
+    key:'equipPrancheta',
+    title:'Prancheta e ficha de campo',
+    general:'Usada para registrar informações durante a coleta: data, hora, ponto de amostragem e observações visuais.',
+    use:'Relaciona os resultados laboratoriais com o contexto de cada ponto do igarapé, o que é essencial para interpretar os dados.'
+  }));
 
-  equipFrascos.addEventListener('click',()=>{
-    openInfo({
-      key:'equipFrascos',
-      title:'Frascos e recipientes de campo',
-      general:'Recipientes menores que auxiliam na coleta, divisão e preservação das amostras diretamente no local.',
-      use:'Permitem pegar a água no ponto exato desejado, fazer pré-divisões e adicionar conservantes quando necessário.'
-    });
-  });
+  equipFrascos.addEventListener('click',()=> openInfo({
+    key:'equipFrascos',
+    title:'Frascos e recipientes de campo',
+    general:'Recipientes menores que auxiliam na coleta, divisão e preservação das amostras diretamente no local.',
+    use:'Permitem pegar a água no ponto exato desejado, fazer pré-divisões e adicionar conservantes quando necessário.'
+  }));
 
-  equipMedidor.addEventListener('click',()=>{
-    openInfo({
-      key:'equipMedidor',
-      title:'Medidor portátil (pH/condutividade)',
-      general:'Equipamento eletrônico usado para medições rápidas diretamente em campo.',
-      use:'No igarapé, será usado para medir pH ou condutividade na hora da coleta, evitando mudanças que ocorreriam se a medição fosse feita apenas no laboratório.'
-    });
-  });
+  equipMedidor.addEventListener('click',()=> openInfo({
+    key:'equipMedidor',
+    title:'Medidor portátil (pH/condutividade)',
+    general:'Equipamento eletrônico usado para medições rápidas diretamente em campo.',
+    use:'No igarapé, será usado para medir pH ou condutividade na hora da coleta, evitando mudanças que ocorreriam se a medição fosse feita apenas no laboratório.'
+  }));
 
-  equipTermom.addEventListener('click',()=>{
-    openInfo({
-      key:'equipTermometro',
-      title:'Termômetro / copo de amostra',
-      general:'Instrumentos usados para medir a temperatura da água e realizar pequenas leituras ou testes rápidos.',
-      use:'A temperatura influencia a solubilidade de gases, a atividade biológica e a toxicidade de poluentes, sendo um parâmetro importante na avaliação do igarapé.'
-    });
-  });
+  equipTermom.addEventListener('click',()=> openInfo({
+    key:'equipTermometro',
+    title:'Termômetro / copo de amostra',
+    general:'Instrumentos usados para medir a temperatura da água e realizar pequenas leituras ou testes rápidos.',
+    use:'A temperatura influencia a solubilidade de gases, a atividade biológica e a toxicidade de poluentes, sendo um parâmetro importante na avaliação do igarapé.'
+  }));
 
-  residuos.addEventListener('click', () => {
-    openInfo({
-      key:'residuos',
-      title:'Frascos com soluções e resíduos',
-      general:'Conjunto de frascos que guardam soluções já utilizadas ou sobras de experimentos anteriores, organizados na bancada do laboratório.',
-      use:'Fazem parte da rotina de registro e armazenamento temporário de materiais que já passaram por análise, enquanto outras atividades seguem acontecendo no laboratório.'
-    });
-  });
+  residuos.addEventListener('click', () => openInfo({
+    key:'residuos',
+    title:'Frascos com soluções e resíduos',
+    general:'Conjunto de frascos que guardam soluções já utilizadas ou sobras de experimentos anteriores, organizados na bancada do laboratório.',
+    use:'Fazem parte da rotina de registro e armazenamento temporário de materiais que já passaram por análise, enquanto outras atividades seguem acontecendo no laboratório.'
+  }));
 
-  micro.addEventListener('click', () => {
-    openInfo({
-      key:'microondas',
-      title:'Forno de micro-ondas do laboratório',
-      general:'Equipamento elétrico utilizado em alguns protocolos para aquecer soluções, vidrarias ou materiais, e que costuma ficar instalado em um ponto fixo do laboratório.',
-      use:'É acionado em procedimentos específicos que acontecem ali mesmo na bancada ou em áreas internas do laboratório, integrado ao dia a dia das análises.'
-    });
-  });
+  micro.addEventListener('click', () => openInfo({
+    key:'microondas',
+    title:'Forno de micro-ondas do laboratório',
+    general:'Equipamento elétrico utilizado em alguns protocolos para aquecer soluções, vidrarias ou materiais, e que costuma ficar instalado em um ponto fixo do laboratório.',
+    use:'É acionado em procedimentos específicos que acontecem ali mesmo na bancada ou em áreas internas do laboratório, integrado ao dia a dia das análises.'
+  }));
 
-  cafe.addEventListener('click', () => {
-    openInfo({
-      key:'cafe',
-      title:'Caneca de café da pesquisadora',
-      general:'Caneca pessoal que costuma acompanhar a pesquisadora nas pausas entre uma etapa e outra do trabalho experimental.',
-      use:'Ajuda a manter o foco e o bem-estar durante o planejamento e a interpretação dos resultados, geralmente ficando próxima aos materiais de estudo no laboratório.'
-    });
-  });
+  cafe.addEventListener('click', () => openInfo({
+    key:'cafe',
+    title:'Caneca de café da pesquisadora',
+    general:'Caneca pessoal que costuma acompanhar a pesquisadora nas pausas entre uma etapa e outra do trabalho experimental.',
+    use:'Ajuda a manter o foco e o bem-estar durante o planejamento e a interpretação dos resultados, geralmente ficando próxima aos materiais de estudo no laboratório.'
+  }));
 
-  plantas.addEventListener('click', () => {
-    openInfo({
-      key:'plantas',
-      title:'Plantas da bancada',
-      general:'Vasos decorativos que deixam o ambiente de laboratório mais agradável, trazendo um pouco de verde para perto dos equipamentos.',
-      use:'Contribuem para tornar a rotina científica mais acolhedora e humanizada, compondo o cenário em torno da área onde as análises são realizadas.'
-    });
-  });
+  plantas.addEventListener('click', () => openInfo({
+    key:'plantas',
+    title:'Plantas da bancada',
+    general:'Vasos decorativos que deixam o ambiente de laboratório mais agradável, trazendo um pouco de verde para perto dos equipamentos.',
+    use:'Contribuem para tornar a rotina científica mais acolhedora e humanizada, compondo o cenário em torno da área onde as análises são realizadas.'
+  }));
 
-  btnReiniciar?.addEventListener('click',()=>{
+  // ========= REINICIAR =========
+  btnReiniciar?.addEventListener('click',()=> {
     Object.keys(estado).forEach(k=>estado[k]=false);
     Object.keys(errados).forEach(k=>errados[k]=false);
+
     Object.values(hotspotsMap).forEach(el=>{
       el.style.pointerEvents = 'auto';
       el.style.opacity = '';
     });
+
+    scene.style.pointerEvents = 'auto';
+
     itemAtual = null;
     resultadoMostrado = false;
+
     overlayRes?.classList.remove('visible');
     hint.textContent = defaultHintText;
     closeInfo();
     applyHotspots();
     pararFogosLoop();
+
+    // reset vídeos (sem mexer em src/source)
+    if (videoViagem) {
+      videoViagem.pause();
+      videoViagem.currentTime = 0;
+      videoViagem.style.display = 'none';
+      videoViagem.muted = false;
+      videoViagem.volume = 1;
+    }
+    if (videoVilarejo) {
+      videoVilarejo.pause();
+      videoVilarejo.currentTime = 0;
+      videoVilarejo.style.display = 'none';
+      videoVilarejo.muted = false;
+      videoVilarejo.volume = 1;
+    }
   });
 }
 
+// =====================
+// CENA 2 (mantida como estava)
+// =====================
 export function initCena2() {
   const hint         = $('#hint');
   const btnReiniciar = $('#btnReiniciar');
@@ -657,7 +713,6 @@ export function initCena2() {
 
   if (!hint || !scene || !bg) return;
 
-  // Debug: tecla H mostra/esconde hotspots
   function onKeyDebug(e){
     if (e.key.toLowerCase() === 'h') {
       document.body.classList.toggle('debug-hotspots');
@@ -669,7 +724,6 @@ export function initCena2() {
     '💡 Observe a cena e encontre os 7 erros químico-ambientais no igarapé.';
   hint.textContent = defaultHintText;
 
-  // ===== Modal de explicação =====
   const erroBackdrop = document.getElementById('erroBackdrop');
   const erroTitle    = document.getElementById('erroTitle');
   const erroDesc     = document.getElementById('erroDesc');
@@ -678,7 +732,6 @@ export function initCena2() {
   const erroClose    = document.getElementById('erroClose');
   const erroOk       = document.getElementById('erroOk');
 
-  // ===== Resultado / ranking =====
   const overlayRes     = document.getElementById('resultadoOverlay');
   const resPont        = document.getElementById('resultadoPontuacao');
   const resRank        = document.getElementById('resultadoRanking');
@@ -687,51 +740,37 @@ export function initCena2() {
   const btnNext        = document.getElementById('btnIrProximaFase');
   const fogosContainer = document.getElementById('fogosContainer');
 
-  const PROXIMA_FASE_URL = 'cena3.html'; // ajuste
+  const PROXIMA_FASE_URL = 'cena3.html';
 
   const INFO_ERROS = {
-    erro1: {
-      title: 'Erro 1 — Óleo despejado no igarapé',
-      desc:  'A presença de óleo na água indica descarte irregular de resíduos oleosos (ex.: óleo de cozinha, lubrificantes), formando uma película superficial.',
+    erro1: { title:'Erro 1 — Óleo despejado no igarapé',
+      desc:'A presença de óleo na água indica descarte irregular de resíduos oleosos (ex.: óleo de cozinha, lubrificantes), formando uma película superficial.',
       impact:'A película reduz a troca gasosa com o ar, pode intoxicar organismos aquáticos e agrava o mau cheiro e a degradação da qualidade da água.',
-      acao:  'Ação: conter/recolher o óleo (barreiras/absorventes), orientar a comunidade sobre descarte correto e acionar coleta/ponto de entrega (logística reversa).'
-    },
-    erro2: {
-      title: 'Erro 2 — Lavagem de roupas no igarapé',
-      desc:  'Lavar roupa no igarapé lança tensoativos e aditivos diretamente na água.',
+      acao:'Ação: conter/recolher o óleo (barreiras/absorventes), orientar a comunidade sobre descarte correto e acionar coleta/ponto de entrega (logística reversa).' },
+    erro2: { title:'Erro 2 — Lavagem de roupas no igarapé',
+      desc:'Lavar roupa no igarapé lança tensoativos e aditivos diretamente na água.',
       impact:'Degrada a qualidade da água e favorece desequilíbrios no ecossistema.',
-      acao:  'Usar tanque/área adequada e reforçar educação ambiental e soluções de saneamento.'
-    },
-    erro3: {
-      title: 'Erro 3 — Eutrofização / alteração visível',
-      desc:  'Indica excesso de nutrientes (N e P) e crescimento intenso de algas/micro-organismos.',
+      acao:'Usar tanque/área adequada e reforçar educação ambiental e soluções de saneamento.' },
+    erro3: { title:'Erro 3 — Eutrofização / alteração visível',
+      desc:'Indica excesso de nutrientes (N e P) e crescimento intenso de algas/micro-organismos.',
       impact:'A decomposição consome O₂ e pode gerar anoxia e mortandade de peixes.',
-      acao:  'Investigar fontes (esgoto/fertilizantes), monitorar OD, pH, turbidez, DBO, N e P.'
-    },
-    erro4: {
-      title: 'Erro 4 — Banho em água possivelmente contaminada',
-      desc:  'Contato direto com água contaminada expõe a riscos químicos e microbiológicos.',
+      acao:'Investigar fontes (esgoto/fertilizantes), monitorar OD, pH, turbidez, DBO, N e P.' },
+    erro4: { title:'Erro 4 — Banho em água possivelmente contaminada',
+      desc:'Contato direto com água contaminada expõe a riscos químicos e microbiológicos.',
       impact:'Pode causar dermatites, gastroenterites e outras doenças de veiculação hídrica.',
-      acao:  'Sinalizar risco, fazer análise microbiológica e encaminhar ações de saneamento.'
-    },
-    erro5: {
-      title: 'Erro 5 — Lixo/garrafas no curso d’água',
-      desc:  'Resíduos sólidos na água indicam descarte irregular e poluição física/química.',
+      acao:'Sinalizar risco, fazer análise microbiológica e encaminhar ações de saneamento.' },
+    erro5: { title:'Erro 5 — Lixo/garrafas no curso d’água',
+      desc:'Resíduos sólidos na água indicam descarte irregular e poluição física/química.',
       impact:'Gera microplásticos, dano à fauna e liberação de contaminantes ao longo do tempo.',
-      acao:  'Remoção, pontos de coleta e ações educativas + fiscalização comunitária.'
-    },
-    erro6: {
-      title: 'Erro 6 — Resíduos no solo (próximo ao igarapé)',
-      desc:  'Resíduos no solo podem lixiviar contaminantes para a água e lençol freático.',
+      acao:'Remoção, pontos de coleta e ações educativas + fiscalização comunitária.' },
+    erro6: { title:'Erro 6 — Resíduos no solo (próximo ao igarapé)',
+      desc:'Resíduos no solo podem lixiviar contaminantes para a água e lençol freático.',
       impact:'Contamina solo e água ao longo do tempo, com risco crônico para a biota e humanos.',
-      acao:  'Recolhimento e descarte correto/logística reversa; evitar áreas de drenagem.'
-    },
-    erro7: {
-      title: 'Erro 7 — Peixe morto/boiando',
-      desc:  'Peixe morto é bioindicador de estresse ambiental (OD baixo, toxicidade, pH etc.).',
+      acao:'Recolhimento e descarte correto/logística reversa; evitar áreas de drenagem.' },
+    erro7: { title:'Erro 7 — Peixe morto/boiando',
+      desc:'Peixe morto é bioindicador de estresse ambiental (OD baixo, toxicidade, pH etc.).',
       impact:'Sinaliza desequilíbrio ecológico e possível contaminação/anoxia localizada.',
-      acao:  'Medir OD, pH, temperatura, condutividade e rastrear fontes de poluição.'
-    }
+      acao:'Medir OD, pH, temperatura, condutividade e rastrear fontes de poluição.' }
   };
 
   const PESO_ERRO = { erro1:1, erro2:1, erro3:1, erro4:1, erro5:1, erro6:1, erro7:1 };
@@ -742,7 +781,6 @@ export function initCena2() {
   let resultadoMostrado = false;
   let errosEncontrados = 0;
 
-  // ✅ precisa ser LET para reiniciar no "tentar novamente"
   let startTime = performance.now();
   let misclicks = 0;
 
@@ -764,7 +802,6 @@ export function initCena2() {
       `Erros encontrados: ${errosEncontrados}/${TOTAL_ERROS}. Clique nos pontos problemáticos do igarapé.`;
   }
 
-  // ===== Modal =====
   let erroPendente = null;
   let eventoPendente = null;
 
@@ -807,7 +844,6 @@ export function initCena2() {
   });
   erroOk?.addEventListener('click', confirmarErroModal);
 
-  // ===== Marcar erro (X + trava hotspot) =====
   function marcarErro(erroId, ev) {
     if (errosClicados.has(erroId)) return;
 
@@ -827,7 +863,6 @@ export function initCena2() {
       const cx = ev ? (ev.clientX - rect.left) : rect.width / 2;
       const cy = ev ? (ev.clientY - rect.top)  : rect.height / 2;
 
-      // ✅ centraliza depois do layout
       requestAnimationFrame(() => {
         const w = xNode.offsetWidth || 0;
         const h = xNode.offsetHeight || 0;
@@ -850,7 +885,6 @@ export function initCena2() {
     abrirModalErro(erroId, ev);
   }
 
-  // ✅ conta clique fora com closest (evita falso misclick)
   function onSceneClick(e){
     if (resultadoMostrado) return;
     if (erroBackdrop?.classList.contains('visible')) return;
@@ -860,7 +894,6 @@ export function initCena2() {
   }
   scene.addEventListener('click', onSceneClick);
 
-  // ===== Hotspots responsivos =====
   function aplicarHotspots() {
     const sceneRect = scene.getBoundingClientRect();
     const imgRect   = bg.getBoundingClientRect();
@@ -897,7 +930,6 @@ export function initCena2() {
   else bg.addEventListener('load', aplicarHotspots, { once:true });
   window.addEventListener('resize', aplicarHotspots);
 
-  // ===== Fogos (só Ouro) =====
   let fogosLoopId = null;
 
   function dispararFogos(){
@@ -962,17 +994,17 @@ export function initCena2() {
       ranking = 'Ouro';
       texto = `Excelente! ${texto}`;
       trofeuIcon?.classList.add('trofeu-ouro');
-      iniciarFogosLoop(); // ✅ só Ouro
+      iniciarFogosLoop();
     } else if (misclicks <= 5 && seconds <= 150) {
       ranking = 'Prata';
       texto = `Muito bom! ${texto}`;
       trofeuIcon?.classList.add('trofeu-prata');
-      pararFogosLoop(); // segurança
+      pararFogosLoop();
     } else {
       ranking = 'Bronze';
       texto = `Concluído! ${texto}`;
       trofeuIcon?.classList.add('trofeu-bronze');
-      pararFogosLoop(); // segurança
+      pararFogosLoop();
     }
 
     if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
@@ -1007,7 +1039,6 @@ export function initCena2() {
     misclicks = 0;
     errosClicados.clear();
 
-    // ✅ reinicia o cronômetro no "tentar novamente"
     startTime = performance.now();
 
     hint.textContent = defaultHintText;
@@ -1030,4 +1061,3 @@ export function initCena2() {
 
   atualizarHint();
 }
-
