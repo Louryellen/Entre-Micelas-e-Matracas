@@ -445,3 +445,34 @@ body.debug-hotspots .hs-erro{
   position: relative;
   z-index: 1;
 }
+
+.scene-label{
+  position:absolute;
+  z-index: 60;
+  padding: 6px 10px;
+  border-radius: 12px;
+
+  font-family: Inter, system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+
+  color:#fff;
+  background: rgba(10,12,18,.65);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  backdrop-filter: blur(6px);
+
+  user-select: none;
+  pointer-events: none; /* não atrapalha clique */
+  white-space: nowrap;
+}
+
+#lbl-reagentes{
+  left: 31%;  /* mexa aqui */
+  top:  89%;  /* mexa aqui */
+}
+
+#lbl-frascos{
+  left: 20.5%;  /* mexa aqui */
+  top:  77%;  /* mexa aqui */
+}

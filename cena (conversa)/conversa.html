@@ -1,0 +1,76 @@
+<!-- conversa.html -->
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena — Conversa</title>
+  <link rel="stylesheet" href="conversa.css">
+</head>
+
+<body>
+<header class="app-header">
+  <div class="header-left">
+    <div class="title">Entre Micelas e Matracas</div>
+    <div class="subtitle">Cena: Conversa com a Comunidade</div>
+  </div>
+
+  <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+
+  <!-- Barra superior interativa -->
+  <div class="topbar" id="topbar" aria-hidden="true">
+    <div class="topbar-left">
+      <span class="topbar-dot" aria-hidden="true"></span>
+      <span class="topbar-title" id="statusText">Conversa ativa</span>
+    </div>
+
+    <div class="topbar-mid" aria-label="Reputação">
+      <div class="rep-track" role="progressbar" aria-valuemin="-10" aria-valuemax="10" aria-valuenow="0">
+        <div class="rep-fill" id="repFill"></div>
+      </div>
+
+      <div class="rep-face" id="repFace" aria-hidden="true">😐</div>
+
+      <div class="rep-ticks" aria-hidden="true">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <div class="topbar-right" id="repText">😐 Neutra</div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="hud">
+    <div class="hint" id="hint">💡 Clique em “Iniciar conversa” para avançar.</div>
+  </div>
+
+  <div class="scene" id="scene">
+    <img class="bg" src="conversa.png" alt="Nova cena" />
+
+    <div id="hs-1" class="hotspot"></div>
+    <div id="hs-2" class="hotspot"></div>
+
+    <!-- Balão NPC (mesmo elemento, muda classe via JS) -->
+    <div class="bubble npc is-right" id="bubbleNpc" aria-hidden="true">
+      <div class="bubble-title" id="npcName">Pesquisadora</div>
+      <div class="bubble-text" id="npcText"></div>
+    </div>
+
+    <!-- Escolhas do jogador -->
+    <div class="bubble player" id="bubblePlayer" aria-hidden="true">
+      <div class="bubble-title">O que responder?</div>
+      <div class="bubble-choices" id="playerChoices"></div>
+    </div>
+
+    <button class="start-talk" id="btnStartTalk" type="button">
+      Iniciar conversa
+    </button>
+
+    <div class="toast" id="toast" aria-hidden="true"></div>
+  </div>
+</main>
+
+<script src="conversa.js"></script>
+</body>
+</html>

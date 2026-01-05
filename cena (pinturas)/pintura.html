@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cena — Artesanato</title>
+
+  <link rel="stylesheet" href="pintura.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <div class="title">Entre Micelas e Matracas</div>
+      <div class="subtitle">Cena: Artesanato da Comunidade</div>
+    </div>
+
+    <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+  </header>
+
+  <div class="stagebar" id="stagebar" aria-live="polite">
+    <div class="stagebar-text" id="topbarText">
+      Escolha um pigmento e ajuste o pH para obter o tom certo da fita do boi.
+    </div>
+  </div>
+
+  <main class="main">
+    <section class="scene" id="scene" aria-label="Cena">
+
+      <!-- Fundo “ambiente” (fica por trás do laboratório). Pode ser sua pintura.png -->
+      <img id="bgScene" class="bg bg-ambient" src="pintura.png" alt="Imagem da cena (Artesanato da Comunidade)" />
+
+      <!-- LAB UI (formato da 2ª imagem) -->
+      <div class="lab-ui" role="application" aria-label="Laboratório Cultural">
+
+        <!-- Topo do pergaminho -->
+        <div class="lab-header">
+          <div class="lab-title">Química das Cores do Boi — Laboratório Cultural</div>
+        </div>
+
+        <!-- Corpo (2 colunas) -->
+        <div class="lab-body">
+
+          <!-- COLUNA ESQUERDA: Bancada -->
+          <aside class="lab-left" aria-label="Bancada de Preparação da Tinta">
+
+            <div class="section-title">
+              <span class="badge">1</span>
+              <span>Bancada de Preparação da Tinta</span>
+            </div>
+
+            <div class="steps-note">
+              <strong>Etapas:</strong> pigmento → solução → ajuste de pH → aplicação
+            </div>
+
+            <!-- CHIPS (mantidos) -->
+            <div class="hud-row lab-chips">
+              <div class="chip" id="chipStep">Etapa: —</div>
+              <div class="chip chip-muted" id="chipErrors">Erros: 0</div>
+              <div class="chip chip-muted" id="chipGoal">Meta: —</div>
+              <div class="chip chip-muted" id="chipInfo">pH: —</div>
+            </div>
+
+            <!-- FORM -->
+            <div class="form">
+
+              <div class="block">
+                <div class="block-h">1. Escolha do pigmento vegetal</div>
+
+                <label class="field">
+                  <span class="label">Pigmento</span>
+                  <select class="select" id="selPigmento">
+                    <option value="repolho">Repolho roxo (indicador ácido-base)</option>
+                    <option value="curcuma">Cúrcuma (curcumina)</option>
+                    <option value="urucum">Urucum (bixina — apolar)</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span class="label">Meio (solvente)</span>
+                  <select class="select" id="selMeio">
+                    <option value="agua">Água</option>
+                    <option value="oleo">Óleo / resina</option>
+                  </select>
+                  <span class="help" id="helpMeio">Dica: urucum dissolve melhor em meio oleoso (apolar).</span>
+                </label>
+              </div>
+
+              <div class="block">
+                <div class="block-h">2. Preparação da solução (massa e volume)</div>
+
+                <div class="grid2">
+                  <label class="field">
+                    <span class="label">Massa do pigmento (g)</span>
+                    <input class="input" id="inpMassa" type="number" min="0" step="0.1" value="1.0" />
+                  </label>
+
+                  <label class="field">
+                    <span class="label">Volume do solvente (mL)</span>
+                    <input class="input" id="inpVolume" type="number" min="1" step="1" value="120" />
+                  </label>
+                </div>
+
+                <div class="readout">
+                  <div class="row">
+                    <span class="k">Concentração (g/L)</span>
+                    <span class="v" id="outConc">—</span>
+                  </div>
+                  <div class="mini">
+                    Fórmula: C = m / V (com V em litros)
+                  </div>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="block-h">3. Ajuste ácido-base (modelo didático)</div>
+
+                <label class="field">
+                  <span class="label">Ácido (limão) — intensidade</span>
+                  <input class="range" id="rngAcido" type="range" min="0" max="14" step="1" value="0" />
+                  <div class="range-meta">
+                    <span class="mini">0</span>
+                    <span class="mini" id="outAcido">0</span>
+                    <span class="mini">14</span>
+                  </div>
+                </label>
+
+                <label class="field">
+                  <span class="label">Base (cinza/bicarbonato) — intensidade</span>
+                  <input class="range" id="rngBase" type="range" min="0" max="14" step="1" value="0" />
+                  <div class="range-meta">
+                    <span class="mini">0</span>
+                    <span class="mini" id="outBase">0</span>
+                    <span class="mini">14</span>
+                  </div>
+                </label>
+
+                <div class="readout">
+                  <div class="row">
+                    <span class="k">pH estimado</span>
+                    <span class="v" id="outPH">7.0</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">Cor prevista</span>
+                    <span class="v">
+                      <span class="swatch" id="swatch"></span>
+                      <span id="outCorNome">—</span>
+                    </span>
+                  </div>
+                  <div class="mini" id="miniExp">
+                    Repolho roxo: antocianinas mudam de cor com pH.
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn lab-action" id="btnPintar" type="button">
+                Aplicar na Fita / Vestido
+              </button>
+
+              <div class="hint lab-hint" id="hint">
+                Dica: repolho roxo funciona como indicador; cúrcuma tende a alaranjar em meio básico; urucum é apolar.
+              </div>
+            </div>
+          </aside>
+
+          <!-- COLUNA DIREITA -->
+          <section class="lab-right" aria-label="Área de visualização">
+
+            <!-- Janela grande (cena) -->
+            <div class="frame frame-large">
+              <div class="frame-title">Visualização da Bancada</div>
+              <div class="frame-inner">
+                <!-- Use a mesma pintura.png aqui (fica “emoldurado”) -->
+                <img class="preview-img" id="imgPreview" src="pintura.png" alt="Pré-visualização da cena" />
+                <div class="color-overlay" id="colorOverlay" aria-hidden="true"></div>
+              </div>
+            </div>
+
+            <!-- Parte de baixo: vestido + diário -->
+            <div class="bottom-row">
+
+              <div class="frame frame-small">
+                <div class="frame-title">Amostra / Fita</div>
+                <div class="frame-inner dress-wrap">
+                  <!-- Se você tiver um PNG do vestido/fita, troque o src -->
+                  <img class="dress-img" id="imgDress" src="vestido_base.png" alt="Vestido/Fita para pintura" onerror="this.style.display='none'" />
+                  <div class="dress-fallback" id="dressFallback" aria-hidden="true">
+                    Prévia do tecido
+                  </div>
+                  <div class="dress-tint" id="dressTint" aria-hidden="true"></div>
+                </div>
+              </div>
+
+              <div class="frame frame-diary">
+                <div class="frame-title">Diário da Artesã-Química</div>
+
+                <div class="diary" id="diary">
+                  <ul class="diary-list" id="diaryList">
+                    <li class="diary-item">Registro inicial: selecione o pigmento e prepare a solução.</li>
+                  </ul>
+
+                  <div class="progress-wrap">
+                    <div class="progress-label" id="progressLabel">Progresso do preparo</div>
+                    <div class="progress-bar">
+                      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+                    </div>
+                  </div>
+
+                  <div class="achievement" id="achievement" hidden>
+                    Conquista desbloqueada: Química das Cores do Boi
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </section>
+        </div>
+      </div>
+
+      <!-- Toast (mantido) -->
+      <div class="toast" id="toast" hidden></div>
+
+      <!-- Modal (mantido, opcional) -->
+      <div class="modal" id="modal" hidden>
+        <div class="modal-backdrop" data-close="1" aria-hidden="true"></div>
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+          <div class="modal-head">
+            <div>
+              <div class="modal-title" id="modalTitle">—</div>
+              <div class="modal-sub" id="modalSub">—</div>
+            </div>
+            <button class="icon-btn" id="btnClose" type="button" aria-label="Fechar">✕</button>
+          </div>
+          <div class="modal-body" id="modalBody"></div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="pintura.js"></script>
+</body>
+</html>

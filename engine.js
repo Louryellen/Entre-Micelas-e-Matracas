@@ -64,7 +64,7 @@ export function initCena0(){
   });
 
   const mailText =
-    "Olá, pesquisadora. Recebemos relatos de espuma e cheiro de sabão às margens do igarapé. Precisamos de uma análise rápida. Você assume?";
+    "Olá, pesquisadora. Moradores da comunidade entraram em contato relatando mudanças preocupantes no igarapé da região. Há sinais visíveis de poluição na água, além de odores incomuns. A situação tem causado apreensão entre as famílias que utilizam o igarapé no dia a dia, especialmente por envolver atividades domésticas e possíveis riscos ambientais. Diante da urgência, solicitamos uma visita técnica para observação e análise inicial da água, a fim de identificar possíveis impactos químicos e orientar a comunidade sobre os próximos passos. Você pode assumir essa investigação? Atenciosamente, Coordenação de Extensão – UFMA";
 
   function openMail(){
     hint.style.display = 'none';

@@ -36,7 +36,7 @@ const TIP_Y = 0.815;
 // =====================
 // Ficha final (referência + próxima cena)
 // =====================
-const NEXT_SCENE_URL = "cena-3.html"; // <-- TROQUE para o arquivo da próxima cena
+const NEXT_SCENE_URL = "cena (conversa)/conversa.html"; // <-- TROQUE para o arquivo da próxima cena
 
 const REF_CARD = {
   corpo: "Igarapé",
@@ -1131,10 +1131,15 @@ function bindDiagnosis(){
         if (stabLabel) stabLabel.textContent = "Todas as amostras finalizadas. Gerando ficha final...";
         if (diagBox) diagBox.hidden = true;
 
-        setTimeout(() => showFinalSheetModal(), 120);
+        setTimeout(() => {
+        showFinalSheetModal();
+        // redireciona automaticamente após 2,5s (ajuste se quiser)
+        setTimeout(() => window.location.href = cena/conversa.html, 2500);
+      }, 120);
 
-        setHint("Ficha final disponível. Use 'Próxima cena' para continuar.");
-        return;
+      setHint("Ficha final disponível. Indo para a conversa...");
+return;
+
       }
 
       // reseta rep para a próxima amostra e vai direto medir (o descarte já foi feito antes do diagnóstico)

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena — Rio (Coleta)</title>
+
+  <link rel="stylesheet" href="coleta.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<header id="appHeader">
+  <div>
+    <div class="title">Entre Micelas e Matracas</div>
+    <div class="subtitle">Cena: Rio — Coleta</div>
+  </div>
+  <button class="btn" id="btnReset" type="button">Reiniciar</button>
+</header>
+
+<main class="main">
+  <div class="hud">
+    <div class="hint" id="hint">
+      <span id="hintText">Use WASD ou as setinhas para mover o barco e ir aos pontos de interesse.</span>
+    </div>
+  </div>
+
+  <section class="scene" id="scene" aria-label="Cena do rio">
+    <div class="layout">
+      <div class="stage-wrap">
+        <div class="stage" id="stage">
+          <img class="bg" id="bg" src="rioext.png" alt="Cena do rio"/>
+          <img id="barco" class="barco" src="barco.png" alt="Barco" draggable="false">
+          <!-- pontos, UI do minigame e popup são inseridos via JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="coleta.js"></script>
+</body>
+</html>
