@@ -650,7 +650,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   z-index: var(--z-ui);
   left: 50%;
   bottom: 18%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% - 220px)); 
   padding: 10px 12px;
   border-radius: 12px;
   background: rgba(0,0,0,.62);
@@ -660,8 +660,8 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   display:none;
   max-width: min(720px, 92vw);
   text-align:center;
-  box-shadow: 0 18px 40px rgba(0,0,0,.24);
 }
+
 
 @media (max-width: 720px){
   .bubble.player{

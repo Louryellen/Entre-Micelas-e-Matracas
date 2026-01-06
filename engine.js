@@ -63,8 +63,17 @@ export function initCena0(){
     imageRendering:'pixelated'
   });
 
-  const mailText =
-    "Olá, pesquisadora. Moradores da comunidade entraram em contato relatando mudanças preocupantes no igarapé da região. Há sinais visíveis de poluição na água, além de odores incomuns. A situação tem causado apreensão entre as famílias que utilizam o igarapé no dia a dia, especialmente por envolver atividades domésticas e possíveis riscos ambientais. Diante da urgência, solicitamos uma visita técnica para observação e análise inicial da água, a fim de identificar possíveis impactos químicos e orientar a comunidade sobre os próximos passos. Você pode assumir essa investigação? Atenciosamente, Coordenação de Extensão – UFMA";
+  const mailText = `Olá, pesquisadora.
+Moradores da comunidade entraram em contato relatando mudanças preocupantes no igarapé da região. Há sinais visíveis de poluição na água, além de odores incomuns.
+
+A situação tem causado apreensão entre as famílias que utilizam o igarapé no dia a dia, especialmente por envolver atividades domésticas e possíveis riscos ambientais.
+
+Diante da urgência, solicitamos uma visita técnica para observação e análise inicial da água, a fim de identificar possíveis impactos químicos e orientar a comunidade sobre os próximos passos.
+
+Você pode assumir essa investigação?
+
+Atenciosamente,  ggg
+Coordenação de Extensão – UFMA`;
 
   function openMail(){
     hint.style.display = 'none';
@@ -152,6 +161,9 @@ export function initCena0(){
   });
 }
 
+// =====================
+// CENA 1
+// =====================
 // =====================
 // CENA 1
 // =====================
@@ -429,6 +441,7 @@ export function initCena1(){
       videoEl.muted = true;
       try { await videoEl.play(); } catch {}
 
+      // OBS: se você esconder o HUD durante o vídeo, essa mensagem não aparece.
       hint.textContent = '🔊 Vídeo tocando sem som por bloqueio do navegador. Clique no vídeo para ativar o áudio.';
       videoEl.addEventListener('click', async () => {
         videoEl.muted = false;
@@ -442,9 +455,17 @@ export function initCena1(){
     }
   }
 
+  // ✅ utilitário: esconder/mostrar HUD enquanto vídeo roda
+  function setVideoMode(isOn){
+    document.body.classList.toggle('is-video-playing', !!isOn);
+  }
+
   async function tocarSequenciaDeVideos(){
     overlayRes?.classList.remove('visible');
     pararFogosLoop();
+
+    // ✅ esconde a barrinha (HUD) enquanto roda vídeo
+    setVideoMode(true);
 
     scene.style.pointerEvents = 'none';
     Object.values(hotspotsMap).forEach(el => {
@@ -453,6 +474,7 @@ export function initCena1(){
     });
 
     if (!videoViagem) {
+      setVideoMode(false); // ✅ segurança
       window.location.href = 'cena2.html';
       return;
     }
@@ -466,6 +488,7 @@ export function initCena1(){
       videoViagem.style.display = 'none';
 
       if (!videoVilarejo) {
+        setVideoMode(false); // ✅ segurança
         window.location.href = 'cena2.html';
         return;
       }
@@ -476,6 +499,7 @@ export function initCena1(){
       await playWithSound(videoVilarejo);
 
       videoVilarejo.addEventListener('ended', () => {
+        setVideoMode(false); // ✅ libera HUD antes de sair
         window.location.href = 'cena2.html';
       }, { once:true });
 
@@ -665,6 +689,9 @@ export function initCena1(){
 
   // ========= REINICIAR =========
   btnReiniciar?.addEventListener('click',()=> {
+    // ✅ garante que a HUD volte se o usuário reiniciar
+    setVideoMode(false);
+
     Object.keys(estado).forEach(k=>estado[k]=false);
     Object.keys(errados).forEach(k=>errados[k]=false);
 
@@ -700,7 +727,10 @@ export function initCena1(){
       videoVilarejo.volume = 1;
     }
   });
+
+  atualizarHint();
 }
+
 
 // =====================
 // CENA 2 (mantida como estava)
@@ -753,7 +783,7 @@ export function initCena2() {
       acao:'Usar tanque/área adequada e reforçar educação ambiental e soluções de saneamento.' },
     erro3: { title:'Erro 3 — Eutrofização / alteração visível',
       desc:'Indica excesso de nutrientes (N e P) e crescimento intenso de algas/micro-organismos.',
-      impact:'A decomposição consome O₂ e pode gerar anoxia e mortandade de peixes.',
+      impact:'A decomposição consome O₂ e pode gerar a morte de peixes.',
       acao:'Investigar fontes (esgoto/fertilizantes), monitorar OD, pH, turbidez, DBO, N e P.' },
     erro4: { title:'Erro 4 — Banho em água possivelmente contaminada',
       desc:'Contato direto com água contaminada expõe a riscos químicos e microbiológicos.',
@@ -769,7 +799,7 @@ export function initCena2() {
       acao:'Recolhimento e descarte correto/logística reversa; evitar áreas de drenagem.' },
     erro7: { title:'Erro 7 — Peixe morto/boiando',
       desc:'Peixe morto é bioindicador de estresse ambiental (OD baixo, toxicidade, pH etc.).',
-      impact:'Sinaliza desequilíbrio ecológico e possível contaminação/anoxia localizada.',
+      impact:'Sinaliza desequilíbrio ecológico e possível contaminação localizada.',
       acao:'Medir OD, pH, temperatura, condutividade e rastrear fontes de poluição.' }
   };
 
@@ -978,86 +1008,37 @@ export function initCena2() {
   }
 
   function mostrarResultado(){
-    if (!overlayRes || resultadoMostrado) return;
-    resultadoMostrado = true;
+  if (!overlayRes || resultadoMostrado) return;
+  resultadoMostrado = true;
 
-    const endTime = performance.now();
-    const seconds = Math.max(1, Math.round((endTime - startTime) / 1000));
-    const maxPontos = TOTAL_ERROS * PONTOS_POR_ERRO;
+  const maxPontos = TOTAL_ERROS * PONTOS_POR_ERRO;
 
-    let ranking = 'Bronze';
-    let texto = `Tempo: ${seconds}s • Cliques fora: ${misclicks}.`;
+  // Ranking agora NÃO depende de tempo (somente precisão / misclicks)
+  let ranking = 'Bronze';
+  let texto = `Cliques fora: ${misclicks}.`;
 
-    trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
+  trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
 
-    if (misclicks <= 2 && seconds <= 90) {
-      ranking = 'Ouro';
-      texto = `Excelente! ${texto}`;
-      trofeuIcon?.classList.add('trofeu-ouro');
-      iniciarFogosLoop();
-    } else if (misclicks <= 5 && seconds <= 150) {
-      ranking = 'Prata';
-      texto = `Muito bom! ${texto}`;
-      trofeuIcon?.classList.add('trofeu-prata');
-      pararFogosLoop();
-    } else {
-      ranking = 'Bronze';
-      texto = `Concluído! ${texto}`;
-      trofeuIcon?.classList.add('trofeu-bronze');
-      pararFogosLoop();
-    }
-
-    if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
-    if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
-
-    overlayRes.classList.add('visible');
-  }
-
-  function fadeAndGo(url){
-    const fade = document.createElement('div');
-    Object.assign(fade.style, {
-      position:'fixed', inset:'0', background:'#000',
-      opacity:'0', transition:'opacity 650ms ease',
-      zIndex:'400', pointerEvents:'none'
-    });
-    document.body.appendChild(fade);
-    requestAnimationFrame(() => fade.style.opacity = '1');
-    setTimeout(() => window.location.href = url, 680);
-  }
-
-  function irProximaFase(){
-    overlayRes?.classList.remove('visible');
+  if (misclicks <= 2) {
+    ranking = 'Ouro';
+    texto = `Excelente! ${texto}`;
+    trofeuIcon?.classList.add('trofeu-ouro');
+    iniciarFogosLoop();
+  } else if (misclicks <= 5) {
+    ranking = 'Prata';
+    texto = `Muito bom! ${texto}`;
+    trofeuIcon?.classList.add('trofeu-prata');
     pararFogosLoop();
-    fadeAndGo(PROXIMA_FASE_URL);
-  }
-  btnNext?.addEventListener('click', irProximaFase);
-
-  function resetCena2(){
-    pontos = 0;
-    resultadoMostrado = false;
-    errosEncontrados = 0;
-    misclicks = 0;
-    errosClicados.clear();
-
-    startTime = performance.now();
-
-    hint.textContent = defaultHintText;
-
-    Object.values(hotspots).forEach(hs => {
-      hs.style.pointerEvents = 'auto';
-      hs.querySelectorAll('.erro-x').forEach(x => x.remove());
-    });
-
-    overlayRes?.classList.remove('visible');
+  } else {
+    ranking = 'Bronze';
+    texto = `Concluído! ${texto}`;
+    trofeuIcon?.classList.add('trofeu-bronze');
     pararFogosLoop();
-    fecharModalErro();
-
-    aplicarHotspots();
-    atualizarHint();
   }
 
-  btnFecharRes?.addEventListener('click', resetCena2);
-  btnReiniciar?.addEventListener('click', resetCena2);
+  if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
+  if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
 
-  atualizarHint();
+  overlayRes.classList.add('visible');
+}
 }

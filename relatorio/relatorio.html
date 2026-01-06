@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Cena 9 — Relatório Final (Igarapé)</title>
+
+  <link rel="stylesheet" href="relatorio.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <div class="title">Entre Micelas e Matracas</div>
+      <div class="subtitle">Cena 9: Relatório Final — Igarapé</div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn ghost" id="btnAjuda" type="button">Como funciona</button>
+      <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="scene" aria-label="Cena do relatório final">
+      <!-- Opcional: fundo da cena 9 -->
+      <img class="bg" src="assets/cena9_relatorio_bg.png" alt="" onerror="this.style.display='none'">
+
+      <div class="overlay">
+        <!-- HUD -->
+        <div class="hud" aria-live="polite">
+          <div class="hud-row">
+            <div class="hint" id="hint">
+              Monte o relatório técnico do igarapé. Marque decisões e escreva pareceres curtos para justificar.
+            </div>
+
+            <div class="chips">
+              <div class="chip">
+                <div class="chip-label">Etapa</div>
+                <div class="chip-value" id="chipStep">1/4</div>
+              </div>
+              <div class="chip">
+                <div class="chip-label">Progresso</div>
+                <div class="chip-value" id="chipProgress">0%</div>
+              </div>
+              <div class="chip">
+                <div class="chip-label">Pontos</div>
+                <div class="chip-value" id="chipScore">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress" aria-hidden="true">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+
+        <!-- Painel -->
+        <section class="panel" aria-label="Montagem do relatório">
+          <div class="panel-head">
+            <h1 class="panel-title">Relatório Final</h1>
+            <p class="panel-sub" id="panelSub">
+              Etapa 1: indique a causa provável e registre as evidências que sustentam sua análise.
+            </p>
+          </div>
+
+          <div class="steps">
+
+            <!-- STEP 1 -->
+            <form class="step active" id="step1" data-step="1">
+              <h2 class="step-title">1) Causa provável</h2>
+              <p class="step-help">
+                Com base nos sinais observados no igarapé (odor, coloração, presença de filme superficial, espuma, descarte irregular etc.),
+                selecione a hipótese mais consistente e descreva o porquê.
+              </p>
+
+              <div class="options" role="radiogroup" aria-label="Causa provável">
+                <label class="option">
+                  <input type="radio" name="cause" value="A">
+                  <span class="option-body">
+                    <span class="option-title">Carga orgânica elevada por descarte de resíduos e óleo no entorno do igarapé</span>
+                    <span class="option-desc">Coerente quando há sinais de poluição recorrente, odor e impactos na biota e no uso comunitário.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="cause" value="B">
+                  <span class="option-body">
+                    <span class="option-title">Variação natural (chuvas/estiagem) como principal explicação</span>
+                    <span class="option-desc">Pode influenciar vazão e turbidez, mas tende a não justificar sinais persistentes de contaminação.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="cause" value="C">
+                  <span class="option-body">
+                    <span class="option-title">Contaminação por substância específica sem evidências suficientes</span>
+                    <span class="option-desc">Hipótese exige suporte analítico; não deve ser tratada como conclusão sem dados.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="cause" value="D">
+                  <span class="option-body">
+                    <span class="option-title">A alteração é apenas visual e não afeta a qualidade da água</span>
+                    <span class="option-desc">Minimiza riscos e costuma ser incompatível com sinais de degradação ambiental.</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="parecer">
+                <div class="parecer-head">
+                  <div class="parecer-title">Parecer técnico (curto)</div>
+                  <div class="counter" id="countCause">0/240</div>
+                </div>
+                <textarea
+                  id="txtCause"
+                  name="txtCause"
+                  class="textarea"
+                  rows="4"
+                  maxlength="240"
+                  placeholder="Descreva as evidências observadas no igarapé que sustentam sua hipótese (ex.: odor, filme superficial, espuma, descarte, impacto na fauna, uso pela comunidade)."></textarea>
+                <div class="parecer-hint">Mínimo recomendado: 90 caracteres.</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn" id="btnNext1" type="button">Confirmar e avançar</button>
+              </div>
+            </form>
+
+            <!-- STEP 2 -->
+            <form class="step" id="step2" data-step="2">
+              <h2 class="step-title">2) Nível de risco</h2>
+              <p class="step-help">
+                Classifique o risco considerando: exposição da população, persistência do problema, possibilidade de agravamento e impacto ecológico.
+              </p>
+
+              <div class="options" role="radiogroup" aria-label="Nível de risco">
+                <label class="option">
+                  <input type="radio" name="risk" value="A">
+                  <span class="option-body">
+                    <span class="option-title">Alto</span>
+                    <span class="option-desc">Indica necessidade de resposta imediata, orientação pública e ações de contenção/mitigação.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="risk" value="B">
+                  <span class="option-body">
+                    <span class="option-title">Moderado</span>
+                    <span class="option-desc">Exige intervenção e monitoramento; risco controlável com medidas rápidas e contínuas.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="risk" value="C">
+                  <span class="option-body">
+                    <span class="option-title">Baixo</span>
+                    <span class="option-desc">Compatível apenas com evidências fracas e ausência de exposição relevante (raro em cenários críticos).</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="risk" value="D">
+                  <span class="option-body">
+                    <span class="option-title">Nenhum</span>
+                    <span class="option-desc">Classificação inadequada quando há suspeita de contaminação e risco à comunidade.</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="parecer">
+                <div class="parecer-head">
+                  <div class="parecer-title">Justificativa do risco (curta)</div>
+                  <div class="counter" id="countRisk">0/240</div>
+                </div>
+                <textarea
+                  id="txtRisk"
+                  name="txtRisk"
+                  class="textarea"
+                  rows="4"
+                  maxlength="240"
+                  placeholder="Justifique o nível de risco para a comunidade e o ambiente (ex.: contato com água, odor, vetores, uso para lazer/atividades, mortandade/ausência de fauna, persistência do problema)."></textarea>
+                <div class="parecer-hint">Mínimo recomendado: 80 caracteres.</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn ghost" id="btnBack2" type="button">Voltar</button>
+                <button class="btn" id="btnNext2" type="button">Confirmar e avançar</button>
+              </div>
+            </form>
+
+            <!-- STEP 3 -->
+            <form class="step" id="step3" data-step="3">
+              <h2 class="step-title">3) Recomendações</h2>
+              <p class="step-help">
+                Selecione até 2 recomendações prioritárias. O objetivo é reduzir a causa provável e mitigar riscos sem criar novos problemas.
+              </p>
+
+              <div class="options" role="group" aria-label="Recomendações (múltipla seleção)">
+                <label class="option">
+                  <input type="checkbox" name="reco" value="A">
+                  <span class="option-body">
+                    <span class="option-title">Pontos de coleta de óleo + mobilização comunitária + limpeza monitorada do entorno</span>
+                    <span class="option-desc">Combina prevenção (ponto de coleta) com resposta (organização e manutenção).</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="checkbox" name="reco" value="B">
+                  <span class="option-body">
+                    <span class="option-title">Monitoramento periódico (checklist e registro) + encaminhamento para análise quando necessário</span>
+                    <span class="option-desc">Define acompanhamento e sustenta decisões com evidência.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="checkbox" name="reco" value="C">
+                  <span class="option-body">
+                    <span class="option-title">Aplicar produtos químicos diretamente no igarapé para “neutralizar”</span>
+                    <span class="option-desc">Ação arriscada e geralmente inadequada sem projeto técnico, licenças e avaliação de impacto.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="checkbox" name="reco" value="D">
+                  <span class="option-body">
+                    <span class="option-title">Somente fiscalização punitiva, sem alternativa/educação</span>
+                    <span class="option-desc">Pode falhar se não houver orientação e caminho prático para descarte correto.</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="parecer">
+                <div class="parecer-head">
+                  <div class="parecer-title">Plano de ação (curto)</div>
+                  <div class="counter" id="countReco">0/260</div>
+                </div>
+                <textarea
+                  id="txtReco"
+                  name="txtReco"
+                  class="textarea"
+                  rows="4"
+                  maxlength="260"
+                  placeholder="Descreva como executar as recomendações (quem faz, o que faz, periodicidade e objetivo). Seja prático e direto."></textarea>
+                <div class="parecer-hint">Mínimo recomendado: 100 caracteres.</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn ghost" id="btnBack3" type="button">Voltar</button>
+                <button class="btn" id="btnNext3" type="button">Confirmar e avançar</button>
+              </div>
+            </form>
+
+            <!-- STEP 4 -->
+            <form class="step" id="step4" data-step="4">
+              <h2 class="step-title">4) Orientações para a comunidade</h2>
+              <p class="step-help">
+                Selecione a orientação principal e escreva um parecer final (mensagem clara e responsável para circulação na comunidade).
+              </p>
+
+              <div class="options" role="radiogroup" aria-label="Orientações para a comunidade">
+                <label class="option">
+                  <input type="radio" name="guid" value="A">
+                  <span class="option-body">
+                    <span class="option-title">Não descarte óleo no ralo; armazene e entregue em ponto de coleta</span>
+                    <span class="option-desc">Medida preventiva, acionável e alinhada à redução da causa provável.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="guid" value="B">
+                  <span class="option-body">
+                    <span class="option-title">Use produtos químicos fortes e despeje no esgoto para “limpar”</span>
+                    <span class="option-desc">Aumenta risco à saúde e pode agravar impactos ambientais.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="guid" value="C">
+                  <span class="option-body">
+                    <span class="option-title">Não é necessário mudar hábitos; é responsabilidade exclusiva do poder público</span>
+                    <span class="option-desc">Reduz corresponsabilidade e limita ações imediatas de baixo custo.</span>
+                  </span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="guid" value="D">
+                  <span class="option-body">
+                    <span class="option-title">Se a água parecer “normal”, pode usar sem cuidados</span>
+                    <span class="option-desc">Aspecto visual não garante segurança; orientação incorreta.</span>
+                  </span>
+                </label>
+              </div>
+
+              <div class="parecer">
+                <div class="parecer-head">
+                  <div class="parecer-title">Parecer final (mensagem para a comunidade)</div>
+                  <div class="counter" id="countGuid">0/280</div>
+                </div>
+                <textarea
+                  id="txtGuid"
+                  name="txtGuid"
+                  class="textarea"
+                  rows="5"
+                  maxlength="280"
+                  placeholder="Escreva uma mensagem final clara para a comunidade sobre o igarapé: o que evitar, o que fazer e por quê."></textarea>
+                <div class="parecer-hint">Mínimo recomendado: 120 caracteres.</div>
+              </div>
+
+              <div class="actions">
+                <button class="btn ghost" id="btnBack4" type="button">Voltar</button>
+                <button class="btn" id="btnFinish" type="button">Finalizar relatório</button>
+              </div>
+            </form>
+
+          </div>
+        </section>
+
+        <!-- Modal: Ajuda -->
+        <dialog class="modal" id="helpModal" aria-label="Ajuda">
+          <div class="modal-card">
+            <div class="modal-head">
+              <div class="modal-title">Como funciona</div>
+              <button class="icon-btn" id="btnCloseHelp" type="button" aria-label="Fechar">×</button>
+            </div>
+
+            <div class="modal-body">
+              <p>
+                Você vai montar um relatório do igarapé combinando:
+                <strong>decisões marcadas</strong> (múltipla escolha/seleção) e
+                <strong>pareceres curtos</strong> (texto).
+              </p>
+              <ul>
+                <li>As escolhas geram pontos e podem adicionar “erros críticos” (decisões inseguras).</li>
+                <li>Os pareceres precisam ter um tamanho mínimo para validar a etapa.</li>
+                <li>No final, você recebe um desfecho: <strong>Bom</strong>, <strong>Médio</strong> ou <strong>Ruim</strong>.</li>
+              </ul>
+              <p>
+                Dica: deixe os textos das alternativas alinhados com as evidências que seu jogador viu nas cenas 1–8.
+              </p>
+            </div>
+
+            <div class="modal-actions">
+              <button class="btn" id="btnOkHelp" type="button">Entendi</button>
+            </div>
+          </div>
+        </dialog>
+
+        <!-- Modal: Resultado -->
+        <dialog class="modal" id="resultModal" aria-label="Resultado final">
+          <div class="modal-card wide">
+            <div class="modal-head">
+              <div>
+                <div class="modal-title" id="resultTitle">Resultado</div>
+                <div class="modal-sub" id="resultSub">Desfecho e relatório consolidado.</div>
+              </div>
+              <button class="icon-btn" id="btnCloseResult" type="button" aria-label="Fechar">×</button>
+            </div>
+
+            <div class="modal-body">
+              <div class="result-grid">
+                <div class="result-box">
+                  <div class="badge" id="resultBadge">FINAL</div>
+
+                  <div class="kpis">
+                    <div class="kpi">
+                      <div class="kpi-label">Pontuação</div>
+                      <div class="kpi-value" id="kpiScore">0</div>
+                    </div>
+                    <div class="kpi">
+                      <div class="kpi-label">Consistência</div>
+                      <div class="kpi-value" id="kpiConsistency">—</div>
+                    </div>
+                  </div>
+
+                  <div class="result-text" id="endingText">—</div>
+
+                  <div class="result-actions">
+                    <button class="btn ghost" id="btnCopy" type="button">Copiar relatório</button>
+                    <button class="btn ghost" id="btnPrint" type="button">Imprimir / Salvar PDF</button>
+                  </div>
+
+                  <div class="result-actions">
+                    <button class="btn" id="btnFinishGame" type="button">Encerrar jogo</button>
+                  </div>
+                </div>
+
+                <div class="report-preview" aria-label="Relatório gerado">
+                  <div class="paper">
+                    <div class="paper-title">Relatório Final — Igarapé</div>
+                    <div class="paper-meta" id="paperMeta">Data: —</div>
+                    <hr class="paper-rule">
+                    <pre class="paper-pre" id="reportText">—</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-foot" id="resultFoot">
+              Ajuste os textos para refletir exatamente os sinais do seu igarapé e o que foi descoberto nas cenas anteriores.
+            </div>
+          </div>
+        </dialog>
+
+      </div>
+    </section>
+  </main>
+
+  <script src="relatorio.js"></script>
+</body>
+</html>

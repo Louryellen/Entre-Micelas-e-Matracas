@@ -2,7 +2,7 @@
   // =========================
   // CONFIG: PRÓXIMA CENA
   // =========================
-  const NEXT_SCENE_URL = "proxima_cena.html"; // troque para o arquivo/rota real da próxima cena
+  const NEXT_SCENE_URL = "../cena-pinturas/pintura.html"; // troque para o arquivo/rota real da próxima cena
 
   // =========================
   // Helpers (robustez)
@@ -47,17 +47,17 @@
   const finalFx = $("finalFx");
   const finalFw = $("finalFw");
   const btnAdvance = $("btnAdvance");
- 
+
   // Se algo crítico estiver faltando, evita “quebrar silencioso”
   const REQUIRED = [
-  btnReset, btnStart, scrollBtn,
-  hudSub, chipStep, chipErrors, chipLot,
-  targetsBox, tNaOH, tWater, mNaOH, mWater, hint,
-  progressWrap, progressLabel, progressFill,
-  modal, modalTitle, modalSub, modalBody, btnClose,
-  toast, topbarText, bgScene, hudEl,
+    btnReset, btnStart, scrollBtn,
+    hudSub, chipStep, chipErrors, chipLot,
+    targetsBox, tNaOH, tWater, mNaOH, mWater, hint,
+    progressWrap, progressLabel, progressFill,
+    modal, modalTitle, modalSub, modalBody, btnClose,
+    toast, topbarText, bgScene, hudEl,
     finalFx, finalFw, btnAdvance
-];
+  ];
 
   if (REQUIRED.some((el) => !el)) {
     console.error("Faltam elementos no HTML. Confira IDs obrigatórios.");
@@ -102,7 +102,7 @@
     toastTimer = setTimeout(() => (toast.hidden = true), 1900);
   }
 
-  // Bloqueio opcional do modal (para final)
+  // Bloqueio opcional do modal (para final e para cooldown)
   let modalLocked = false;
 
   function openModal(title, sub, html) {
@@ -111,8 +111,16 @@
     modalBody.innerHTML = html;
     modal.hidden = false;
   }
+
   function closeModal() {
     if (modalLocked) return;
+
+    // ✅ se fechar o modal durante aquecimento, para a simulação
+    if (game?.heat?.active) game.stopHeat();
+
+    // ✅ se fechar o modal durante resfriamento, para a simulação
+    if (game?.cool?.active) game.stopCoolDown();
+
     modal.hidden = true;
     modalBody.innerHTML = "";
   }
@@ -199,11 +207,9 @@
       const w = rect.width;
       const h = rect.height;
 
-      // leve "fade" para deixar rastro
       ctx.clearRect(0, 0, w, h);
       ctx.globalCompositeOperation = "lighter";
 
-      // bursts viram partículas rapidamente
       for (let i = bursts.length - 1; i >= 0; i--) {
         const b = bursts[i];
         b.t += dt;
@@ -213,7 +219,6 @@
         }
       }
 
-      // física
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.age += dt;
@@ -223,10 +228,8 @@
           continue;
         }
 
-        // gravidade leve
         p.vy += 0.035 * 60 * dt;
 
-        // arrasto
         p.vx *= Math.pow(p.drag, dt * 60);
         p.vy *= Math.pow(p.drag, dt * 60);
 
@@ -255,7 +258,6 @@
       if (raf) cancelAnimationFrame(raf);
       clearInterval(burstTimer);
       window.removeEventListener("resize", onResize);
-      // limpa
       const rect = canvas.getBoundingClientRect();
       ctx.clearRect(0, 0, rect.width, rect.height);
     };
@@ -275,7 +277,8 @@
     "Ordem segura (NaOH na água)",
     "Adicionar solução ao óleo lentamente",
     "Adicionar detergente (proporção por 1 L)",
-    "Adicionar corante e escolher cor",
+    "Resfriar para 25–30°C (aguardar)",
+    "Adicionar corante e óleo essencial (voláteis)",
     "Verter (molde)",
     "Finalizar",
   ];
@@ -299,17 +302,6 @@
 
   const PURIFY = { tol: 2 }; // mL
   const DETERG = { perLiter: 40, tol: 2 }; // mL por 1 L
-
-  // Aquecimento: menos sensível
-  const HEAT_TUNE = {
-    needSec: 6.0,
-    overLimitSec: 2.2,   // mais tolerante
-    boilTemp: 66.0,      // ferver só mais alto
-    heatKBase: 0.72,
-    coolKBase: 0.12,
-    lag: 1.55,
-    driftAmp: 0.045,
-  };
 
   function calcTargets(oilMl) {
     const naoh = (oilMl * BASE.naoh) / BASE.oil;
@@ -352,6 +344,17 @@
       last: 0,
     },
 
+    // ✅ Resfriamento antes de corante/óleo essencial
+    cool: {
+      active: false,
+      raf: null,
+      last: 0,
+      startTemp: 45,
+      endTemp: 28,
+      tempNow: 45,
+      durationSec: 6.0, // “tempo de espera” do jogo (simula o resfriamento)
+    },
+
     stir: { holding: false, progress: 0, raf: null, last: 0 },
 
     lotOptions: [650, 700, 850, 900, 1000, 1100],
@@ -387,57 +390,150 @@
       }
     },
 
+    stopCoolDown() {
+      this.cool.active = false;
+      if (this.cool.raf) cancelAnimationFrame(this.cool.raf);
+      this.cool.raf = null;
+    },
+
+    // ✅ FINAL: Parabéns sem “caixa” e overlay bem transparente
     openCongratsPopup() {
-      // popup travado (para o usuário ir pra próxima cena ou reiniciar)
       modalLocked = true;
 
+      // Detecta elementos “chrome” do modal de forma tolerante ao seu HTML
+      const modalCard =
+        modal.querySelector(".modal-card") ||
+        modal.querySelector(".modal") ||
+        modal.firstElementChild ||
+        modal;
+
+      const modalHeader =
+        modal.querySelector(".modal-head") ||
+        modal.querySelector(".modal-header") ||
+        modal.querySelector("header");
+
+      // Guarda o estado anterior para restaurar
+      const prev = {
+        modalBg: modal.style.background,
+        modalBackdrop: modal.style.backdropFilter,
+        cardBg: modalCard ? modalCard.style.background : "",
+        cardBorder: modalCard ? modalCard.style.border : "",
+        cardShadow: modalCard ? modalCard.style.boxShadow : "",
+        cardPadding: modalCard ? modalCard.style.padding : "",
+        cardMaxW: modalCard ? modalCard.style.maxWidth : "",
+        cardW: modalCard ? modalCard.style.width : "",
+        headerDisplay: modalHeader ? modalHeader.style.display : "",
+        closeDisplay: btnClose ? btnClose.style.display : "",
+      };
+
+      // Overlay bem transparente (pra ver os sabões atrás)
+      modal.style.background = "rgba(0,0,0,.12)";
+      modal.style.backdropFilter = "blur(1px)";
+
+      // Remove “janela/caixa” do card do modal
+      if (modalCard) {
+        modalCard.style.background = "transparent";
+        modalCard.style.border = "0";
+        modalCard.style.boxShadow = "none";
+        modalCard.style.padding = "0";
+        modalCard.style.width = "min(980px, 96vw)";
+        modalCard.style.maxWidth = "980px";
+      }
+
+      // Some cabeçalho e botão fechar
+      if (modalHeader) modalHeader.style.display = "none";
+      if (btnClose) btnClose.style.display = "none";
+      if (modalTitle) modalTitle.textContent = "";
+      if (modalSub) modalSub.textContent = "";
+
+      const restoreCongratsStyles = () => {
+        modalLocked = false;
+
+        modal.style.background = prev.modalBg || "";
+        modal.style.backdropFilter = prev.modalBackdrop || "";
+
+        if (modalCard) {
+          modalCard.style.background = prev.cardBg || "";
+          modalCard.style.border = prev.cardBorder || "";
+          modalCard.style.boxShadow = prev.cardShadow || "";
+          modalCard.style.padding = prev.cardPadding || "";
+          modalCard.style.maxWidth = prev.cardMaxW || "";
+          modalCard.style.width = prev.cardW || "";
+        }
+
+        if (modalHeader) modalHeader.style.display = prev.headerDisplay || "";
+        if (btnClose) btnClose.style.display = prev.closeDisplay || "";
+
+        modal.hidden = true;
+        modalBody.innerHTML = "";
+      };
+
+      // Corpo: fogos + texto central sem caixa + botões
       openModal(
-        "Parabéns!",
-        "Produção concluída",
+        "",
+        "",
         `
-          <div class="mini" style="margin-bottom:10px">
-            Parabéns as unidades de sabão foram produzidas.
-          </div>
+          <div style="position:relative; width:100%;">
+            <canvas id="fwCanvas" style="width:100%; height:420px; display:block;"></canvas>
 
-          <div style="border:1px solid var(--stroke); border-radius:14px; overflow:hidden; background:rgba(0,0,0,.18)">
-            <canvas id="fwCanvas" style="width:100%; height:240px; display:block;"></canvas>
-          </div>
+            <div style="
+              position:absolute;
+              inset:0;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              text-align:center;
+              padding:18px;
+              pointer-events:none;
+            ">
+              <div>
+                <div style="
+                  font-size:40px;
+                  font-weight:900;
+                  letter-spacing:.3px;
+                  text-shadow: 0 8px 22px rgba(0,0,0,.55);
+                ">Parabéns!</div>
 
-          <div class="mini" style="margin-top:10px; color: var(--muted);">
-            Se quiser, você pode seguir para a próxima cena agora.
-          </div>
+                <div style="
+                  margin-top:10px;
+                  font-size:16px;
+                  color: rgba(255,255,255,.92);
+                  text-shadow: 0 6px 18px rgba(0,0,0,.55);
+                ">As unidades de sabão foram produzidas.</div>
+              </div>
+            </div>
 
-          <div class="actions" style="margin-top:12px">
-            <button class="btn-secondary" id="btnAgain" type="button">Reiniciar</button>
-            <button class="btn" id="btnNextScene" type="button">Avançar</button>
+            <div class="actions" style="margin-top:14px">
+              <button class="btn-secondary" id="btnAgain" type="button">Reiniciar</button>
+              <button class="btn" id="btnNextScene" type="button">Avançar</button>
+            </div>
           </div>
         `
       );
 
-      // esconde o X do modal para evitar fechar sem escolher (opcional)
-      btnClose.style.display = "none";
-
-      const canvas = $("fwCanvas");
+      // Fogos
+      const canvas = document.getElementById("fwCanvas");
       this.stopFireworks();
-      this.fireworksStop = startFireworks(canvas);
+      if (canvas) this.fireworksStop = startFireworks(canvas);
 
-      $("btnAgain").addEventListener("click", () => {
-        // destrava e reseta
-        this.stopFireworks();
-        modalLocked = false;
-        btnClose.style.display = "";
-        modal.hidden = true;
-        modalBody.innerHTML = "";
-        this.reset();
-      });
+      const btnAgain = document.getElementById("btnAgain");
+      const btnNext = document.getElementById("btnNextScene");
 
-      $("btnNextScene").addEventListener("click", () => {
-        this.stopFireworks();
-        // destrava e navega
-        modalLocked = false;
-        btnClose.style.display = "";
-        window.location.href = NEXT_SCENE_URL;
-      });
+      if (btnAgain) {
+        btnAgain.addEventListener("click", () => {
+          this.stopFireworks();
+          restoreCongratsStyles();
+          this.reset();
+        }, { once: true });
+      }
+
+      if (btnNext) {
+        btnNext.addEventListener("click", () => {
+          this.stopFireworks();
+          restoreCongratsStyles();
+          window.location.href = NEXT_SCENE_URL;
+        }, { once: true });
+      }
     },
 
     reset() {
@@ -455,14 +551,39 @@
       this.chosenColor = null;
 
       this.stopHeat();
+      this.stopCoolDown();
       this.stopStir();
       this.stopFireworks();
 
-      // destrava modal (caso reset durante final)
+      // garante que o modal volte ao normal, caso tenha sido alterado no final
       modalLocked = false;
+      modal.style.background = "";
+      modal.style.backdropFilter = "";
       btnClose.style.display = "";
       modal.hidden = true;
       modalBody.innerHTML = "";
+
+      const modalCard =
+        modal.querySelector(".modal-card") ||
+        modal.querySelector(".modal") ||
+        modal.firstElementChild ||
+        modal;
+
+      if (modalCard) {
+        modalCard.style.background = "";
+        modalCard.style.border = "";
+        modalCard.style.boxShadow = "";
+        modalCard.style.padding = "";
+        modalCard.style.width = "";
+        modalCard.style.maxWidth = "";
+      }
+
+      const modalHeader =
+        modal.querySelector(".modal-head") ||
+        modal.querySelector(".modal-header") ||
+        modal.querySelector("header");
+
+      if (modalHeader) modalHeader.style.display = "";
 
       this.setEndScreen(false);
 
@@ -547,7 +668,7 @@
       if (this.step === 7) hs.panela.classList.add("active");
       if (this.step === 8) hs.panela.classList.add("active");
       if (this.step === 9) hs.oleo.classList.add("active");
-      if (this.step === 11) hs.molde.classList.add("active");
+      if (this.step === 12) hs.molde.classList.add("active");
     },
 
     lockHotspots() {
@@ -570,7 +691,7 @@
       else if (this.step === 7) unlock("panela");
       else if (this.step === 8) unlock("panela");
       else if (this.step === 9) unlock("oleo");
-      else if (this.step === 11) unlock("molde");
+      else if (this.step === 12) unlock("molde");
     },
 
     // Etapa 1: Pergaminho
@@ -660,7 +781,7 @@
       });
     },
 
-    // Etapa 2: Purificar — SEM entregar o número “necessário”
+    // Etapa 2: Purificar
     openPurifyOil() {
       if (!this.started) return;
 
@@ -677,7 +798,7 @@
 
           <div class="mini" style="margin-top:10px">
             1) <b>Peneire/filtre</b> o óleo com peneira e <b>Bombril</b>.<br>
-            2) Adicione <b>hipoclorito 2,5%</b> usando a referência: <b>50 mL para 1 L de óleo</b>.
+            2) Adicione <b>hipoclorito de sódio 2,5%</b> usando a referência: <b>50 mL para 1 L de óleo</b>.
           </div>
 
           <div class="row" style="margin-top:10px">
@@ -686,7 +807,7 @@
               <div class="big">${this.lotOil} mL</div>
             </div>
             <div>
-              <div class="mini">Hipoclorito necessário</div>
+              <div class="mini">Hipoclorito de sódio necessário</div>
               <div class="big">— (calcule)</div>
             </div>
           </div>
@@ -696,7 +817,7 @@
           </div>
 
           <div class="field">
-            <label class="mini">Quanto de hipoclorito 2,5% (mL) você vai usar?</label>
+            <label class="mini">Quanto de hipoclorito de sódio 2,5% (mL) você vai usar?</label>
             <input class="input" id="inBleach" inputmode="numeric" placeholder="Ex.: ${decoyMl(need)}" value="">
           </div>
 
@@ -725,7 +846,7 @@
         const ok = Math.abs(v - need) <= tol;
         if (!ok) {
           this.fail("Proporção incorreta. Refaça o cálculo e tente de novo.");
-          this.setInstruction(STEPS[this.step], "Clique na panela e calcule novamente o hipoclorito.");
+          this.setInstruction(STEPS[this.step], "Clique na panela e calcule novamente o hipoclorito de sódio.");
           return;
         }
 
@@ -740,7 +861,7 @@
       });
     },
 
-    // Etapa 3: Aquecer — menos sensível + 🔥
+    // Etapa 3: Aquecer — mais estável
     openHeatGame() {
       if (!this.started) return;
 
@@ -748,6 +869,20 @@
 
       const massFactor = clamp(this.lotOil / 1000, 0.65, 1.25);
       const ambient = rand(23, 29);
+
+      const THERMO = { min: 0, max: 80, physMax: 72 };
+
+      const toPct = (t) => {
+        const p = (t - THERMO.min) / (THERMO.max - THERMO.min);
+        return clamp(p, 0, 1) * 100;
+      };
+
+      const NEED_SEC = 8.0;
+      const OVER_LIMIT_SEC = 3.5;
+      const BOIL_TEMP = 70.0;
+      const LAG_SEC = 1.9;
+      const DRIFT = 0.018;
+      const K_RESPONSE = 0.55;
 
       this.heat.active = true;
       this.heat.ambient = ambient;
@@ -758,16 +893,14 @@
       this.heat.overSec = 0;
       this.heat.last = performance.now();
 
-      const NEED_SEC = HEAT_TUNE.needSec;
-
       progressWrap.hidden = false;
-      progressLabel.textContent = "🔥 Aquecendo: mantenha 55–60°C de forma contínua. Não pode ferver.";
+      progressLabel.textContent = "🔥 Aquecendo: mantenha 55–60°C continuamente. Não pode ferver.";
       progressFill.style.width = "0%";
       this.setInstruction(STEPS[this.step], "Ajuste a chama 🔥 e mantenha 55–60°C por tempo contínuo.");
 
       openModal(
         "Fogão — Controle de temperatura 🔥",
-        "Controle a chama. O termômetro tem atraso e a mistura tem inércia.",
+        "Use a barra do termômetro (0–80°C). O valor real tem inércia e o termômetro tem atraso.",
         `
           <div class="row">
             <div>
@@ -775,12 +908,32 @@
               <div class="big">55–60°C</div>
             </div>
             <div>
-              <div class="mini">Termômetro</div>
+              <div class="mini">Leitura</div>
               <div class="big" id="tempNow">—</div>
             </div>
           </div>
 
-          <div class="mini" style="margin-top:10px">Chama 🔥</div>
+          <div style="margin-top:12px">
+            <div class="mini" style="margin-bottom:6px">Termômetro</div>
+
+            <div style="position:relative; height:16px; border-radius:999px; overflow:hidden;
+                        background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.14);">
+              <div id="band"
+                   style="position:absolute; top:0; bottom:0; opacity:.35; border-radius:999px; background: rgba(110,168,254,.8);">
+              </div>
+
+              <div id="thermoFill"
+                   style="height:100%; width:0%; border-radius:999px; background: rgba(255,255,255,.85);">
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:6px; color: var(--muted); font-size:12px">
+              <span>0°C</span>
+              <span>80°C</span>
+            </div>
+          </div>
+
+          <div class="mini" style="margin-top:12px">Chama 🔥</div>
           <input class="input" id="flameRange" type="range" min="0" max="100" step="1" value="35" style="width:100%">
 
           <div class="row" style="margin-top:10px">
@@ -796,7 +949,7 @@
 
           <div class="mini" style="margin-top:10px; color: var(--muted);">
             Regra: acima de <b>60°C</b> por muito tempo conta erro.
-            Se passar de <b>${HEAT_TUNE.boilTemp.toFixed(0)}°C</b>, “ferveu” (erro imediato).
+            Se passar de <b>${BOIL_TEMP.toFixed(0)}°C</b>, “ferveu” (erro imediato).
           </div>
         `
       );
@@ -804,6 +957,13 @@
       const tempNow = $("tempNow");
       const holdNow = $("holdNow");
       const flameRange = $("flameRange");
+      const thermoFill = $("thermoFill");
+      const band = $("band");
+
+      const bandLeftPct = toPct(55);
+      const bandRightPct = toPct(60);
+      band.style.left = `${bandLeftPct}%`;
+      band.style.width = `${Math.max(0, bandRightPct - bandLeftPct)}%`;
 
       flameRange.addEventListener("input", () => {
         this.heat.flame = Number(flameRange.value);
@@ -816,39 +976,36 @@
         this.heat.last = now;
 
         const flame01 = clamp(this.heat.flame / 100, 0, 1);
+        const eq = ambient + flame01 * (THERMO.physMax - ambient);
 
-        const heatK = HEAT_TUNE.heatKBase / massFactor;
-        const coolK = HEAT_TUNE.coolKBase * massFactor;
+        const k = (K_RESPONSE / massFactor);
+        this.heat.trueTemp += (eq - this.heat.trueTemp) * k * dt * 6.0;
 
-        const drift = (Math.random() - 0.5) * HEAT_TUNE.driftAmp;
-        this.heat.trueTemp += dt * (heatK * flame01 * 60 - coolK * (this.heat.trueTemp - this.heat.ambient)) + drift;
+        this.heat.trueTemp += (Math.random() - 0.5) * DRIFT;
+        this.heat.trueTemp = clamp(this.heat.trueTemp, ambient - 2, 75);
 
-        const lag = HEAT_TUNE.lag;
-        const alpha = clamp(dt / lag, 0.01, 0.11);
+        const alpha = clamp(dt / LAG_SEC, 0.02, 0.12);
         this.heat.readTemp += (this.heat.trueTemp - this.heat.readTemp) * alpha;
-
-        this.heat.trueTemp = clamp(this.heat.trueTemp, this.heat.ambient - 2, 75);
-        this.heat.readTemp = clamp(this.heat.readTemp, this.heat.ambient - 2, 75);
+        this.heat.readTemp = clamp(this.heat.readTemp, ambient - 2, 75);
 
         const read = this.heat.readTemp;
-
         const inBand = read >= 55 && read <= 60;
 
         if (inBand) this.heat.inBandSec += dt;
-        else this.heat.inBandSec = clamp(this.heat.inBandSec - dt * 1.25, 0, NEED_SEC);
+        else this.heat.inBandSec = clamp(this.heat.inBandSec - dt * 1.10, 0, NEED_SEC);
 
         if (read > 60) this.heat.overSec += dt;
-        else this.heat.overSec = clamp(this.heat.overSec - dt * 1.7, 0, 10);
+        else this.heat.overSec = clamp(this.heat.overSec - dt * 1.5, 0, 10);
 
-        if (read >= HEAT_TUNE.boilTemp) {
+        if (read >= BOIL_TEMP) {
           this.heat.active = false;
           closeModal();
-          this.fail("Temperatura passou demais: ferveu. Controle a chama com mais cuidado.");
+          this.fail("Temperatura passou demais: ferveu. Controle a chama com mais calma.");
           this.setInstruction(STEPS[this.step], "Clique no fogão e tente manter 55–60°C.");
           return;
         }
 
-        if (this.heat.overSec > HEAT_TUNE.overLimitSec) {
+        if (this.heat.overSec > OVER_LIMIT_SEC) {
           this.heat.active = false;
           closeModal();
           this.fail("Passou de 60°C por tempo demais. Ajuste a chama e tente novamente.");
@@ -859,8 +1016,10 @@
         tempNow.textContent = `${read.toFixed(1)}°C`;
         holdNow.textContent = `${this.heat.inBandSec.toFixed(1)}s`;
 
-        const pct = clamp(this.heat.inBandSec / NEED_SEC, 0, 1);
-        progressFill.style.width = `${Math.round(pct * 100)}%`;
+        thermoFill.style.width = `${toPct(read)}%`;
+
+        const pctHold = clamp(this.heat.inBandSec / NEED_SEC, 0, 1);
+        progressFill.style.width = `${Math.round(pctHold * 100)}%`;
 
         if (this.heat.inBandSec >= NEED_SEC) {
           this.heat.active = false;
@@ -1280,18 +1439,197 @@
 
         this.ok("Detergente adicionado.");
 
+        // ✅ Agora vem o RESFRIAMENTO (25–30°C) antes de corante/óleo essencial
         this.step = 10;
         this.updateUI();
         this.lockHotspots();
         this.highlightStep();
-        this.setInstruction(STEPS[this.step], "Escolha a cor do sabão.");
+        this.setInstruction(STEPS[this.step], "Aguarde resfriar para 25–30°C antes de adicionar corante e óleo essencial.");
+        this.openCoolDownModal();
+      });
+    },
+
+    // ✅ Etapa 10: Resfriamento (relógio analógico)
+    openCoolDownModal() {
+      if (!this.started || this.step !== 10) return;
+
+      modalLocked = true;
+      btnClose.style.display = "none";
+
+      this.stopCoolDown();
+      this.cool.active = true;
+      this.cool.last = performance.now();
+      this.cool.startTemp = rand(38, 52);
+      this.cool.endTemp = rand(26, 30);
+      this.cool.tempNow = this.cool.startTemp;
+
+      openModal(
+        "Atenção — Resfriamento antes dos voláteis",
+        "Corante e óleo essencial devem entrar com a massa mais fria.",
+        `
+          <div class="mini">
+            <b>Antes de adicionar corante e óleo essencial:</b> aguarde a massa chegar a
+            <b>25–30°C</b>. Esses componentes são <b>voláteis</b> e, em temperatura alta,
+            podem <b>evaporar</b> e <b>não aderir bem</b> ao sabão.
+          </div>
+
+          <div style="margin-top:12px; border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px; background:rgba(0,0,0,.04)">
+            <div class="row">
+              <div>
+                <div class="mini">Temperatura atual</div>
+                <div class="big" id="coolTemp">—</div>
+              </div>
+              <div>
+                <div class="mini">Alvo</div>
+                <div class="big">25–30°C</div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px; display:flex; justify-content:center;">
+              <canvas id="coolClock" style="width:220px; height:220px; display:block;"></canvas>
+            </div>
+
+            <div class="mini" style="margin-top:8px; color: var(--muted); text-align:center;">
+              (Relógio acelerado simulando o tempo de resfriamento)
+            </div>
+          </div>
+
+          <div class="actions" style="margin-top:12px">
+            <button class="btn" id="btnCoolOk" type="button" disabled>Continuar</button>
+          </div>
+        `
+      );
+
+      const tempEl = $("coolTemp");
+      const canvas = $("coolClock");
+      const btnOk = $("btnCoolOk");
+
+      const ctx = canvas.getContext("2d", { alpha: true });
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+
+      const resize = () => {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = Math.floor(rect.width * dpr);
+        canvas.height = Math.floor(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      };
+      resize();
+
+      const easeOutCubic = (x) => 1 - Math.pow(1 - x, 3);
+
+      const drawClock = (progress01) => {
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width;
+        const h = rect.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const r = Math.min(w, h) * 0.42;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // aro
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 10, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,.06)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 10, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,255,255,.14)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // marcações
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
+          const x1 = cx + Math.cos(a) * (r * 0.86);
+          const y1 = cy + Math.sin(a) * (r * 0.86);
+          const x2 = cx + Math.cos(a) * (r * 0.98);
+          const y2 = cy + Math.sin(a) * (r * 0.98);
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = "rgba(255,255,255,.22)";
+          ctx.lineWidth = (i % 3 === 0) ? 3 : 2;
+          ctx.stroke();
+        }
+
+        // ponteiros acelerados
+        const turns = 8;
+        const secAng = (progress01 * turns) * Math.PI * 2 - Math.PI / 2;
+        const minAng = (progress01 * (turns / 12)) * Math.PI * 2 - Math.PI / 2;
+
+        // minutos
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(minAng) * (r * 0.62), cy + Math.sin(minAng) * (r * 0.62));
+        ctx.strokeStyle = "rgba(255,255,255,.75)";
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        // segundos
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(secAng) * (r * 0.80), cy + Math.sin(secAng) * (r * 0.80));
+        ctx.strokeStyle = "rgba(110,168,254,.95)";
+        ctx.lineWidth = 3;
+        ctx.lineCap = "round";
+        ctx.stroke();
+
+        // centro
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,.85)";
+        ctx.fill();
+      };
+
+      const start = performance.now();
+      const loop = (now) => {
+        if (!this.cool.active) return;
+
+        const t = (now - start) / 1000;
+        const raw = clamp(t / this.cool.durationSec, 0, 1);
+        const p = easeOutCubic(raw);
+
+        this.cool.tempNow = this.cool.startTemp + (this.cool.endTemp - this.cool.startTemp) * p;
+
+        tempEl.textContent = `${this.cool.tempNow.toFixed(1)}°C`;
+        drawClock(raw);
+
+        if (raw >= 1) {
+          this.cool.active = false;
+          btnOk.disabled = false;
+          btnOk.textContent = "Continuar (25–30°C)";
+          return;
+        }
+
+        this.cool.raf = requestAnimationFrame(loop);
+      };
+
+      this.cool.raf = requestAnimationFrame(loop);
+
+      btnOk.addEventListener("click", () => {
+        this.stopCoolDown();
+        modalLocked = false;
+        btnClose.style.display = "";
+        closeModal();
+
+        this.ok("Temperatura adequada para adicionar os voláteis.");
+
+        this.step = 11;
+        this.updateUI();
+        this.lockHotspots();
+        this.highlightStep();
+        this.setInstruction(STEPS[this.step], "Agora adicione corante e óleo essencial (massa em 25–30°C).");
+
         this.openColorPicker();
       });
     },
 
-    // Etapa 10: Corante
+    // Etapa 11: Corante + Óleo essencial (modal)
     openColorPicker() {
-      if (!this.started || this.step !== 10) return;
+      if (!this.started || this.step !== 11) return;
 
       const options = [
         { key: "Azul", sw: "#3b82f6" },
@@ -1309,11 +1647,16 @@
       `).join("");
 
       openModal(
-        "Corante — Escolha a cor",
-        "Selecione a cor para as unidades de sabão.",
+        "Corante e óleo essencial — Etapa dos voláteis",
+        "Adicionar somente com a massa em 25–30°C.",
         `
           <div class="mini">
-            Dica: use pouco corante e misture bem para distribuir a cor de forma uniforme.
+            <b>Aviso:</b> óleo essencial e corante são <b>voláteis</b>. Em temperatura alta podem evaporar e não aderir bem.
+            <br>Com a massa em <b>25–30°C</b>, você pode adicionar e misturar com mais segurança.
+          </div>
+
+          <div class="mini" style="margin-top:10px; color: var(--muted);">
+            Escolha a cor do sabão. (Considere adicionar o óleo essencial agora e misturar bem.)
           </div>
 
           <div style="margin-top:10px">
@@ -1328,11 +1671,13 @@
 
       $("btnColorBack").addEventListener("click", () => {
         closeModal();
-        this.step = 9;
+        // volta para o resfriamento
+        this.step = 10;
         this.updateUI();
         this.lockHotspots();
         this.highlightStep();
-        this.setInstruction(STEPS[this.step], "Se precisar, clique no frasco para revisar o detergente.");
+        this.setInstruction(STEPS[this.step], "Aguarde resfriar para 25–30°C antes de adicionar corante e óleo essencial.");
+        this.openCoolDownModal();
       });
 
       modalBody.querySelectorAll("[data-color]").forEach((btn) => {
@@ -1343,7 +1688,7 @@
 
           this.ok(`Cor escolhida: ${picked}.`);
 
-          this.step = 11;
+          this.step = 12;
           this.updateUI();
           this.lockHotspots();
           this.highlightStep();
@@ -1352,7 +1697,7 @@
       });
     },
 
-    // Etapa 11: Verter
+    // Etapa 12: Verter
     openPour() {
       openModal(
         "Molde — Verter a massa",
@@ -1402,20 +1747,18 @@
     },
 
     finish() {
-      this.step = 12;
+      this.step = 13;
       this.updateUI();
       this.lockHotspots();
       this.highlightStep();
 
       progressWrap.hidden = true;
 
-      // troca para a imagem final
       this.setEndScreen(true);
 
       const msg = "Parabéns as unidades de sabão foram produzidas.";
       setTopbar(`Produção de Sabão — ${msg}`);
 
-      // abre popup com fogos e botão de próxima cena
       this.openCongratsPopup();
     },
   };
@@ -1448,7 +1791,7 @@
     if (game.step === 8 && id === "panela") return game.openAddLyeToOil();
 
     if (game.step === 9 && id === "oleo") return game.openAddDetergent();
-    if (game.step === 11 && id === "molde") return game.openPour();
+    if (game.step === 12 && id === "molde") return game.openPour();
 
     if (game.step === 4 && id === "colheres") {
       showToast("Segure o clique nas colheres para mexer.", "good");

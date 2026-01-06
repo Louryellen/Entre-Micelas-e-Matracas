@@ -24,28 +24,26 @@
 
   <div class="stagebar" id="stagebar" aria-live="polite">
     <div class="stagebar-text" id="topbarText">
-      Escolha um pigmento e ajuste o pH para obter o tom certo da fita do boi.
+      Defina pigmento, solvente e concentração. Depois ajuste ácido/base para atingir a meta.
     </div>
   </div>
 
   <main class="main">
     <section class="scene" id="scene" aria-label="Cena">
 
-      <!-- Fundo “ambiente” (fica por trás do laboratório). Pode ser sua pintura.png -->
-      <img id="bgScene" class="bg bg-ambient" src="pintura.png" alt="Imagem da cena (Artesanato da Comunidade)" />
+      <!-- Fundo (vai ficar oculto via CSS; mantido para você reaproveitar depois se quiser) -->
+      <img id="bgScene" class="bg" src="pintura.png" alt="Imagem da cena (Artesanato da Comunidade)" />
 
-      <!-- LAB UI (formato da 2ª imagem) -->
+      <!-- LAB UI -->
       <div class="lab-ui" role="application" aria-label="Laboratório Cultural">
 
-        <!-- Topo do pergaminho -->
         <div class="lab-header">
-          <div class="lab-title">Química das Cores do Boi — Laboratório Cultural</div>
+          <div class="lab-title">Química das Cores</div>
         </div>
 
-        <!-- Corpo (2 colunas) -->
         <div class="lab-body">
 
-          <!-- COLUNA ESQUERDA: Bancada -->
+          <!-- COLUNA ESQUERDA -->
           <aside class="lab-left" aria-label="Bancada de Preparação da Tinta">
 
             <div class="section-title">
@@ -57,7 +55,6 @@
               <strong>Etapas:</strong> pigmento → solução → ajuste de pH → aplicação
             </div>
 
-            <!-- CHIPS (mantidos) -->
             <div class="hud-row lab-chips">
               <div class="chip" id="chipStep">Etapa: —</div>
               <div class="chip chip-muted" id="chipErrors">Erros: 0</div>
@@ -65,7 +62,6 @@
               <div class="chip chip-muted" id="chipInfo">pH: —</div>
             </div>
 
-            <!-- FORM -->
             <div class="form">
 
               <div class="block">
@@ -130,7 +126,7 @@
                 </label>
 
                 <label class="field">
-                  <span class="label">Base (cinza/bicarbonato) — intensidade</span>
+                  <span class="label">Base (bicarbonato) — intensidade</span>
                   <input class="range" id="rngBase" type="range" min="0" max="14" step="1" value="0" />
                   <div class="range-meta">
                     <span class="mini">0</span>
@@ -158,7 +154,7 @@
               </div>
 
               <button class="btn lab-action" id="btnPintar" type="button">
-                Aplicar na Fita / Vestido
+                Aplicar no Vestido
               </button>
 
               <div class="hint lab-hint" id="hint">
@@ -169,34 +165,32 @@
 
           <!-- COLUNA DIREITA -->
           <section class="lab-right" aria-label="Área de visualização">
-
-            <!-- Janela grande (cena) -->
             <div class="frame frame-large">
-              <div class="frame-title">Visualização da Bancada</div>
               <div class="frame-inner">
-                <!-- Use a mesma pintura.png aqui (fica “emoldurado”) -->
                 <img class="preview-img" id="imgPreview" src="pintura.png" alt="Pré-visualização da cena" />
-                <div class="color-overlay" id="colorOverlay" aria-hidden="true"></div>
               </div>
             </div>
 
-            <!-- Parte de baixo: vestido + diário -->
             <div class="bottom-row">
 
               <div class="frame frame-small">
-                <div class="frame-title">Amostra / Fita</div>
-                <div class="frame-inner dress-wrap">
-                  <!-- Se você tiver um PNG do vestido/fita, troque o src -->
-                  <img class="dress-img" id="imgDress" src="vestido_base.png" alt="Vestido/Fita para pintura" onerror="this.style.display='none'" />
-                  <div class="dress-fallback" id="dressFallback" aria-hidden="true">
+                <div class="frame-title">Colorindo o Vestido</div>
+                <div class="frame-inner fit-wrap" id="fitWrap">
+                  <!-- “Geração” local: canvas renderiza uma imagem já colorida -->
+                  <canvas class="fit-canvas" id="fitCanvas"></canvas>
+
+                  <!-- Base (ideal: PNG com transparência e sombreamento em tons claros/cinza) -->
+                  <img id="fitBase" src="vestido.png" alt="" hidden />
+
+                  <!-- Fallback se não existir a fita_base.png -->
+                  <div class="fit-fallback" id="fitFallback" aria-hidden="true">
                     Prévia do tecido
                   </div>
-                  <div class="dress-tint" id="dressTint" aria-hidden="true"></div>
                 </div>
               </div>
 
               <div class="frame frame-diary">
-                <div class="frame-title">Diário da Artesã-Química</div>
+                <div class="frame-title">Diário de Progresso</div>
 
                 <div class="diary" id="diary">
                   <ul class="diary-list" id="diaryList">
@@ -215,16 +209,15 @@
                   </div>
                 </div>
               </div>
+
             </div>
 
           </section>
         </div>
       </div>
 
-      <!-- Toast (mantido) -->
       <div class="toast" id="toast" hidden></div>
 
-      <!-- Modal (mantido, opcional) -->
       <div class="modal" id="modal" hidden>
         <div class="modal-backdrop" data-close="1" aria-hidden="true"></div>
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">

@@ -683,9 +683,7 @@ function reportTextFor(chosen, stats){
     `;
   }
   return `
-    <b>Crítico:</b> diagnóstico <b>CRÍTICO</b>. Forte impacto sugerido:
-    pH <b>${fmt(ph,2)}</b>, EC <b>${Math.round(ec)}</b> µS/cm e T <b>${fmt(t,1)}</b> °C.
-    Recomenda-se ação imediata e investigação de carga/nutrientes/esgoto.
+    <b>Diagnóstico Correto:</b> Crítico. Recomenda-se ação imediata e investigação de carga/nutrientes/esgoto.
   `;
 }
 
@@ -698,7 +696,7 @@ function showReportModal({ sampleName, chosen, expected, stats }){
 
   body.innerHTML = `
     <div>
-      <span class="tag">Diagnóstico: <b>${classLabel(chosen)}</b></span>
+      <span class="tag">Hipótese Sugerida: <b>${classLabel(chosen)}</b></span>
       <span class="tag">Esperado: <b>${classLabel(expected)}</b></span>
     </div>
 
@@ -811,7 +809,7 @@ function ensureFinalSheetModal(){
 
       <div class="ff-actions">
         <button class="ff-btn" id="ffPrint" type="button">Imprimir</button>
-        <button class="ff-btn primary" id="ffNext" type="button">Próxima cena</button>
+        <button class="ff-btn primary" id="ffNext" type="button">Avançar</button>
       </div>
     </div>
   `;

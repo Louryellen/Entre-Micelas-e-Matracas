@@ -544,7 +544,7 @@ function buildGeneralReportItems() {
     ["Amostra 2 (eutrofização)", "Cor verde turva indica possível floração de algas e excesso de nutrientes; pode estar associada à queda de oxigênio dissolvido e odores."],
     ["Amostra 3 (escurecida)", "Tonalidade marrom/âmbar sugere sedimentos e/ou matéria orgânica; pode indicar escoamento superficial, decomposição e aumento de carga orgânica."],
     ["Hipóteses principais", "A2 aponta para eutrofização; A3 aponta para aporte de sedimentos/matéria orgânica. A confirmação depende das medidas do multiparâmetro."],
-    ["Prioridades na análise", "Comparar pH, condutividade e principalmente OD (oxigênio dissolvido) entre os pontos; diferenças grandes reforçam as hipóteses de impacto."],
+    ["Prioridades na análise", "Comparar pH, condutividade e temperatura entre os pontos; diferenças grandes reforçam as hipóteses de impacto."],
   ];
 }
 

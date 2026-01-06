@@ -206,7 +206,7 @@
               sub:"Ação concreta e comunitária.",
               feedback:"A ideia animou muita gente.",
               reply:
-                "Minha sugestão é bem prática: criar um ponto de coleta de óleo usado e fazer uma campanha curta (cartaz + conversa rápida).\n\nSe vocês toparem, a gente pode fazer uma oficina simples de reaproveitamento (como sabão) com segurança e orientação.",
+                "Minha sugestão é bem prática: fazer uma campanha de conscientização para que não se jogue mais lixo e óleo no rio. Podemos também, contactar o prefeito para pensarmos na possibilidade da criação de um ecoponto.\n\n Para além disso, se vocês toparem, a gente pode fazer uma oficina de reaproveitamento de óleo para produzir sabão, com segurança e orientação.",
               next:"a5"
             },
             {
@@ -336,7 +336,7 @@
     showToast._t = window.setTimeout(() => {
       el.toast.style.display = "none";
       el.toast.setAttribute("aria-hidden", "true");
-    }, 1300);
+    }, 2300);
   }
 
   function setHint(text) {
