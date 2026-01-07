@@ -161,7 +161,6 @@
           ]
         },
 
-        /* ===== NOVO NÓ: PEIXES MORTOS + EUTROFIZAÇÃO ===== */
         a3b: {
           speaker: "Moradores",
           text: "E os peixes mortos… por que isso acontece? E o que é essa tal de eutrofização?",
@@ -206,7 +205,7 @@
               sub:"Ação concreta e comunitária.",
               feedback:"A ideia animou muita gente.",
               reply:
-                "Minha sugestão é bem prática: fazer uma campanha de conscientização para que não se jogue mais lixo e óleo no rio. Podemos também, contactar o prefeito para pensarmos na possibilidade da criação de um ecoponto.\n\n Para além disso, se vocês toparem, a gente pode fazer uma oficina de reaproveitamento de óleo para produzir sabão, com segurança e orientação.",
+                "Minha sugestão é bem prática: combinar um ponto de coleta para o óleo usado e fazer uma campanha curta aqui no bairro.\n\nSe vocês toparem, a gente organiza uma oficina de sabão com segurança (EPI e cuidado com a soda), para transformar o óleo em algo útil e evitar que ele vá pro igarapé.",
               next:"a5"
             },
             {
@@ -240,8 +239,8 @@
               sub:"Monitoramento básico e realista.",
               feedback:"O grupo gostou de acompanhar a evolução.",
               reply:
-                "Dá para fazer um acompanhamento simples.\n\nUma vez por semana: registrar foto do mesmo ponto, anotar cheiro, cor e presença de espuma. Se der, a gente inclui testes básicos com orientação. Assim vocês enxergam a melhora ao longo do tempo.",
-              next:"aEnd"
+                "Dá para fazer um acompanhamento simples.\n\nUma vez por semana: foto do mesmo ponto, anotar cheiro, cor e presença de espuma. Se der, a gente inclui testes básicos com orientação. Assim vocês enxergam a melhora ao longo do tempo.",
+              next:"a6"
             },
             {
               repDelta:0, icon:"dialogo",
@@ -250,7 +249,7 @@
               feedback:"Ficou mais claro, porém ainda genérico.",
               reply:
                 "Observar ajuda, mas registrar junto ajuda mais.\n\nSe vocês toparem, a gente combina um ponto e um dia fixo para comparar: foto, anotações e conversa rápida. Isso dá um “termômetro” do igarapé.",
-              next:"aEnd"
+              next:"a6"
             },
             {
               repDelta:-2, icon:"alerta",
@@ -259,6 +258,42 @@
               feedback:"O grupo desanimou.",
               reply:
                 "É verdade que medir com precisão pode ser difícil.\n\nMas dá para acompanhar com sinais simples e registro. Se vocês quiserem, eu ajudo a organizar um jeito bem fácil de fazer isso sem atrapalhar a rotina.",
+              next:"a6"
+            },
+          ]
+        },
+
+        /* ===== NOVO FINAL: GANCHO PARA OFICINA DE SABÃO ===== */
+        a6: {
+          speaker: "Moradores",
+          text:
+            "Professora… a gente quer fazer do jeito certo. Você consegue ajudar a gente a organizar a oficina de sabão com o óleo usado?",
+          choices: [
+            {
+              repDelta:+3, icon:"check",
+              label:"Sim. Vamos para a oficina agora e fazer com segurança.",
+              sub:"Encaminhar direto para a cena da oficina.",
+              feedback:"A comunidade topou participar da oficina.",
+              reply:
+                "Consigo, sim.\n\nVamos organizar direitinho: segurança primeiro (EPI), cuidado com a soda e passo a passo bem claro.\n\nSe vocês estiverem prontos, vamos para a oficina agora.",
+              next:"goto:../cenaoficina/oficina.html"
+            },
+            {
+              repDelta:+1, icon:"dialogo",
+              label:"Sim, mas combinando um horário e separando os materiais primeiro.",
+              sub:"Planejamento antes de executar.",
+              feedback:"A comunidade aceitou combinar a organização.",
+              reply:
+                "Sim. A gente faz, mas com organização.\n\nPrimeiro: separar os materiais, combinar o local e garantir os EPIs. Depois a oficina fica segura e dá certo.\n\nQuando estiverem prontos, a gente segue para a oficina.",
+              next:"aEnd"
+            },
+            {
+              repDelta:-1, icon:"alerta",
+              label:"Dizer que é melhor alguém experiente fazer (mas orientar o caminho).",
+              sub:"Menos engajamento direto.",
+              feedback:"O grupo ficou menos animado, mas entendeu o cuidado.",
+              reply:
+                "Eu entendo a vontade, mas com soda cáustica precisa ter muito cuidado.\n\nO ideal é fazer com alguém que siga segurança e orientação. Se vocês quiserem, eu ajudo a montar um roteiro de segurança e a checar os materiais antes de começar.",
               next:"aEnd"
             },
           ]
@@ -388,6 +423,24 @@
     if (buttons[index]) buttons[index].classList.add("is-active");
   }
 
+  // ===== Interpreta "next" especial: goto:arquivo.html
+  function handleNext(nextToken){
+    if (!nextToken) {
+      endConversation(true);
+      return;
+    }
+
+    if (typeof nextToken === "string" && nextToken.startsWith("goto:")) {
+      const url = nextToken.slice("goto:".length).trim();
+      if (url) window.location.href = url;
+      else endConversation(true);
+      return;
+    }
+
+    // default: renderiza próximo nó na thread atual
+    renderNode(state.activeThread, nextToken);
+  }
+
   function renderSingleContinue(nextFn){
     el.playerChoices.innerHTML = "";
     const btn = document.createElement("button");
@@ -407,18 +460,18 @@
   }
 
   /* ===== Clique na resposta: mostra fala da Pesquisadora e só depois avança ===== */
-  function onPickChoice(choice, nextId){
+  function onPickChoice(choice){
     state.reputation = clamp(state.reputation + choice.repDelta, state.repMin, state.repMax);
     updateRepUI();
     showToast(choice.feedback);
 
-    // mostra resposta da pesquisadora (não some rápido)
+    // mostra resposta da pesquisadora
     el.npcName.textContent = "Pesquisadora";
     el.npcText.textContent = choice.reply || "Certo. Vamos seguir.";
     setNpcBubbleBySpeaker("Pesquisadora");
 
     renderSingleContinue(() => {
-      if (nextId) renderNode(state.activeThread, nextId);
+      if (choice.next) handleNext(choice.next);
       else endConversation(true);
     });
 
@@ -443,7 +496,7 @@
       `;
 
       btn.addEventListener("click", () => {
-        onPickChoice(choice, choice.next);
+        onPickChoice(choice);
       });
 
       buttons.push(btn);
@@ -456,7 +509,12 @@
   }
 
   function renderNode(threadKey, nodeId) {
-    const node = DIALOGUES[threadKey].nodes[nodeId];
+    const thread = DIALOGUES[threadKey];
+    if (!thread) return;
+
+    const node = thread.nodes[nodeId];
+    if (!node) return;
+
     state.currentNodeId = nodeId;
 
     el.npcName.textContent = node.speaker || "";
@@ -467,7 +525,7 @@
       renderChoices(node);
       setHint("💬 Escolha uma resposta.");
     } else if (node.next) {
-      renderSingleContinue(() => renderNode(threadKey, node.next));
+      renderSingleContinue(() => handleNext(node.next));
       setHint("💬 Clique em Continuar.");
     } else {
       el.playerChoices.innerHTML = "";
