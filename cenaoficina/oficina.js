@@ -268,7 +268,7 @@
   // ---------------------------
   const STEPS = [
     "Preparos Iniciais",
-    "Calcular alvos (pergaminho)",
+    "Calcular quantidade necessária (pergaminho)",
     "Purificar e filtrar óleo (hipoclorito 2,5%)",
     "Aquecer para 55–60°C (não ferver)",
     "Mexer por 2 minutos",
@@ -697,7 +697,7 @@
     // Etapa 1: Pergaminho
     openCalculator() {
       if (!this.started) { showToast("Clique em Começar para iniciar.", "bad"); return; }
-      if (this.step !== 1) { showToast("O pergaminho é usado na Etapa 1 (calcular alvos).", "bad"); return; }
+      if (this.step !== 1) { showToast("O pergaminho é usado na Etapa 1 (calcular quantidade necessária).", "bad"); return; }
 
       const baseTargets = calcTargets(BASE.oil);
 
@@ -1098,7 +1098,7 @@
     // Etapas 5/6: Medir
     openMeasureMini(type) {
       if (this.playerTargets.naoh == null || this.playerTargets.water == null) {
-        this.fail("Você precisa calcular seus alvos no pergaminho primeiro.");
+        this.fail("Você precisa calcular a quantidade necessária conforme o pergaminho primeiro.");
         this.step = 1;
         this.updateUI();
         this.lockHotspots();

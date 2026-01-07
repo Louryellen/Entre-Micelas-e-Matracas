@@ -63,5 +63,26 @@
 <script type="module">
   import { initCena0 } from "./engine.js";
   initCena0();
+  // ===== Ocultar header/HUD SOMENTE durante o vídeo desta cena =====
+  const video = document.getElementById("introVideo");
+
+  const setVideoMode = (on) => {
+    document.body.classList.toggle("is-video-playing", !!on);
+  };
+
+  if (video) {
+    // cobre play/auto-play e transições
+    video.addEventListener("play", () => setVideoMode(true));
+    video.addEventListener("playing", () => setVideoMode(true));
+
+    // se pausar ou terminar, volta header/HUD
+    video.addEventListener("pause", () => setVideoMode(false));
+    video.addEventListener("ended", () => setVideoMode(false));
+
+    // segurança extra
+    video.addEventListener("error", () => setVideoMode(false));
+  }
+</script>
+
 </script>
 
