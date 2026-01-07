@@ -72,7 +72,7 @@ Diante da urgência, solicitamos uma visita técnica para observação e anális
 
 Você pode assumir essa investigação?
 
-Atenciosamente,  ggg
+Atenciosamente, 
 Coordenação de Extensão – UFMA`;
 
   function openMail(){

@@ -36,7 +36,7 @@ const TIP_Y = 0.815;
 // =====================
 // Ficha final (referência + próxima cena)
 // =====================
-const NEXT_SCENE_URL = "cena (conversa)/conversa.html"; // <-- TROQUE para o arquivo da próxima cena
+const NEXT_SCENE_URL = "cena-conversa/conversa.html"; // <-- TROQUE para o arquivo da próxima cena
 
 const REF_CARD = {
   corpo: "Igarapé",
