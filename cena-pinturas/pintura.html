@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Cena — Artesanato</title>
+  <title>Química das Cores</title>
 
   <link rel="stylesheet" href="pintura.css" />
 
@@ -16,7 +16,7 @@
   <header class="app-header">
     <div class="header-left">
       <div class="title">Entre Micelas e Matracas</div>
-      <div class="subtitle">Cena: Artesanato da Comunidade</div>
+      <div class="subtitle">Química das Cores</div>
     </div>
 
     <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
@@ -31,7 +31,7 @@
   <main class="main">
     <section class="scene" id="scene" aria-label="Cena">
 
-      <!-- Fundo (vai ficar oculto via CSS; mantido para você reaproveitar depois se quiser) -->
+      <!-- Fundo (mantido para reaproveitar se quiser) -->
       <img id="bgScene" class="bg" src="pintura.png" alt="Imagem da cena (Artesanato da Comunidade)" />
 
       <!-- LAB UI -->
@@ -74,6 +74,9 @@
                     <option value="curcuma">Cúrcuma (curcumina)</option>
                     <option value="urucum">Urucum (bixina — apolar)</option>
                   </select>
+                  <span class="help" id="helpPigmento">
+                    O jogo segue a ordem: repolho → cúrcuma → urucum.
+                  </span>
                 </label>
 
                 <label class="field">
@@ -82,7 +85,9 @@
                     <option value="agua">Água</option>
                     <option value="oleo">Óleo / resina</option>
                   </select>
-                  <span class="help" id="helpMeio">Dica: urucum dissolve melhor em meio oleoso (apolar).</span>
+                  <span class="help" id="helpMeio">
+                    Dica: urucum dissolve melhor em meio oleoso (apolar).
+                  </span>
                 </label>
               </div>
 
@@ -110,28 +115,47 @@
                     Fórmula: C = m / V (com V em litros)
                   </div>
                 </div>
+
+                <!-- FAIXA IDEAL (DINÂMICA) -->
+                <div class="readout">
+                  <div class="row">
+                    <span class="k">Faixa ideal de concentração</span>
+                    <span class="v" id="idealConc">5–25 g/L</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">Massa ideal para o V atual</span>
+                    <span class="v" id="idealMassa">—</span>
+                  </div>
+                  <div class="row">
+                    <span class="k">Volume ideal para a m atual</span>
+                    <span class="v" id="idealVolume">—</span>
+                  </div>
+                  <div class="mini">
+                    Dica: mantendo C na faixa, a cor fica mais “estável” e previsível.
+                  </div>
+                </div>
               </div>
 
               <div class="block">
-                <div class="block-h">3. Ajuste ácido-base (modelo didático)</div>
+                <div class="block-h">3. Ajuste ácido-base</div>
 
                 <label class="field">
-                  <span class="label">Ácido (limão) — intensidade</span>
-                  <input class="range" id="rngAcido" type="range" min="0" max="14" step="1" value="0" />
+                  <span class="label">Ácido (limão) — dose</span>
+                  <input class="range" id="rngAcido" type="range" min="0" max="10" step="1" value="0" />
                   <div class="range-meta">
-                    <span class="mini">0</span>
-                    <span class="mini" id="outAcido">0</span>
-                    <span class="mini">14</span>
+                    <span class="mini">Fraco</span>
+                    <span class="mini"><strong id="outAcido">0</strong>/10</span>
+                    <span class="mini">Forte</span>
                   </div>
                 </label>
 
                 <label class="field">
-                  <span class="label">Base (bicarbonato) — intensidade</span>
-                  <input class="range" id="rngBase" type="range" min="0" max="14" step="1" value="0" />
+                  <span class="label">Base (bicarbonato) — dose</span>
+                  <input class="range" id="rngBase" type="range" min="0" max="10" step="1" value="0" />
                   <div class="range-meta">
-                    <span class="mini">0</span>
-                    <span class="mini" id="outBase">0</span>
-                    <span class="mini">14</span>
+                    <span class="mini">Fraca</span>
+                    <span class="mini"><strong id="outBase">0</strong>/10</span>
+                    <span class="mini">Forte</span>
                   </div>
                 </label>
 
@@ -158,7 +182,7 @@
               </button>
 
               <div class="hint lab-hint" id="hint">
-                Dica: repolho roxo funciona como indicador; cúrcuma tende a alaranjar em meio básico; urucum é apolar.
+                Dica: mantenha C entre 5 e 25 g/L. Para urucum, use Óleo/resina.
               </div>
             </div>
           </aside>
@@ -176,13 +200,11 @@
               <div class="frame frame-small">
                 <div class="frame-title">Colorindo o Vestido</div>
                 <div class="frame-inner fit-wrap" id="fitWrap">
-                  <!-- “Geração” local: canvas renderiza uma imagem já colorida -->
                   <canvas class="fit-canvas" id="fitCanvas"></canvas>
 
                   <!-- Base (ideal: PNG com transparência e sombreamento em tons claros/cinza) -->
                   <img id="fitBase" src="vestido.png" alt="" hidden />
 
-                  <!-- Fallback se não existir a fita_base.png -->
                   <div class="fit-fallback" id="fitFallback" aria-hidden="true">
                     Prévia do tecido
                   </div>
@@ -218,6 +240,7 @@
 
       <div class="toast" id="toast" hidden></div>
 
+      <!-- Modal mantido (se você usar depois); não interfere -->
       <div class="modal" id="modal" hidden>
         <div class="modal-backdrop" data-close="1" aria-hidden="true"></div>
         <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
