@@ -99,7 +99,7 @@
   // Vídeo final (sem botões Som/Pular no HTML)
   const finalVideoOverlay = $("finalVideoOverlay");
   const finalVideoEl = $("finalVideoEl");
-  const videoTap = $("videoTap");
+  const videoTap = $("videoTap"); // fica oculto; não será usado para “ativar som”
 
   // Validação (mínimos)
   const MIN = { cause: 90, risk: 80, reco: 100, guid: 120 };
@@ -263,27 +263,13 @@
     ].join("\n");
   }
 
-  // ====== VÍDEO (sem botões Som/Pular) ======
-  async function tryPlayVideo({ preferSound }) {
-    if (!finalVideoEl) return false;
-
-    // Sem botão de som, tentamos:
-    // - se preferSound=true: desmutado (pode falhar por autoplay policy)
-    // - se preferSound=false: mutado (maior chance de autoplay)
-    finalVideoEl.muted = !preferSound;
-
-    try {
-      await finalVideoEl.play();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  async function startFinalVideo() {
-    if (!reportCompleted) return; // GARANTIA: só depois de finalizar relatório
+  // ====== VÍDEO (tenta com som usando o clique do fechamento do modal) ======
+  async function startFinalVideo({ fromUserGesture = false } = {}) {
+    if (!reportCompleted) return;
     if (videoStarted) return;
     videoStarted = true;
+
+    if (videoTap) videoTap.hidden = true; // não usar clique extra
 
     finalVideoOverlay.hidden = false;
     finalVideoOverlay.setAttribute("aria-hidden", "false");
@@ -293,18 +279,28 @@
     finalVideoEl.currentTime = 0;
     finalVideoEl.load();
 
-    // Primeiro tenta autoplay mutado (mais compatível)
-    let ok = await tryPlayVideo({ preferSound: false });
+    // 1) Tentativa principal: SOM LIGADO
+    finalVideoEl.muted = false;
+    finalVideoEl.volume = 1;
 
-    // Se não deu, mostra botão de toque/clique (gesto do usuário libera áudio em muitos navegadores)
-    if (!ok) {
-      videoTap.hidden = false;
-      setHint("Clique/toque para iniciar o vídeo final.");
+    try {
+      await finalVideoEl.play();
       return;
+    } catch {
+      // 2) Fallback inevitável (política do navegador)
+      // Se mesmo vindo de clique o browser bloquear, não tem como forçar som sem interação específica.
+      try {
+        finalVideoEl.muted = true;
+        await finalVideoEl.play();
+        setHint(
+          fromUserGesture
+            ? "Seu navegador bloqueou o autoplay com som. O vídeo iniciou sem áudio por política do navegador."
+            : "O vídeo iniciou sem áudio por política do navegador."
+        );
+      } catch {
+        setHint("Não foi possível iniciar o vídeo automaticamente.");
+      }
     }
-
-    // Se tocou mutado, e você quiser orientar:
-    setHint("Vídeo final em execução. Pressione ESC para sair.");
   }
 
   function endVideoAndExit() {
@@ -319,22 +315,6 @@
     finalVideoOverlay.hidden = true;
     finalVideoOverlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("video-mode");
-  }
-
-  // Clique do “Toque/Clique para iniciar”
-  if (videoTap) {
-    videoTap.addEventListener("click", async () => {
-      videoTap.hidden = true;
-
-      // Com gesto do usuário, tentamos com som primeiro
-      let ok = await tryPlayVideo({ preferSound: true });
-      if (!ok) ok = await tryPlayVideo({ preferSound: false });
-
-      if (!ok) {
-        videoTap.hidden = false;
-        setHint("Não foi possível iniciar o vídeo automaticamente. Tente novamente.");
-      }
-    });
   }
 
   if (finalVideoEl) {
@@ -373,19 +353,22 @@
       report
     }));
 
-    reportCompleted = true; // relatório concluído
+    reportCompleted = true;
     resultModal.showModal();
   }
 
-  // Só inicia vídeo quando FECHAR o modal do resultado, e apenas se reportCompleted = true
-  resultModal.addEventListener("close", () => {
-    if (reportCompleted) startFinalVideo();
-  });
+  // IMPORTANTE: não iniciar vídeo no "close" (perde o gesto do clique)
+  // Em vez disso, iniciar no MESMO clique do botão que fecha o modal:
+  function closeResultAndStartVideo() {
+    // garante que o modal feche e o vídeo inicie ainda no contexto do clique
+    try { resultModal.close(); } catch {}
+    startFinalVideo({ fromUserGesture: true });
+  }
 
-  // Cancel (ESC) fecha modal e mantém fluxo
+  // Cancel (ESC) fecha modal e mantém fluxo (ESC também é gesto do usuário)
   resultModal.addEventListener("cancel", (e) => {
     e.preventDefault();
-    resultModal.close();
+    closeResultAndStartVideo();
   });
 
   // ====== Validações ======
@@ -484,7 +467,7 @@
     chipProgress.textContent = "100%";
     progressFill.style.width = "100%";
 
-    openResult(); // só aqui o relatório é concluído e o modal abre
+    openResult();
   });
 
   // ====== Ajuda/Modais ======
@@ -492,7 +475,9 @@
   btnCloseHelp.addEventListener("click", () => helpModal.close());
   btnOkHelp.addEventListener("click", () => helpModal.close());
 
-  btnCloseResult.addEventListener("click", () => resultModal.close());
+  // Fechar resultado (×) e Encerrar jogo: FECHA e já INICIA VÍDEO COM SOM no mesmo clique
+  btnCloseResult.addEventListener("click", closeResultAndStartVideo);
+  btnFinishGame.addEventListener("click", closeResultAndStartVideo);
 
   btnCopy.addEventListener("click", async () => {
     try {
@@ -504,9 +489,6 @@
   });
 
   btnPrint.addEventListener("click", () => window.print());
-
-  // Encerrar jogo: fecha modal -> event close -> inicia vídeo
-  btnFinishGame.addEventListener("click", () => resultModal.close());
 
   // ====== Reset ======
   function hardReset() {
@@ -548,15 +530,14 @@
 
   // ====== Boot ======
   function boot() {
-    // garante invisível desde o início
     finalVideoOverlay.hidden = true;
     finalVideoOverlay.setAttribute("aria-hidden", "true");
     if (videoTap) videoTap.hidden = true;
 
-    // prepara src sem tocar
     if (finalVideoEl) {
       finalVideoEl.src = FINAL_VIDEO_SRC;
       finalVideoEl.muted = false;
+      finalVideoEl.volume = 1;
     }
 
     updateScoreUI();
