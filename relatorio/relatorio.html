@@ -1,3 +1,4 @@
+<!-- relatorio.html -->
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -27,11 +28,9 @@
 
   <main class="main">
     <section class="scene" aria-label="Cena do relatório final">
-      <!-- Opcional: fundo da cena 9 -->
       <img class="bg" src="assets/cena9_relatorio_bg.png" alt="" onerror="this.style.display='none'">
 
       <div class="overlay">
-        <!-- HUD -->
         <div class="hud" aria-live="polite">
           <div class="hud-row">
             <div class="hint" id="hint">
@@ -59,7 +58,6 @@
           </div>
         </div>
 
-        <!-- Painel -->
         <section class="panel" aria-label="Montagem do relatório">
           <div class="panel-head">
             <h1 class="panel-title">Relatório Final</h1>
@@ -402,14 +400,33 @@
             </div>
 
             <div class="modal-foot" id="resultFoot">
-              Ajuste os textos para refletir exatamente os sinais do seu igarapé e o que foi descoberto nas cenas anteriores.
+              Ao fechar este resultado (×/ESC) ou clicar em “Encerrar jogo”, o vídeo final será exibido em tela cheia.
             </div>
           </div>
         </dialog>
-
       </div>
     </section>
   </main>
+
+  <!-- OVERLAY: VÍDEO FINAL -->
+  <div class="video-overlay" id="finalVideoOverlay" hidden aria-hidden="true">
+    <video
+      id="finalVideoEl"
+      class="final-video"
+      preload="auto"
+      playsinline
+      webkit-playsinline
+    ></video>
+
+    <div class="video-ui">
+      <button class="video-btn" id="btnVideoSound" type="button">Som: ON</button>
+      <button class="video-btn" id="btnVideoSkip" type="button">Pular</button>
+    </div>
+
+    <button class="video-tap" id="videoTap" type="button" hidden>
+      Toque/Clique para iniciar o vídeo
+    </button>
+  </div>
 
   <script src="relatorio.js"></script>
 </body>

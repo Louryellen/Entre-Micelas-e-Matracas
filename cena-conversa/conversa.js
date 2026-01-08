@@ -194,7 +194,7 @@
               feedback: "Agora a comunidade entendeu a causa dos peixes mortos.",
               reply:
                 "Ótima pergunta. Muitas mortes de peixes acontecem por falta de oxigênio na água.\n\nIsso acontece por causa da eutrofização, que é quando entram nutrientes demais na água (principalmente nitrogênio e fósforo), por exemplo, de esgoto, restos orgânicos e até alguns detergentes. Isso faz as algas crescerem muito, deixando a água mais verde.\n\nDepois, quando essas algas morrem, as bactérias decompõem esse material e consomem muito oxigênio. Aí o oxigênio dissolve menos na água, ou seja, sobra menos oxigênio disponível e os peixes podem sufocar.\n\nVocês já perceberam a água mais esverdeada ou com “lodo”/algas perto da margem?",
-              next: "a4", // ✅ VOLTA AO FLUXO NORMAL (tintas não entra aqui)
+              next: "a4",
             },
             {
               repDelta: +1,
@@ -204,7 +204,7 @@
               feedback: "O grupo participou e a explicação ficou clara.",
               reply:
                 "Vamos ligar os sinais: vocês notaram água mais verde, lodo na margem ou muita espuma?\n\nQuando tem nutrientes demais na água, as algas aumentam. Só que isso pode reduzir o oxigênio, principalmente à noite e na decomposição. Sem oxigênio, os peixes ficam fracos e podem morrer.\n\n",
-              next: "a4", // ✅ VOLTA AO FLUXO NORMAL
+              next: "a4",
             },
             {
               repDelta: -2,
@@ -214,7 +214,7 @@
               feedback: "A comunidade ficou insegura e menos aberta.",
               reply:
                 "Isso acontece porque vocês estão poluindo o igarapé.\n\nMas, para resolver de verdade, precisamos entender as fontes (óleo, esgoto, água de limpeza) e organizar ações simples para reduzir nutrientes e melhorar o oxigênio na água.",
-              next: "a4", // ✅ VOLTA AO FLUXO NORMAL
+              next: "a4",
             },
           ],
         },
@@ -342,6 +342,11 @@
 
     hs1: document.getElementById("hs-1"),
     hs2: document.getElementById("hs-2"),
+
+    // ===== VÍDEO COMO "CENA" (dentro do palco)
+    videoLayer: document.getElementById("videoLayer"),
+    endVideo: document.getElementById("endVideo"),
+    btnSkipVideo: document.getElementById("btnSkipVideo"),
   };
 
   // =========================
@@ -404,6 +409,104 @@
 
   function setHint(text) {
     if (el.hint) el.hint.textContent = text;
+  }
+
+  // =========================
+  // VÍDEO FINAL COMO "CENA" (TELA CHEIA)
+  // =========================
+  function stopFinalVideo() {
+    if (!el.endVideo) return;
+    try { el.endVideo.pause(); } catch {}
+    try { el.endVideo.currentTime = 0; } catch {}
+    el.endVideo.controls = false;
+  }
+
+  function enterVideoMode() {
+    // ativa modo fullscreen via body (CSS)
+    document.body.classList.add("is-fullscreen-video");
+
+    // marca cena (opcional)
+    el.scene?.classList.add("video-mode");
+
+    // garante que aparece
+    if (el.videoLayer) {
+      el.videoLayer.style.display = "block";
+      el.videoLayer.setAttribute("aria-hidden", "false");
+    }
+
+    // remove topbar por cima do vídeo
+    if (el.topbar) {
+      el.topbar.style.display = "none";
+      el.topbar.setAttribute("aria-hidden", "true");
+    }
+
+    setHint("");
+  }
+
+  function exitVideoMode() {
+    document.body.classList.remove("is-fullscreen-video");
+    el.scene?.classList.remove("video-mode");
+
+    if (el.videoLayer) {
+      el.videoLayer.style.display = "none";
+      el.videoLayer.setAttribute("aria-hidden", "true");
+    }
+
+    // volta topbar somente se conversa estiver ativa
+    if (el.topbar) {
+      const show = state.conversationOn;
+      el.topbar.style.display = show ? "flex" : "none";
+      el.topbar.setAttribute("aria-hidden", show ? "false" : "true");
+    }
+  }
+
+  function playFinalVideoSceneThen(onDone) {
+    const v = el.endVideo;
+    if (!v) { onDone?.(); return; }
+
+    enterVideoMode();
+
+    // reset
+    stopFinalVideo();
+
+    let finished = false;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+
+      v.removeEventListener("ended", onEnded);
+      v.removeEventListener("error", onError);
+
+      if (el.btnSkipVideo) el.btnSkipVideo.onclick = null;
+
+      stopFinalVideo();
+      exitVideoMode();
+      onDone?.();
+    };
+
+    const onEnded = () => finish();
+
+    const onError = () => {
+      showToast("Não foi possível reproduzir o vídeo. Prosseguindo...");
+      finish();
+    };
+
+    v.addEventListener("ended", onEnded);
+    v.addEventListener("error", onError);
+
+    if (el.btnSkipVideo) {
+      el.btnSkipVideo.onclick = () => finish();
+    }
+
+    // tenta tocar (funciona por clique do usuário)
+    const p = v.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(() => {
+        v.controls = true;
+        showToast("Clique no vídeo para reproduzir.");
+      });
+    }
   }
 
   // =========================
@@ -589,13 +692,15 @@
     btn.innerHTML = `
       <span class="choice-ico" aria-hidden="true">${getIcon("check")}</span>
       <span class="choice-main">
-        <span class="choice-text">Ir para a campanha de conscientizção e depois para oficina</span>
+        <span class="choice-text">Ir para a campanha de conscientização e depois para oficina</span>
         <span class="choice-sub">Avançar.</span>
       </span>
     `;
 
     btn.onclick = () => {
-      if (url) window.location.href = url;
+      playFinalVideoSceneThen(() => {
+        if (url) window.location.href = url;
+      });
     };
 
     el.playerChoices.appendChild(btn);
@@ -616,7 +721,7 @@
     if (!el.playerChoices) return;
     el.playerChoices.innerHTML = "";
 
-    // Péssima: mantém o botão de tentar novamente (como você pediu)
+    // Péssima: mantém o botão de tentar novamente
     if (tier === "Péssima") {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -647,7 +752,7 @@
     state._pendingGotoUrl = url || "";
     state._pendingTier = tier;
 
-    // Dispara imediatamente a pergunta de tintas (ordem correta)
+    // Dispara imediatamente a pergunta de tintas
     renderNode("agua", "aTintas");
   }
 
@@ -658,7 +763,6 @@
     }
 
     // Intercepta retorno do bloco de tintas: aTintasResp -> (next: a4)
-    // Aqui, em vez de voltar ao fluxo normal, mostramos o botão de avançar.
     if (state._inPostGateTintas && nextToken === "a4") {
       const url = state._pendingGotoUrl;
       const tier = state._pendingTier;
@@ -813,6 +917,10 @@
     state._pendingGotoUrl = "";
     state._pendingTier = "";
 
+    // se por algum motivo estava em vídeo, volta
+    stopFinalVideo();
+    exitVideoMode();
+
     updateRepUI();
 
     if (el.btnStartTalk) el.btnStartTalk.style.display = "none";
@@ -876,6 +984,9 @@
     state._inPostGateTintas = false;
     state._pendingGotoUrl = "";
     state._pendingTier = "";
+
+    stopFinalVideo();
+    exitVideoMode();
 
     updateRepUI();
     endConversation(false);

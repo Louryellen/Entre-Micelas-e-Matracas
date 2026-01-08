@@ -24,13 +24,13 @@ header{
   background:linear-gradient(180deg,#101521,#0d1220);
   border-bottom:1px solid #222839;
 }
-header .title{
-  font-weight:800;
-}
+
+header .title{ font-weight:800; }
 header .subtitle{
   color:var(--muted);
   font-size:13px;
 }
+
 .btn{
   background:var(--primary);
   color:#06122a;
@@ -91,6 +91,7 @@ header .subtitle{
   overflow:hidden;
 }
 
+/* Fundo do cenário */
 .scene img.bg{
   position:absolute;
   inset:0;
@@ -104,6 +105,23 @@ header .subtitle{
   background:#0b0f18;
 }
 
+/* ===== VÍDEO DENTRO DA CENA (SEM ZOOM/CORTE) ===== */
+.scene-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+
+  /* sem corte / sem zoom */
+  object-fit: contain;
+  object-position: center;
+
+  display:none;
+  background:#000;
+  z-index:80;
+}
+
+/* Ícone de e-mail */
 .email-icon{
   position:absolute;
   width:72px;
@@ -113,7 +131,6 @@ header .subtitle{
   pointer-events:none;
   z-index:10;
 }
-
 .email-icon.active{
   display:block;
   animation:bounce .6s ease-in-out infinite alternate;
@@ -121,17 +138,17 @@ header .subtitle{
 }
 
 #mailText{
-  white-space: pre-line;   /* respeita \n e linhas em branco */
+  white-space: pre-line;
   margin-top: 10px;
   line-height: 1.5;
 }
-
 
 @keyframes bounce{
   0%{transform:translateY(0);}
   100%{transform:translateY(-6px);}
 }
 
+/* Janela pixel */
 .pixel-win{
   position:fixed;
   display:none;
@@ -144,6 +161,7 @@ header .subtitle{
   image-rendering:pixelated;
   z-index:20;
 }
+
 .pixel-title{
   background:#0c1326;
   border-bottom:4px solid #2b395c;
@@ -153,21 +171,25 @@ header .subtitle{
   justify-content:space-between;
   align-items:center;
 }
+
 .pixel-body{
   padding:10px 12px;
   font-family:monospace;
   line-height:1.6;
 }
+
 .pixel-actions{
   display:flex;
   justify-content:flex-end;
   gap:8px;
   margin-top:8px;
 }
+
 .pixel-close{
   cursor:pointer;
   color:#9fb2ff;
 }
+
 .pixel-body p{
   text-align:justify;
   margin:0 0 6px;
@@ -178,26 +200,15 @@ header .subtitle{
   header .subtitle{font-size:12px;}
 }
 
-.scene-video{
+/* hotspots */
+.hotspot{
   position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:none;
-  background:#000;
-  z-index:80;
+  cursor:pointer;
+  border-radius:10px;
+  z-index:50;
 }
 
-/* hotspots gerais (pode ficar como já está) */
-.hotspot {
-  position: absolute;
-  cursor: pointer;
-  border-radius: 10px;
-  z-index: 50;
-}
-
-
+/* popup */
 .info-popup-backdrop{
   position:fixed;
   inset:0;
@@ -207,10 +218,7 @@ header .subtitle{
   background:rgba(0,0,0,0.55);
   z-index:120;
 }
-
-.info-popup-backdrop.visible{
-  display:flex;
-}
+.info-popup-backdrop.visible{ display:flex; }
 
 .info-popup{
   width:min(420px,90vw);
@@ -251,10 +259,7 @@ header .subtitle{
   margin:0 0 8px;
   text-align:justify;
 }
-
-.info-popup-body p:last-child{
-  margin-bottom:0;
-}
+.info-popup-body p:last-child{ margin-bottom:0; }
 
 .info-popup-actions{
   margin-top:1rem;
@@ -262,13 +267,12 @@ header .subtitle{
   gap:.75rem;
   justify-content:center;
 }
-
 .info-popup-actions .btn{
   flex:1;
   max-width:190px;
 }
 
-
+/* mochila */
 .mochila{
   position:absolute;
   right:5%;
@@ -279,6 +283,7 @@ header .subtitle{
   pointer-events:none;
 }
 
+/* overlay resultado */
 .resultado-overlay{
   position:fixed;
   inset:0;
@@ -288,10 +293,7 @@ header .subtitle{
   justify-content:center;
   z-index:200;
 }
-
-.resultado-overlay.visible{
-  display:flex;
-}
+.resultado-overlay.visible{ display:flex; }
 
 .resultado-card{
   background:#050b17;
@@ -304,17 +306,14 @@ header .subtitle{
   border:1px solid rgba(255,255,255,0.1);
   box-shadow:0 20px 40px rgba(0,0,0,0.5);
   position:relative;
-  z-index:2;
+  overflow:hidden;
 }
 
 .resultado-card h2{
   margin-bottom:.75rem;
   font-size:1.3rem;
 }
-
-.resultado-card p{
-  margin:.25rem 0;
-}
+.resultado-card p{ margin:.25rem 0; }
 
 .trofeu-wrap{
   position:relative;
@@ -329,28 +328,22 @@ header .subtitle{
   animation:trofeu-bounce 1.4s ease-in-out infinite;
 }
 
-.trofeu-ouro{
-  color:#facc15;
-}
-.trofeu-prata{
-  color:#e5e7eb;
-}
-.trofeu-bronze{
-  color:#f97316;
-}
-
+.trofeu-ouro{ color:#facc15; }
+.trofeu-prata{ color:#e5e7eb; }
+.trofeu-bronze{ color:#f97316; }
 
 @keyframes trofeu-bounce{
   0%,100%{transform:translateY(0) scale(1);}
   50%{transform:translateY(-6px) scale(1.05);}
 }
 
+/* fogos */
 #fogosContainer{
   position:absolute;
   inset:0;
+  z-index:0;
   pointer-events:none;
   overflow:hidden;
-  z-index:1;
 }
 
 .firework{
@@ -364,18 +357,9 @@ header .subtitle{
 }
 
 @keyframes explode{
-  0%{
-    transform:translate(0,0) scale(0.3);
-    opacity:1;
-  }
-  40%{
-    transform:translate(calc(var(--dx) * 0.6),calc(var(--dy) * 0.6)) scale(1);
-    opacity:1;
-  }
-  100%{
-    transform:translate(var(--dx),var(--dy)) scale(1.2);
-    opacity:0;
-  }
+  0%{ transform:translate(0,0) scale(0.3); opacity:1; }
+  40%{ transform:translate(calc(var(--dx) * 0.6),calc(var(--dy) * 0.6)) scale(1); opacity:1; }
+  100%{ transform:translate(var(--dx),var(--dy)) scale(1.2); opacity:0; }
 }
 
 .resultado-actions{
@@ -385,6 +369,7 @@ header .subtitle{
   margin-top:1.5rem;
 }
 
+/* erro X */
 .erro-x{
   position:absolute;
   font-size:clamp(28px, 3vw, 42px);
@@ -398,18 +383,9 @@ header .subtitle{
 }
 
 @keyframes pop-x{
-  0%{
-    transform:scale(0);
-    opacity:0;
-  }
-  80%{
-    transform:scale(1.1);
-    opacity:1;
-  }
-  100%{
-    transform:scale(1);
-    opacity:1;
-  }
+  0%{ transform:scale(0); opacity:0; }
+  80%{ transform:scale(1.1); opacity:1; }
+  100%{ transform:scale(1); opacity:1; }
 }
 
 /* invisível, mas clicável */
@@ -420,87 +396,53 @@ header .subtitle{
   box-shadow: none !important;
 }
 
-/* debug só quando o body tiver a classe */
+/* debug */
 body.debug-hotspots .hs-erro{
   border: 2px dashed rgba(0, 255, 0, 0.9) !important;
   background: rgba(0, 255, 0, 0.18) !important;
 }
 
+/* botões alternativos */
 .btn-ghost{
   background: rgba(110,168,254,0.14);
   border: 1px solid rgba(110,168,254,0.85);
   color: #eaf2ff;
 }
-
 .btn-ghost:hover{ background: rgba(110,168,254,0.22); }
 .btn-ghost:active{ transform: translateY(1px); }
 
-/* fogos por trás do texto, mas dentro do card */
-.resultado-card{
-  position: relative;
-  overflow: hidden;
-}
-
-#fogosContainer{
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
+/* fogos por trás do texto */
 .resultado-card > *:not(#fogosContainer){
-  position: relative;
-  z-index: 1;
+  position:relative;
+  z-index:1;
 }
 
+/* labels */
 .scene-label{
   position:absolute;
   z-index: 60;
   padding: 6px 10px;
   border-radius: 12px;
-
   font-family: Inter, system-ui, sans-serif;
   font-weight: 800;
   font-size: 14px;
-
   color:#fff;
   background: rgba(10,12,18,.65);
   border: 1px solid rgba(255,255,255,.18);
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
   backdrop-filter: blur(6px);
-
   user-select: none;
-  pointer-events: none; /* não atrapalha clique */
+  pointer-events: none;
   white-space: nowrap;
 }
 
-#lbl-reagentes{
-  left: 31%;  /* mexa aqui */
-  top:  89%;  /* mexa aqui */
-}
+#lbl-reagentes{ left: 31%; top: 89%; }
+#lbl-frascos{ left: 20.5%; top: 77%; }
 
-#lbl-frascos{
-  left: 20.5%;  /* mexa aqui */
-  top:  77%;  /* mexa aqui */
-}
-
-/* Quando estiver tocando vídeo, some com a barrinha de dica (HUD) */
+/* ===== MODO VÍDEO (durante playback) ===== */
 body.is-video-playing .hud{
-  display: none !important;
+  display:none !important;        /* HUD some */
 }
-
-/* ===== MODO VÍDEO: esconder HUD + HEADER ===== */
-body.is-video-playing .hud{
-  display: none !important;
-}
-
-body.is-video-playing header{
-  display: none !important;
-}
-
-/* se seu layout usa height calc(100vh - header), força ocupar a tela toda */
-body.is-video-playing .main{
-  height: 100vh !important;
-  padding-top: 0 !important;
+body.is-video-playing #btnReiniciar{
+  display:none !important;        /* Reiniciar some */
 }

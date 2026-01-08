@@ -188,7 +188,7 @@
 
     // urucum
     return {
-      name: "URUCU M",
+      name: "URUCUM",
       phMin: 4.0,
       phMax: 7.0,
       concMin: 15,
@@ -216,7 +216,9 @@
     meio: "agua",
     acido: 0,
     base: 0,
-    tasksDone: { repolho: false, curcuma: false, urucum: false }
+    tasksDone: { repolho: false, curcuma: false, urucum: false },
+
+    winShown: false
   };
 
   // =========================
@@ -226,7 +228,6 @@
     const delta = (state.base - state.acido) * PH_FACTOR;
     let ph = 7.0 + delta;
 
-    // em óleo/resina, efeito de ácido/base é amortecido (didático)
     if (state.meio === "oleo") ph = 7.0 + delta * 0.6;
 
     ph = clamp(ph, 0.0, 14.0);
@@ -296,7 +297,6 @@
     const vml = parseFloat(inpVolume?.value || "0");
     const vl = vml / 1000;
 
-    // Massa ideal para o volume atual: m = C * V
     if (vl > 0) {
       const mMin = t.concMin * vl;
       const mMax = t.concMax * vl;
@@ -305,7 +305,6 @@
       if (idealMassa) idealMassa.textContent = "—";
     }
 
-    // Volume ideal para a massa atual: V = m / C
     if (m > 0) {
       const vMinL = m / t.concMax;
       const vMaxL = m / t.concMin;
@@ -320,7 +319,6 @@
   function computeStatusText() {
     const t = targets();
 
-    // NOVO: se já concluiu esta cor, bloqueia a ação
     if (state.tasksDone[state.pigment]) {
       return "Cor já concluída. Selecione uma cor pendente para continuar.";
     }
@@ -335,7 +333,6 @@
       return "Meio incorreto. Para URUCUM, use Óleo/resina (obrigatório).";
     }
 
-    // recomendação (não bloqueante)
     if (!t.requireMeio && t.recommendedMeio && state.meio !== t.recommendedMeio) {
       return "Dentro do alvo, mas recomenda-se Água para esta cor.";
     }
@@ -473,12 +470,10 @@
     const dx = Math.round((cw - dw) / 2);
     const dy = Math.round((ch - dh) / 2);
 
-    // base
     fitCtx.globalCompositeOperation = "source-over";
     fitCtx.globalAlpha = 1;
     fitCtx.drawImage(fitBase, dx, dy, dw, dh);
 
-    // colorir apenas blusa (máscara)
     if (dressMask.ok) {
       tmpLayer.canvas.width = cw;
       tmpLayer.canvas.height = ch;
@@ -505,7 +500,6 @@
       return;
     }
 
-    // fallback (pinta tudo)
     fitCtx.globalCompositeOperation = "multiply";
     fitCtx.globalAlpha = alpha;
     fitCtx.fillStyle = hex;
@@ -550,13 +544,10 @@
       const v = opt.value;
       if (!PIGMENTS.includes(v)) return;
 
-      // evita duplicar sufixo
       const baseText = opt.textContent.replace(/\s+\(conclu[ií]do\)$/i, "");
       const done = !!state.tasksDone[v];
 
       opt.textContent = done ? `${baseText} (concluído)` : baseText;
-
-      // NOVO: bloqueia opções concluídas (deixa só pendentes selecionáveis)
       opt.disabled = done;
     });
   }
@@ -565,14 +556,12 @@
     const t = getTargetsFor(pigment);
     if (!selMeio) return;
 
-    // Para urucum, força óleo (porque é requisito)
     if (t.requireMeio === "oleo") {
       selMeio.value = "oleo";
       state.meio = "oleo";
       return;
     }
 
-    // Para os demais, sugere água (soft set se estiver em óleo)
     if (selMeio.value === "oleo") {
       selMeio.value = "agua";
       state.meio = "agua";
@@ -591,6 +580,309 @@
       `Cores concluídas: ${doneCount}/3${remain ? ` (faltam ${remain})` : ""}.`;
   }
 
+  // =========================
+  // POPUP FINAL + FOGOS (CONTÍNUOS E LEVES)
+  // =========================
+  function injectWinStylesOnce() {
+    if (document.getElementById("winPopupStyles")) return;
+
+    const style = document.createElement("style");
+    style.id = "winPopupStyles";
+    style.textContent = `
+      .win-overlay{
+        position:fixed; inset:0;
+        display:flex; align-items:center; justify-content:center;
+        background: rgba(10,10,14,.35);
+        z-index: 99999;
+        overflow:hidden;
+      }
+
+      .win-fire{
+        position:absolute; inset:0;
+        width:100%; height:100%;
+        z-index: 0;
+        pointer-events:none;
+      }
+
+      .win-card{
+        position:relative;
+        z-index: 2;
+        width:min(520px, calc(100vw - 28px));
+        border-radius: 18px;
+        padding: 18px 18px 16px;
+        background: rgba(18,18,24,.92);
+        border: 1px solid rgba(255,255,255,.10);
+        box-shadow: 0 18px 60px rgba(0,0,0,.55);
+        color:#fff;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        overflow:hidden;
+      }
+      .win-title{
+        margin: 6px 0 6px;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: .2px;
+      }
+      .win-text{
+        margin: 0 0 14px;
+        font-size: 14.5px;
+        line-height: 1.45;
+        color: rgba(255,255,255,.88);
+      }
+      .win-actions{
+        display:flex;
+        gap:10px;
+        justify-content:flex-end;
+        margin-top: 10px;
+      }
+      .win-btn{
+        appearance:none;
+        border:0;
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-weight: 800;
+        cursor:pointer;
+      }
+      .win-btn-primary{
+        background: rgba(110,168,254, .95);
+        color:#0a0a0f;
+      }
+      .win-close{
+        position:absolute;
+        top:10px; right:10px;
+        width: 34px; height: 34px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,.12);
+        background: rgba(255,255,255,.08);
+        color:#fff;
+        font-size: 18px;
+        line-height: 1;
+        cursor:pointer;
+      }
+      @media (max-width: 420px){
+        .win-title{ font-size:20px; }
+        .win-actions{ flex-direction: column; }
+        .win-btn{ width:100%; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Fogos CONTÍNUOS porém leves:
+  // - menos partículas por burst
+  // - spawn espaçado
+  // - cap duro de partículas
+  // - DPR limitado
+  // - 30fps (ou 20fps se reduce motion)
+  // - sem glow/shadowBlur e sem "lighter"
+  // - fade com destination-out (não “escurece” o overlay)
+  function makeFireworks(canvas) {
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    let raf = 0;
+    let alive = true;
+
+    let W = 0;
+    let H = 0;
+    let dpr = 1;
+
+    const particles = [];
+    const maxParticles = reduceMotion ? 260 : 440;
+
+    const gravity = 0.040;
+    const drag = 0.988;
+    const alphaDecay = 0.986;
+
+    let nextSpawn = 0;
+    let lastDraw = 0;
+
+    const fps = reduceMotion ? 20 : 30;
+    const frameMS = 1000 / fps;
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+    function randi(a, b) { return Math.floor(rand(a, b + 1)); }
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      W = window.innerWidth;
+      H = window.innerHeight;
+
+      canvas.width = Math.max(1, Math.floor(W * dpr));
+      canvas.height = Math.max(1, Math.floor(H * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // limpa ao redimensionar
+      ctx.clearRect(0, 0, W, H);
+    }
+
+    function burst(x, y) {
+      const hue = rand(0, 360);
+      const count = reduceMotion ? randi(14, 20) : randi(26, 38);
+
+      for (let i = 0; i < count; i++) {
+        const ang = rand(0, Math.PI * 2);
+        const spd = reduceMotion ? rand(1.6, 3.0) : rand(1.8, 3.8);
+
+        particles.push({
+          x, y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          life: reduceMotion ? randi(26, 34) : randi(36, 54),
+          size: reduceMotion ? rand(1.3, 2.2) : rand(1.6, 2.8),
+          hue: hue + rand(-18, 18),
+          alpha: reduceMotion ? rand(0.70, 0.90) : rand(0.78, 0.98),
+        });
+      }
+
+      if (particles.length > maxParticles) {
+        particles.splice(0, particles.length - maxParticles);
+      }
+    }
+
+    function spawn() {
+      const x = rand(W * 0.14, W * 0.86);
+      const y = rand(H * 0.14, H * 0.46);
+      burst(x, y);
+    }
+
+    function step(ts) {
+      if (!alive) return;
+      raf = requestAnimationFrame(step);
+
+      if (!lastDraw) {
+        lastDraw = ts;
+        nextSpawn = ts + rand(240, 520);
+      }
+
+      const elapsed = ts - lastDraw;
+      if (elapsed < frameMS) return;
+
+      const dt = Math.min(3, elapsed / 16.666); // normaliza p/ ~60fps
+      lastDraw = ts;
+
+      // Fade “transparente” (não escurece)
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.fillStyle = "rgba(0,0,0,0.16)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = "source-over";
+
+      // Spawn contínuo, mas espaçado
+      if (ts >= nextSpawn) {
+        spawn();
+        nextSpawn = ts + (reduceMotion ? rand(700, 1050) : rand(360, 650));
+      }
+
+      // Atualiza/desenha partículas
+      const dragPow = Math.pow(drag, dt);
+      const decayPow = Math.pow(alphaDecay, dt);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+
+        p.vx *= dragPow;
+        p.vy = p.vy * dragPow + gravity * dt;
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        p.life -= dt;
+        p.alpha *= decayPow;
+
+        if (p.life <= 0 || p.alpha <= 0.05 || p.y > H + 80 || p.x < -80 || p.x > W + 80) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = `hsla(${p.hue}, 92%, 62%, 1)`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    // início com 2 bursts (sem pesar)
+    spawn();
+    if (!reduceMotion) spawn();
+
+    raf = requestAnimationFrame(step);
+
+    return {
+      stop() {
+        if (!alive) return;
+        alive = false;
+        cancelAnimationFrame(raf);
+        window.removeEventListener("resize", resize);
+        try { ctx.clearRect(0, 0, W, H); } catch (_) {}
+      }
+    };
+  }
+
+  function showWinPopup() {
+    if (state.winShown) return;
+    state.winShown = true;
+
+    if (achievement) {
+      achievement.hidden = true;
+      achievement.textContent = "";
+    }
+
+    injectWinStylesOnce();
+
+    const overlay = document.createElement("div");
+    overlay.className = "win-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+
+    const fire = document.createElement("canvas");
+    fire.className = "win-fire";
+
+    const card = document.createElement("div");
+    card.className = "win-card";
+    card.innerHTML = `
+      <button class="win-close" type="button" aria-label="Fechar">×</button>
+      <div class="win-title">Parabéns!</div>
+      <div class="win-text">Você coloriu o traje para festa do bumba meu boi.</div>
+      <div class="win-actions">
+        <button class="win-btn win-btn-primary" type="button" data-action="advance">Avançar</button>
+      </div>
+    `;
+
+    overlay.appendChild(fire);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    const fx = makeFireworks(fire);
+
+    function cleanup() {
+      fx?.stop?.();
+      document.removeEventListener("keydown", onKey);
+      overlay.remove();
+    }
+
+    function onKey(e) {
+      if (e.key === "Escape") cleanup();
+    }
+    document.addEventListener("keydown", onKey);
+
+    card.querySelector(".win-close")?.addEventListener("click", cleanup);
+
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) cleanup();
+    });
+
+    card.querySelector('[data-action="advance"]')?.addEventListener("click", () => {
+      window.location.href = new URL("../relatorio/relatorio.html", window.location.href).href;
+    });
+
+    card.querySelector('[data-action="advance"]')?.focus();
+  }
+
   function render() {
     if (chipStep) chipStep.textContent = `Etapa: ${state.step}`;
     if (chipErrors) chipErrors.textContent = `Erros: ${state.errors}`;
@@ -605,25 +897,24 @@
     updateIdealBands();
     updateColorUI();
 
-    // meta / alvo / status
     const t = targets();
     if (outGoal) outGoal.textContent = state.goal;
     if (outTargetPH) outTargetPH.textContent = t.text;
     if (outStatus) outStatus.textContent = computeStatusText();
 
-    // progresso = cores concluídas
     const doneCount = Object.values(state.tasksDone).filter(Boolean).length;
     const pct = (doneCount / 3) * 100;
     setProgress(pct, `Cores concluídas: ${doneCount}/3`);
 
-    const allDone = doneCount === 3;
-    if (achievement) achievement.hidden = !allDone;
+    if (achievement) {
+      achievement.hidden = true;
+      achievement.textContent = "";
+    }
 
     decoratePigmentOptions();
   }
 
   function validateAndApply() {
-    // NOVO: impede aplicar em cor já concluída (não conta erro)
     if (state.tasksDone[state.pigment]) {
       const pending = PIGMENTS.filter((p) => !state.tasksDone[p]);
       if (pending.length > 0) {
@@ -636,7 +927,6 @@
       }
     }
 
-    // recalcula no clique
     syncFromUI();
 
     const t = targets();
@@ -666,7 +956,6 @@
       return false;
     }
 
-    // OK
     state.step = "Aplicação";
 
     const alreadyDone = !!state.tasksDone[state.pigment];
@@ -691,6 +980,8 @@
       showToast(msgFinal, "good");
       if (topbarText) topbarText.textContent = msgFinal;
       logDiary("Conclusão: repolho roxo, cúrcuma e urucum finalizados.");
+
+      showWinPopup();
     }
 
     render();
@@ -701,7 +992,6 @@
   // AJUSTES VISUAIS (sem mexer no HTML)
   // =========================
   function applySliderLabels() {
-    // troca os textos dos spans .label dentro dos dois campos de range
     const fieldAcido = rngAcido?.closest(".field");
     const fieldBase = rngBase?.closest(".field");
 
@@ -720,7 +1010,6 @@
 
     applySliderLabels();
 
-    // imagem do vestido (cache/load)
     if (fitBase) {
       fitBase.addEventListener("load", () => {
         fitState.baseOk = true;
@@ -741,18 +1030,15 @@
 
     window.addEventListener("resize", () => resizeFitCanvas());
 
-    // agora o jogador pode escolher a cor primeiro
     if (helpPigmento) {
       helpPigmento.textContent =
         "Você pode escolher qualquer cor para começar. A meta e as dicas mudam conforme o pigmento selecionado.";
     }
 
-    // mudanças de pigmento
     selPigmento?.addEventListener("change", () => {
       const v = selPigmento.value;
       if (!PIGMENTS.includes(v)) return;
 
-      // segurança extra: se for uma cor já concluída (por algum motivo), volta e avisa
       if (state.tasksDone[v]) {
         const msg = "Essa cor já foi concluída. Selecione uma cor pendente.";
         showToast(msg, "bad");
@@ -762,7 +1048,6 @@
 
       state.pigment = v;
 
-      // reset leve das doses ao trocar de cor (evita carregar pH anterior)
       state.acido = 0;
       state.base = 0;
       if (rngAcido) rngAcido.value = "0";
@@ -779,14 +1064,12 @@
       render();
     });
 
-    // meio pode mudar livremente (urucum será validado como obrigatório)
     selMeio?.addEventListener("change", () => {
       state.meio = selMeio.value;
       state.step = "Ajuste de pH";
       render();
     });
 
-    // massa/volume
     inpMassa?.addEventListener("input", () => {
       state.step = "Preparação da solução";
       calcConc();
@@ -799,7 +1082,6 @@
       render();
     });
 
-    // dose limão/bicarbonato
     rngAcido?.addEventListener("input", () => {
       state.step = "Ajuste de pH";
       state.acido = parseFloat(rngAcido.value);
@@ -812,7 +1094,6 @@
       render();
     });
 
-    // aplicar
     btnPintar?.addEventListener("click", () => {
       const oldText = btnPintar.textContent;
       try {
@@ -825,7 +1106,6 @@
       }
     });
 
-    // estado inicial: respeita o que estiver selecionado no HTML
     state.pigment = selPigmento?.value && PIGMENTS.includes(selPigmento.value)
       ? selPigmento.value
       : "repolho";
@@ -850,15 +1130,14 @@
   }
 
   init();
-  
-  function applyCompactMode(){
-  const h = window.innerHeight;
-  const compact = h < 820; // ajuste o corte se quiser
 
-  document.documentElement.classList.toggle("ui-compact", compact);
-}
+  function applyCompactMode() {
+    const h = window.innerHeight;
+    const compact = h < 820;
+    document.documentElement.classList.toggle("ui-compact", compact);
+  }
 
-window.addEventListener("resize", applyCompactMode);
-applyCompactMode();
+  window.addEventListener("resize", applyCompactMode);
+  applyCompactMode();
 
 })();
