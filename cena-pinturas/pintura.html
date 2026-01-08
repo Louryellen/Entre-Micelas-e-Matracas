@@ -1,3 +1,4 @@
+<!-- pintura.html -->
 <!doctype html>
 <html lang="pt-br">
 <head>
@@ -47,7 +48,6 @@
           <aside class="lab-left" aria-label="Bancada de Preparação da Tinta">
 
             <div class="section-title">
-              <span class="badge">1</span>
               <span>Bancada de Preparação da Tinta</span>
             </div>
 
@@ -55,11 +55,10 @@
               <strong>Etapas:</strong> pigmento → solução → ajuste de pH → aplicação
             </div>
 
+            <!-- CHIPS (apenas etapa + erros, como você pediu) -->
             <div class="hud-row lab-chips">
               <div class="chip" id="chipStep">Etapa: —</div>
               <div class="chip chip-muted" id="chipErrors">Erros: 0</div>
-              <div class="chip chip-muted" id="chipGoal">Meta: —</div>
-              <div class="chip chip-muted" id="chipInfo">pH: —</div>
             </div>
 
             <div class="form">
@@ -139,9 +138,34 @@
               <div class="block">
                 <div class="block-h">3. Ajuste ácido-base</div>
 
+                <!-- META + pH perto do ajuste ácido-base -->
+                <div class="goalbox" aria-label="Meta e leitura rápida">
+                  <div class="goal-top">
+                    <div class="goal-label">Meta desta etapa</div>
+                    <div class="goal-value" id="outGoal">—</div>
+                  </div>
+
+                  <div class="goal-grid">
+                    <div class="goal-item">
+                      <div class="goal-k">pH atual</div>
+                      <div class="goal-v"><strong id="outPHBig">7.0</strong></div>
+                    </div>
+
+                    <div class="goal-item">
+                      <div class="goal-k">Faixa Aceitável</div>
+                      <div class="goal-v" id="outTargetPH">—</div>
+                    </div>
+
+                    <div class="goal-item goal-wide">
+                      <div class="goal-k">Status</div>
+                      <div class="goal-v" id="outStatus">—</div>
+                    </div>
+                  </div>
+                </div>
+
                 <label class="field">
                   <span class="label">Ácido (limão) — dose</span>
-                  <input class="range" id="rngAcido" type="range" min="0" max="10" step="1" value="0" />
+                  <input class="range" id="rngAcido" type="range" min="0" max="10" step="0.5" value="0" />
                   <div class="range-meta">
                     <span class="mini">Fraco</span>
                     <span class="mini"><strong id="outAcido">0</strong>/10</span>
@@ -151,7 +175,7 @@
 
                 <label class="field">
                   <span class="label">Base (bicarbonato) — dose</span>
-                  <input class="range" id="rngBase" type="range" min="0" max="10" step="1" value="0" />
+                  <input class="range" id="rngBase" type="range" min="0" max="10" step="0.5" value="0" />
                   <div class="range-meta">
                     <span class="mini">Fraca</span>
                     <span class="mini"><strong id="outBase">0</strong>/10</span>
@@ -181,9 +205,7 @@
                 Aplicar no Vestido
               </button>
 
-              <div class="hint lab-hint" id="hint">
-                Dica: mantenha C entre 5 e 25 g/L. Para urucum, use Óleo/resina.
-              </div>
+              <div class="hint lab-hint" id="hint"></div>
             </div>
           </aside>
 

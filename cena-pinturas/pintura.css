@@ -1,3 +1,4 @@
+/* pintura.css */
 :root{
   --text:#ffffff;
   --muted:#c7cde6;
@@ -100,7 +101,7 @@ body{
   box-shadow: var(--shadow);
 }
 
-/* você ocultou o fundo original */
+/* ocultar fundo original */
 .scene > .bg{ display:none; }
 
 /* ---------------------------
@@ -258,6 +259,74 @@ body{
 }
 
 /* ---------------------------
+   Meta + pH perto do ajuste ácido-base
+--------------------------- */
+.goalbox{
+  margin: 10px 0 12px;
+  padding: 10px 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(43,36,23,.18);
+  background: rgba(255,255,255,.28);
+}
+
+.goal-top{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(43,36,23,.10);
+}
+
+.goal-label{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(43,36,23,.72);
+  letter-spacing: .2px;
+}
+
+.goal-value{
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(43,36,23,.92);
+  text-align:right;
+}
+
+.goal-grid{
+  margin-top: 10px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.goal-item{
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(43,36,23,.12);
+  background: rgba(255,255,255,.22);
+}
+
+.goal-wide{ grid-column: 1 / -1; }
+
+.goal-k{
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(43,36,23,.70);
+  margin-bottom: 4px;
+}
+
+.goal-v{
+  font-size: 13px;
+  font-weight: 900;
+  color: rgba(43,36,23,.92);
+}
+
+#outPHBig{
+  font-size: 18px;
+  letter-spacing: .2px;
+}
+
+/* ---------------------------
    Frames (direita)
 --------------------------- */
 .frame{
@@ -284,8 +353,6 @@ body{
   overflow: hidden;
   background: rgba(255,255,255,.14);
 }
-
-/* fundo desfocado usando a mesma imagem */
 .frame-large .frame-inner::before{
   content:"";
   position:absolute;
@@ -295,8 +362,6 @@ body{
   transform: scale(1.12);
   opacity: .42;
 }
-
-/* imagem principal por cima */
 .preview-img{
   position:absolute;
   inset:0;
@@ -340,20 +405,16 @@ body{
 }
 
 /* ---------------------------
-   DIÁRIO (final, limpo)
+   DIÁRIO
 --------------------------- */
 .frame-diary .frame-inner{
   padding: 12px 12px 14px;
 }
-
-/* “miolo” central */
 .diary{
   max-width: 520px;
   margin: 0 auto;
   padding: 6px 10px 0;
 }
-
-/* lista */
 .diary-list{
   margin: 8px 0 0;
   padding: 0;
@@ -361,19 +422,15 @@ body{
   display:grid;
   gap: 10px;
 }
-
-/* item: confortável, centralizado e sem “grudar” */
 .diary-item{
   position: relative;
   margin: 0;
   padding: 0 0 0 18px;
   font-size: 13px;
   line-height: 1.35;
-  font-weight: 800;              /* ambos em negrito */
+  font-weight: 800;
   color: rgba(43,36,23,.92);
 }
-
-/* marcador discreto */
 .diary-item::before{
   content:"";
   position:absolute;
@@ -385,23 +442,19 @@ body{
   background: rgba(43,36,23,.40);
 }
 
-/* separador leve entre lista e progresso */
 .progress-wrap{
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid rgba(43,36,23,.10);
 }
-
 .progress-label{
   margin: 0 0 10px;
   font-size: 13px;
   font-weight: 900;
   color: rgba(43,36,23,.90);
 }
-
-/* barra mais grossa (e alinhada ao miolo) */
 .progress-bar{
-  height: 12px;                 /* mais grossa */
+  height: 12px;
   width: 100%;
   border-radius: 999px;
   background: rgba(43,36,23,.12);
@@ -409,7 +462,6 @@ body{
   overflow:hidden;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.28);
 }
-
 .progress-fill{
   height: 100%;
   width: 0%;
@@ -418,9 +470,6 @@ body{
   transition: width .18s ease;
 }
 
-/* ---------------------------
-   Achievement
---------------------------- */
 .achievement{
   margin-top: 12px;
   padding: 10px 12px;

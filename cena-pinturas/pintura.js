@@ -1,3 +1,4 @@
+/* pintura.js */
 (() => {
   "use strict";
 
@@ -11,8 +12,6 @@
 
   const chipStep = $("#chipStep");
   const chipErrors = $("#chipErrors");
-  const chipGoal = $("#chipGoal");
-  const chipInfo = $("#chipInfo");
 
   const selPigmento = $("#selPigmento");
   const selMeio = $("#selMeio");
@@ -38,6 +37,12 @@
   const idealVolume = $("#idealVolume");
   const idealConc = $("#idealConc");
 
+  // meta/pH perto do ajuste ácido-base
+  const outGoal = $("#outGoal");
+  const outTargetPH = $("#outTargetPH");
+  const outStatus = $("#outStatus");
+  const outPHBig = $("#outPHBig");
+
   const btnPintar = $("#btnPintar");
 
   const diaryList = $("#diaryList");
@@ -55,16 +60,14 @@
   const fitCtx = fitCanvas?.getContext("2d", { willReadFrequently: false });
 
   // =========================
-  // CONSTANTES DIDÁTICAS
+  // CONSTANTES
   // =========================
-  const CONC_MIN = 5;     // g/L (faixa ideal mínima)
-  const CONC_MAX = 25;    // g/L (faixa ideal máxima)
+  const DOSE_MAX = 10;                        // sliders 0..10 (passo 0.5 no HTML)
+  const PH_RANGE_HALF = 5;                    // [-5, +5] em água; controlável
+  const PH_FACTOR = PH_RANGE_HALF / DOSE_MAX; // 0.5
+  const EPS = 1e-6;
 
-  const DOSE_MAX = 10;                // sliders (0..10) = “dose”
-  const PH_RANGE_HALF = 7;            // 7 unidades para cima/baixo do neutro
-  const PH_FACTOR = PH_RANGE_HALF / DOSE_MAX; // 0.7
-
-  const PIGMENT_ORDER = ["repolho", "curcuma", "urucum"];
+  const PIGMENTS = ["repolho", "curcuma", "urucum"];
 
   // =========================
   // UTIL
@@ -121,25 +124,83 @@
     return `${x.toFixed(digits)}–${y.toFixed(digits)} ${unit}`;
   }
 
+  function prettyDose(n) {
+    const v = Number(n);
+    if (!isFinite(v)) return "0";
+    const s = v.toFixed(1);
+    return s.endsWith(".0") ? s.slice(0, -2) : s;
+  }
+
+  function phInRange(ph, min, max) {
+    return (ph + EPS >= min) && (ph - EPS <= max);
+  }
+
   // =========================
   // MAPAS DE COR (DIDÁTICOS)
   // =========================
   function repolhoColorByPH(ph) {
-    if (ph <= 3.0) return { hex: "#b10f2e", name: "Vermelho (ácido forte)" };
-    if (ph <= 5.0) return { hex: "#7a1fa2", name: "Roxo (ácido)" };
-    if (ph <= 7.0) return { hex: "#7b5bbd", name: "Lilás (próximo do neutro)" };
-    if (ph <= 9.0) return { hex: "#2f63c8", name: "Azul (básico)" };
-    return { hex: "#2a8a3a", name: "Verde (básico forte)" };
+    if (ph <= 3.0) return { hex: "#b10f2e", name: "Vermelho" };
+    if (ph <= 5.0) return { hex: "#7a1fa2", name: "Roxo" };
+    if (ph <= 7.0) return { hex: "#7b5bbd", name: "Lilás" };
+    if (ph <= 9.0) return { hex: "#2f63c8", name: "Azul" };
+    return { hex: "#2a8a3a", name: "Verde" };
   }
 
   function curcumaColorByPH(ph) {
-    if (ph < 7.5) return { hex: "#f1c40f", name: "Amarelo (ácido/neutro)" };
-    if (ph < 9.0) return { hex: "#f39c12", name: "Amarelo-alaranjado (levemente básico)" };
-    return { hex: "#e67e22", name: "Alaranjado (básico)" };
+    if (ph < 7.5) return { hex: "#f1c40f", name: "Amarelo" };
+    if (ph < 9.0) return { hex: "#f39c12", name: "Amarelo-alaranjado" };
+    return { hex: "#e67e22", name: "Alaranjado" };
   }
 
   function urucumColor() {
-    return { hex: "#c0392b", name: "Vermelho/alaranjado intenso (apolar)" };
+    return { hex: "#c0392b", name: "Vermelho/alaranjado intenso" };
+  }
+
+  // =========================
+  // ALVOS POR PIGMENTO (pH + concentração + meio)
+  // =========================
+  function getTargetsFor(pigment) {
+    if (pigment === "repolho") {
+      return {
+        name: "REPOLHO ROXO",
+        phMin: 6.0,
+        phMax: 7.0,
+        concMin: 25,
+        concMax: 35,
+        requireMeio: null,
+        recommendedMeio: "agua",
+        text: "pH 6,0–7,0 + C 25–35 g/L (repolho roxo)"
+      };
+    }
+
+    if (pigment === "curcuma") {
+      return {
+        name: "CÚRCUMA",
+        phMin: 3.0,
+        phMax: 4.0,
+        concMin: 15,
+        concMax: 25,
+        requireMeio: null,
+        recommendedMeio: "agua",
+        text: "pH 3,0–4,0 + C 15–25 g/L (cúrcuma)"
+      };
+    }
+
+    // urucum
+    return {
+      name: "URUCU M",
+      phMin: 4.0,
+      phMax: 7.0,
+      concMin: 15,
+      concMax: 25,
+      requireMeio: "oleo",
+      recommendedMeio: "oleo",
+      text: "Meio oleoso + pH 4,0–7,0 + C 15–25 g/L (urucum)"
+    };
+  }
+
+  function targets() {
+    return getTargetsFor(state.pigment);
   }
 
   // =========================
@@ -158,15 +219,18 @@
     tasksDone: { repolho: false, curcuma: false, urucum: false }
   };
 
+  // =========================
+  // CÁLCULOS
+  // =========================
   function estimatePH() {
-    // dose 0..10 (não é pH)
-    const delta = (state.base - state.acido) * PH_FACTOR; // -7..+7
+    const delta = (state.base - state.acido) * PH_FACTOR;
     let ph = 7.0 + delta;
 
     // em óleo/resina, efeito de ácido/base é amortecido (didático)
     if (state.meio === "oleo") ph = 7.0 + delta * 0.6;
 
     ph = clamp(ph, 0.0, 14.0);
+    ph = Math.round(ph * 10) / 10;
     state.ph = ph;
     return ph;
   }
@@ -180,8 +244,53 @@
     return conc;
   }
 
+  function alphaFromConc() {
+    const t = targets();
+    const a = state.conc / t.concMax;
+    return clamp(a, 0.35, 1.0);
+  }
+
+  // =========================
+  // UI: metas e dicas
+  // =========================
+  function updateGoalText() {
+    const t = targets();
+
+    if (state.pigment === "repolho") {
+      state.goal = `Atingir a faixa do repolho roxo: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} e C ${t.concMin}–${t.concMax} g/L.`;
+    } else if (state.pigment === "curcuma") {
+      state.goal = `Atingir a faixa da cúrcuma: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (bem ácido) e C ${t.concMin}–${t.concMax} g/L.`;
+    } else {
+      state.goal = `Urucum: usar meio oleoso e atingir pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} com C ${t.concMin}–${t.concMax} g/L.`;
+    }
+  }
+
+  function updateExplanations() {
+    const t = targets();
+    if (!miniExp || !helpMeio) return;
+
+    if (state.pigment === "repolho") {
+      miniExp.textContent =
+        `Repolho roxo: antocianinas mudam com pH. Meta: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (neutro/lilás).`;
+      helpMeio.textContent =
+        "Dica: repolho roxo funciona melhor em água. Ajuste limão/bicarbonato até entrar no alvo.";
+    } else if (state.pigment === "curcuma") {
+      miniExp.textContent =
+        `Cúrcuma: curcumina responde ao pH. Meta: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (ácido) para manter o amarelo.`;
+      helpMeio.textContent =
+        "Dica: cúrcuma em água. Deixe o meio bem ácido com limão (pH alvo 3–4).";
+    } else {
+      miniExp.textContent =
+        `Urucum: bixina é apolar. Meta: meio oleoso + pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)}.`;
+      helpMeio.textContent =
+        "Dica: para urucum, selecione Óleo/resina (obrigatório) e ajuste pH 4–7.";
+    }
+  }
+
   function updateIdealBands() {
-    if (idealConc) idealConc.textContent = `${CONC_MIN}–${CONC_MAX} g/L`;
+    const t = targets();
+
+    if (idealConc) idealConc.textContent = `${t.concMin}–${t.concMax} g/L`;
 
     const m = parseFloat(inpMassa?.value || "0");
     const vml = parseFloat(inpVolume?.value || "0");
@@ -189,8 +298,8 @@
 
     // Massa ideal para o volume atual: m = C * V
     if (vl > 0) {
-      const mMin = CONC_MIN * vl;
-      const mMax = CONC_MAX * vl;
+      const mMin = t.concMin * vl;
+      const mMax = t.concMax * vl;
       if (idealMassa) idealMassa.textContent = fmtRange(mMin, mMax, "g", 2);
     } else {
       if (idealMassa) idealMassa.textContent = "—";
@@ -198,8 +307,8 @@
 
     // Volume ideal para a massa atual: V = m / C
     if (m > 0) {
-      const vMinL = m / CONC_MAX;
-      const vMaxL = m / CONC_MIN;
+      const vMinL = m / t.concMax;
+      const vMaxL = m / t.concMin;
       const vMinML = vMinL * 1000;
       const vMaxML = vMaxL * 1000;
       if (idealVolume) idealVolume.textContent = fmtRange(vMinML, vMaxML, "mL", 0);
@@ -208,32 +317,30 @@
     }
   }
 
-  function updateGoalText() {
-    if (state.pigment === "repolho") state.goal = "Roxo vivo (pH 5–6) + C 5–25 g/L";
-    else if (state.pigment === "curcuma") state.goal = "Amarelo forte (pH < 7,5) + C 5–25 g/L";
-    else state.goal = "Urucum em meio oleoso (óleo/resina) + C 5–25 g/L";
-  }
+  function computeStatusText() {
+    const t = targets();
 
-  function updateExplanations() {
-    if (!miniExp || !helpMeio) return;
-
-    if (state.pigment === "repolho") {
-      miniExp.textContent = "Repolho roxo: antocianinas mudam de cor com pH (indicador natural).";
-    } else if (state.pigment === "curcuma") {
-      miniExp.textContent = "Cúrcuma: curcumina tende a alaranjar em meio básico.";
-    } else {
-      miniExp.textContent = "Urucum: bixina é apolar; o meio oleoso melhora a extração e intensifica a cor.";
+    // NOVO: se já concluiu esta cor, bloqueia a ação
+    if (state.tasksDone[state.pigment]) {
+      return "Cor já concluída. Selecione uma cor pendente para continuar.";
     }
 
-    helpMeio.textContent = (state.pigment === "urucum")
-      ? "Dica: para urucum, selecione Óleo/resina para melhor extração (apolar)."
-      : "Dica: para repolho e cúrcuma, Água funciona bem como meio.";
-  }
+    const concOk = state.conc >= t.concMin && state.conc <= t.concMax;
+    if (!concOk) return `Concentração fora da faixa (${t.concMin}–${t.concMax} g/L). Ajuste massa/volume.`;
 
-  function alphaFromConc() {
-    // Mapeia conc para alpha: 0.35..1.0 (saturação visual didática)
-    const a = state.conc / CONC_MAX;
-    return clamp(a, 0.35, 1.0);
+    const phOk = phInRange(state.ph, t.phMin, t.phMax);
+    if (!phOk) return `pH fora do alvo (${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)}). Limão ↓ pH | Bicarbonato ↑ pH.`;
+
+    if (t.requireMeio && state.meio !== t.requireMeio) {
+      return "Meio incorreto. Para URUCUM, use Óleo/resina (obrigatório).";
+    }
+
+    // recomendação (não bloqueante)
+    if (!t.requireMeio && t.recommendedMeio && state.meio !== t.recommendedMeio) {
+      return "Dentro do alvo, mas recomenda-se Água para esta cor.";
+    }
+
+    return "Dentro da meta. Pode aplicar.";
   }
 
   // =========================
@@ -425,127 +532,184 @@
     drawFitCanvas(c.hex, alphaFromConc());
   }
 
-  function lockPigmentSelect() {
+  // =========================
+  // CONTROLES DE FLUXO
+  // =========================
+  function syncFromUI() {
+    if (selMeio) state.meio = selMeio.value;
+    if (rngAcido) state.acido = parseFloat(rngAcido.value);
+    if (rngBase) state.base = parseFloat(rngBase.value);
+
+    calcConc();
+    estimatePH();
+  }
+
+  function decoratePigmentOptions() {
     if (!selPigmento) return;
-    selPigmento.disabled = true; // evita pular etapas
-    if (helpPigmento) helpPigmento.textContent = "Etapas em sequência: conclua o pigmento atual para liberar o próximo.";
+    [...selPigmento.options].forEach((opt) => {
+      const v = opt.value;
+      if (!PIGMENTS.includes(v)) return;
+
+      // evita duplicar sufixo
+      const baseText = opt.textContent.replace(/\s+\(conclu[ií]do\)$/i, "");
+      const done = !!state.tasksDone[v];
+
+      opt.textContent = done ? `${baseText} (concluído)` : baseText;
+
+      // NOVO: bloqueia opções concluídas (deixa só pendentes selecionáveis)
+      opt.disabled = done;
+    });
+  }
+
+  function applyRecommendedMediumForPigment(pigment) {
+    const t = getTargetsFor(pigment);
+    if (!selMeio) return;
+
+    // Para urucum, força óleo (porque é requisito)
+    if (t.requireMeio === "oleo") {
+      selMeio.value = "oleo";
+      state.meio = "oleo";
+      return;
+    }
+
+    // Para os demais, sugere água (soft set se estiver em óleo)
+    if (selMeio.value === "oleo") {
+      selMeio.value = "agua";
+      state.meio = "agua";
+    }
+  }
+
+  function setTopbarForCurrentPigment() {
+    if (!topbarText) return;
+    const t = targets();
+
+    const doneCount = Object.values(state.tasksDone).filter(Boolean).length;
+    const remain = 3 - doneCount;
+
+    topbarText.textContent =
+      `Escolha a cor que quer fazer e cumpra a meta: ${t.text}. ` +
+      `Cores concluídas: ${doneCount}/3${remain ? ` (faltam ${remain})` : ""}.`;
   }
 
   function render() {
     if (chipStep) chipStep.textContent = `Etapa: ${state.step}`;
     if (chipErrors) chipErrors.textContent = `Erros: ${state.errors}`;
-    if (chipGoal) chipGoal.textContent = `Meta: ${state.goal}`;
-    if (chipInfo) chipInfo.textContent = `pH: ${state.ph.toFixed(1)}`;
 
-    if (outAcido) outAcido.textContent = String(state.acido);
-    if (outBase) outBase.textContent = String(state.base);
+    if (outAcido) outAcido.textContent = prettyDose(state.acido);
+    if (outBase) outBase.textContent = prettyDose(state.base);
 
     if (outConc) outConc.textContent = state.conc ? state.conc.toFixed(1) : "—";
     if (outPH) outPH.textContent = state.ph.toFixed(1);
+    if (outPHBig) outPHBig.textContent = state.ph.toFixed(1);
 
     updateIdealBands();
-
-    let pct = 10;
-    if (state.step === "Preparação da solução") pct = 35;
-    if (state.step === "Ajuste de pH") pct = 65;
-    if (state.step === "Aplicação") pct = 90;
-    setProgress(pct, "Progresso do preparo");
-
     updateColorUI();
 
-    const allDone = Object.values(state.tasksDone).every(Boolean);
+    // meta / alvo / status
+    const t = targets();
+    if (outGoal) outGoal.textContent = state.goal;
+    if (outTargetPH) outTargetPH.textContent = t.text;
+    if (outStatus) outStatus.textContent = computeStatusText();
+
+    // progresso = cores concluídas
+    const doneCount = Object.values(state.tasksDone).filter(Boolean).length;
+    const pct = (doneCount / 3) * 100;
+    setProgress(pct, `Cores concluídas: ${doneCount}/3`);
+
+    const allDone = doneCount === 3;
     if (achievement) achievement.hidden = !allDone;
-  }
 
-  function advanceToNextPigment() {
-    const next = PIGMENT_ORDER.find(p => !state.tasksDone[p]);
-    if (!next) return null;
-
-    state.pigment = next;
-    if (selPigmento) selPigmento.value = next;
-
-    // reseta doses
-    state.acido = 0;
-    state.base = 0;
-    if (rngAcido) rngAcido.value = "0";
-    if (rngBase) rngBase.value = "0";
-
-    // meio padrão volta para água; urucum exige o jogador trocar para óleo
-    state.meio = "agua";
-    if (selMeio) selMeio.value = "agua";
-
-    state.step = "Seleção do pigmento";
-
-    updateGoalText();
-    updateExplanations();
-    calcConc();
-    estimatePH();
-    render();
-
-    return next;
+    decoratePigmentOptions();
   }
 
   function validateAndApply() {
-    const ph = state.ph;
-    const concOk = state.conc >= CONC_MIN && state.conc <= CONC_MAX;
-
-    let ok = false;
-    let msgBad = "";
-
-    if (!concOk) {
-      ok = false;
-      msgBad = `Concentração fora da faixa. Mantenha entre ${CONC_MIN} e ${CONC_MAX} g/L.`;
-    } else if (state.pigment === "repolho") {
-      ok = (ph >= 5.0 && ph <= 6.2);
-      msgBad = "Tom fora do alvo. Para roxo vivo, busque pH ~5–6 (ajuste a dose).";
-    } else if (state.pigment === "curcuma") {
-      ok = (ph < 7.5);
-      msgBad = "A cúrcuma alaranjou. Reduza a base para pH < 7,5.";
-    } else {
-      ok = (state.meio === "oleo");
-      msgBad = "Urucum precisa de meio oleoso (apolar). Troque o solvente para Óleo/resina.";
+    // NOVO: impede aplicar em cor já concluída (não conta erro)
+    if (state.tasksDone[state.pigment]) {
+      const pending = PIGMENTS.filter((p) => !state.tasksDone[p]);
+      if (pending.length > 0) {
+        const msg = "Essa cor já foi concluída. Selecione uma cor pendente para continuar.";
+        showToast(msg, "bad");
+        if (topbarText) topbarText.textContent = msg;
+        state.step = "Seleção do pigmento";
+        render();
+        return false;
+      }
     }
 
-    if (ok) {
-      state.step = "Aplicação";
-      state.tasksDone[state.pigment] = true;
+    // recalcula no clique
+    syncFromUI();
 
-      logDiary(
-        `Etapa concluída: ${state.pigment.toUpperCase()} (pH ${ph.toFixed(1)}, C ${state.conc.toFixed(1)} g/L, meio: ${state.meio}).`
-      );
+    const t = targets();
 
-      // aplica cor final com intensidade alta
-      const hex = readHexFromSwatch() || "#999999";
-      drawFitCanvas(hex, 0.98);
+    const concOk = state.conc >= t.concMin && state.conc <= t.concMax;
+    const phOk = phInRange(state.ph, t.phMin, t.phMax);
+    const meioOk = !t.requireMeio || state.meio === t.requireMeio;
 
-      const allDoneNow = Object.values(state.tasksDone).every(Boolean);
+    if (!concOk || !phOk || !meioOk) {
+      state.errors += 1;
 
-      if (!allDoneNow) {
-        const msg = "Parabéns, etapa concluída com sucesso, faça o próximo pigmento.";
-        showToast(msg, "good");
-        if (topbarText) topbarText.textContent = msg;
-
-        const next = advanceToNextPigment();
-        if (next) logDiary(`Próximo desafio: preparar a cor com ${next.toUpperCase()}.`);
+      let msgBad = "";
+      if (!concOk) {
+        msgBad = `Concentração fora da faixa. Mantenha entre ${t.concMin} e ${t.concMax} g/L.`;
+      } else if (!phOk) {
+        msgBad = `pH fora do alvo. Busque pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} com limão/bicarbonato.`;
       } else {
-        const msgFinal = "Parabéns! Você concluiu as 3 cores com sucesso.";
-        showToast(msgFinal, "good");
-        if (topbarText) topbarText.textContent = msgFinal;
-        logDiary("Conclusão: repolho, cúrcuma e urucum finalizados.");
+        msgBad = "Meio incorreto. Para URUCUM, use Óleo/resina (obrigatório).";
       }
 
+      showToast(msgBad, "bad");
+      logDiary(`Tentativa com falha (${t.name}): ${msgBad}`);
+
+      if (topbarText) topbarText.textContent = "Ajuste os parâmetros (pH, concentração e/ou meio) e tente novamente.";
+      state.step = "Ajuste de pH";
       render();
-      return true;
+      return false;
     }
 
-    // falhou
-    state.errors += 1;
-    showToast(msgBad, "bad");
-    logDiary(`Tentativa com falha: ${msgBad}`);
-    if (topbarText) topbarText.textContent = "Ajuste os parâmetros (pH, concentração e/ou meio) e tente novamente.";
-    state.step = "Ajuste de pH";
+    // OK
+    state.step = "Aplicação";
+
+    const alreadyDone = !!state.tasksDone[state.pigment];
+    state.tasksDone[state.pigment] = true;
+
+    logDiary(
+      `${alreadyDone ? "Reaplicação" : "Etapa concluída"}: ${t.name} ` +
+      `(pH ${state.ph.toFixed(1)}, C ${state.conc.toFixed(1)} g/L, meio: ${state.meio}).`
+    );
+
+    const hex = readHexFromSwatch() || "#999999";
+    drawFitCanvas(hex, 0.98);
+
+    const doneCount = Object.values(state.tasksDone).filter(Boolean).length;
+
+    if (doneCount < 3) {
+      const msg = "Cor aplicada com sucesso. Escolha outra cor pendente no seletor para continuar.";
+      showToast(msg, "good");
+      if (topbarText) topbarText.textContent = msg;
+    } else {
+      const msgFinal = "Parabéns! Você concluiu as 3 cores com sucesso.";
+      showToast(msgFinal, "good");
+      if (topbarText) topbarText.textContent = msgFinal;
+      logDiary("Conclusão: repolho roxo, cúrcuma e urucum finalizados.");
+    }
+
     render();
-    return false;
+    return true;
+  }
+
+  // =========================
+  // AJUSTES VISUAIS (sem mexer no HTML)
+  // =========================
+  function applySliderLabels() {
+    // troca os textos dos spans .label dentro dos dois campos de range
+    const fieldAcido = rngAcido?.closest(".field");
+    const fieldBase = rngBase?.closest(".field");
+
+    const lblAcido = fieldAcido?.querySelector(".label");
+    const lblBase = fieldBase?.querySelector(".label");
+
+    if (lblAcido) lblAcido.textContent = "Quantidade de Limão (Meio Ácido)";
+    if (lblBase) lblBase.textContent = "Quantidade de Bicarbonato (Meio Básico)";
   }
 
   // =========================
@@ -553,6 +717,8 @@
   // =========================
   function init() {
     btnReiniciar?.addEventListener("click", () => location.reload());
+
+    applySliderLabels();
 
     // imagem do vestido (cache/load)
     if (fitBase) {
@@ -575,10 +741,45 @@
 
     window.addEventListener("resize", () => resizeFitCanvas());
 
-    // trava o select de pigmento (sequencial)
-    lockPigmentSelect();
+    // agora o jogador pode escolher a cor primeiro
+    if (helpPigmento) {
+      helpPigmento.textContent =
+        "Você pode escolher qualquer cor para começar. A meta e as dicas mudam conforme o pigmento selecionado.";
+    }
 
-    // meio pode mudar livremente
+    // mudanças de pigmento
+    selPigmento?.addEventListener("change", () => {
+      const v = selPigmento.value;
+      if (!PIGMENTS.includes(v)) return;
+
+      // segurança extra: se for uma cor já concluída (por algum motivo), volta e avisa
+      if (state.tasksDone[v]) {
+        const msg = "Essa cor já foi concluída. Selecione uma cor pendente.";
+        showToast(msg, "bad");
+        if (topbarText) topbarText.textContent = msg;
+        return;
+      }
+
+      state.pigment = v;
+
+      // reset leve das doses ao trocar de cor (evita carregar pH anterior)
+      state.acido = 0;
+      state.base = 0;
+      if (rngAcido) rngAcido.value = "0";
+      if (rngBase) rngBase.value = "0";
+
+      applyRecommendedMediumForPigment(v);
+
+      state.step = "Seleção do pigmento";
+      updateGoalText();
+      updateExplanations();
+      calcConc();
+      estimatePH();
+      setTopbarForCurrentPigment();
+      render();
+    });
+
+    // meio pode mudar livremente (urucum será validado como obrigatório)
     selMeio?.addEventListener("change", () => {
       state.meio = selMeio.value;
       state.step = "Ajuste de pH";
@@ -598,16 +799,16 @@
       render();
     });
 
-    // dose ácido/base
+    // dose limão/bicarbonato
     rngAcido?.addEventListener("input", () => {
       state.step = "Ajuste de pH";
-      state.acido = parseInt(rngAcido.value, 10);
+      state.acido = parseFloat(rngAcido.value);
       render();
     });
 
     rngBase?.addEventListener("input", () => {
       state.step = "Ajuste de pH";
-      state.base = parseInt(rngBase.value, 10);
+      state.base = parseFloat(rngBase.value);
       render();
     });
 
@@ -624,13 +825,16 @@
       }
     });
 
-    // estado inicial (sempre começa no repolho)
-    state.pigment = "repolho";
-    if (selPigmento) selPigmento.value = "repolho";
+    // estado inicial: respeita o que estiver selecionado no HTML
+    state.pigment = selPigmento?.value && PIGMENTS.includes(selPigmento.value)
+      ? selPigmento.value
+      : "repolho";
 
     state.meio = selMeio?.value ?? "agua";
-    state.acido = parseInt(rngAcido?.value ?? "0", 10);
-    state.base = parseInt(rngBase?.value ?? "0", 10);
+    state.acido = parseFloat(rngAcido?.value ?? "0");
+    state.base = parseFloat(rngBase?.value ?? "0");
+
+    applyRecommendedMediumForPigment(state.pigment);
 
     updateGoalText();
     updateExplanations();
@@ -638,11 +842,8 @@
     estimatePH();
     updateIdealBands();
 
-    logDiary("Início do preparo: mantenha C entre 5 e 25 g/L e ajuste a dose (limão/bicarbonato).");
-    if (topbarText) {
-      topbarText.textContent =
-        "Desafio 1/3: REPOLHO. Mantenha C entre 5–25 g/L e ajuste o pH (dose) para atingir a meta.";
-    }
+    logDiary("Início do preparo: escolha um pigmento, ajuste concentração e pH conforme a meta e aplique no vestido.");
+    setTopbarForCurrentPigment();
 
     resizeFitCanvas();
     render();

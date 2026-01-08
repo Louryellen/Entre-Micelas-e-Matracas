@@ -642,7 +642,7 @@
       this.updateUI();
       this.lockHotspots();
       this.highlightStep();
-      this.setInstruction(STEPS[this.step], "Clique no pergaminho e calcule seus alvos (NaOH e água).");
+      this.setInstruction(STEPS[this.step], "Clique no pergaminho e calcule as quantidades necessesárias (NaOH e água).");
     },
 
     updateUI() {
@@ -713,18 +713,18 @@
           </div>
 
           <div class="mini" style="margin-top:10px">
-            Preencha seus alvos para a quantidade de <b>${this.lotOil} mL</b>.
+            Preencha a quantidade necessária de <b>${this.lotOil} mL</b>.
           </div>
 
           <div class="field">
-            <label class="mini">NaOH alvo (g)</label>
+            <label class="mini">NaOH quantidade necessária (g)</label>
             <input class="input" id="inNaOH" inputmode="decimal"
               placeholder="Ex.: ${decoyNaOH(this.trueTargets.naoh)}"
               value="${this.playerTargets.naoh ?? ""}">
           </div>
 
           <div class="field">
-            <label class="mini">Água alvo (mL)</label>
+            <label class="mini">Água quantidade necessária (mL)</label>
             <input class="input" id="inWater" inputmode="numeric"
               placeholder="Ex.: ${decoyWater(this.trueTargets.water)}"
               value="${this.playerTargets.water ?? ""}">
@@ -766,7 +766,7 @@
 
         if (!okNa || !okWa) {
           this.fail("Cálculo incorreto (fora da tolerância). Ajuste e valide novamente.");
-          this.setInstruction(STEPS[this.step], "Ajuste seus alvos no pergaminho e valide novamente.");
+          this.setInstruction(STEPS[this.step], "Ajuste as quantidades no pergaminho e valide novamente.");
           return;
         }
 
@@ -904,7 +904,7 @@
         `
           <div class="row">
             <div>
-              <div class="mini">Faixa alvo</div>
+              <div class="mini">Faixa de Temperatura</div>
               <div class="big">55–60°C</div>
             </div>
             <div>
@@ -1103,7 +1103,7 @@
         this.updateUI();
         this.lockHotspots();
         this.highlightStep();
-        this.setInstruction(STEPS[this.step], "Clique no pergaminho e calcule os alvos.");
+        this.setInstruction(STEPS[this.step], "Clique no pergaminho e calcule as quantidades necessárias.");
         return;
       }
 
@@ -1144,7 +1144,7 @@
         `
           <div class="row">
             <div>
-              <div class="mini">Alvo</div>
+              <div class="mini">Quantidade Necessária</div>
               <div class="big">${isNaOH ? target.toFixed(1) : Math.round(target)} ${unit}</div>
             </div>
             <div>
@@ -1159,7 +1159,7 @@
           </div>
 
           <div class="mini" style="margin-top:8px">
-            A leitura oscila e desacelera perto do alvo.
+            A leitura oscila e desacelera perto da faixa aceitável.
           </div>
 
           <div class="actions">
@@ -1244,7 +1244,7 @@
         const ok = Math.abs(value - target) <= tol;
 
         if (!ok) {
-          this.fail("Fora da tolerância. Trave mais perto do alvo.");
+          this.fail("Fora da tolerância. Trave mais perto do aceitável.");
           running = true;
           raf = requestAnimationFrame(loop);
           return;
@@ -1480,7 +1480,7 @@
                 <div class="big" id="coolTemp">—</div>
               </div>
               <div>
-                <div class="mini">Alvo</div>
+                <div class="mini">Faixa de Temperatura</div>
                 <div class="big">25–30°C</div>
               </div>
             </div>
