@@ -850,4 +850,15 @@
   }
 
   init();
+  
+  function applyCompactMode(){
+  const h = window.innerHeight;
+  const compact = h < 820; // ajuste o corte se quiser
+
+  document.documentElement.classList.toggle("ui-compact", compact);
+}
+
+window.addEventListener("resize", applyCompactMode);
+applyCompactMode();
+
 })();

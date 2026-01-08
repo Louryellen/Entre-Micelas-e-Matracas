@@ -32,6 +32,13 @@ body{
   overflow:hidden;
 }
 
+.ui-compact :root{
+  --header-h: 72px;
+  --scene-h: clamp(380px, 58vh, 680px);
+  --gap: 14px;
+}
+
+
 /* ---------------------------
    Header + Stagebar
 --------------------------- */
