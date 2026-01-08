@@ -16,6 +16,11 @@
     activeChoiceIndex: 0,
     conversationOn: false,
     _choiceButtons: [],
+
+    // ===== NOVO (controle de fluxo pós-gate, sem mexer nos diálogos)
+    _inPostGateTintas: false,
+    _pendingGotoUrl: "",
+    _pendingTier: "",
   };
 
   const ICONS = {
@@ -71,67 +76,73 @@
             "Gente, eu vim conversar sobre o que estamos observando no igarapé: mudança de cor, espuma, cheiro forte e mortandade de peixes. Isso pode indicar contaminação por óleo e excesso de nutrientes.",
           choices: [
             {
-              repDelta: +2, icon: "dialogo",
+              repDelta: +2,
+              icon: "dialogo",
               label: "Explicar com calma, sem assustar, e pedir exemplos do dia a dia.",
               sub: "Tom acolhedor e participativo.",
               feedback: "A comunidade se sentiu mais à vontade.",
               reply:
                 "Vamos conversar com calma!\n\nQuero entender o dia a dia de vocês: quando começaram a notar cheiro forte, espuma, mudança de cor ou peixes mortos? Esses exemplos ajudam a gente a identificar a origem do problema.",
-              next: "a2"
+              next: "a2",
             },
             {
-              repDelta: 0, icon: "raio",
+              repDelta: 0,
+              icon: "raio",
               label: "Explicar rapidamente e já sugerir o que fazer.",
               sub: "Direto ao ponto, mas pode deixar dúvidas.",
               feedback: "O grupo entendeu, mas ficou com dúvidas.",
               reply:
                 "Vou ser bem objetiva: esses sinais costumam indicar poluição por óleo e excesso de nutrientes.\n\nO primeiro passo é evitar jogar óleo e água de limpeza no igarapé e combinar um ponto de coleta. Depois a gente confirma com observação e, se possível, testes simples.",
-              next: "a2"
+              next: "a2",
             },
             {
-              repDelta: -3, icon: "alerta",
+              repDelta: -3,
+              icon: "alerta",
               label: "Repreender a comunidade e dizer que a culpa é deles.",
               sub: "Confronto direto (tende a fechar o diálogo).",
               feedback: "A comunidade ficou na defensiva.",
               reply:
-                "Gente, desse jeito não dá. Se continuarem jogando óleo e resíduos, o igarapé vai piorar.\n\nMas eu prefiro que a gente volte para um diálogo: vamos entender o que está acontecendo e construir uma saída juntos.",
-              next: "a2"
+                "Gente, desse jeito não dá. Se continuarem jogando óleo e resíduos, o igarapé vai piorar.\n\nVamos entender o que está acontecendo e construir uma saída juntos.",
+              next: "a2",
             },
-          ]
+          ],
         },
 
         a2: {
           speaker: "Moradores",
-          text: "Mas a gente sempre jogou a água do prato e o óleo ali… isso faz tanta diferença assim?",
+          text: "Mas a gente sempre limpou a roupa e jogou o óleo ali… isso faz tanta diferença assim?",
           choices: [
             {
-              repDelta: +2, icon: "livro",
+              repDelta: +2,
+              icon: "livro",
               label: "Explicar que o óleo forma uma película e reduz a oxigenação da água.",
               sub: "Explicação simples e visual.",
               feedback: "Resposta clara e acessível.",
               reply:
                 "Faz diferença, sim.\n\nO óleo forma uma película na superfície, como se fosse uma “tampa”. Isso dificulta a entrada de oxigênio e atrapalha a respiração dos peixes e de outros seres vivos. Com menos oxigênio, aumenta a chance de mortandade.",
-              next: "a3"
+              next: "a3",
             },
             {
-              repDelta: 0, icon: "dialogo",
-              label: "Dizer que faz mal ao meio ambiente e perguntar o que eles já notaram no igarapé.",
+              repDelta: 0,
+              icon: "dialogo",
+              label: "Dizer que faz mal ao meio ambiente.",
               sub: "Mantém o diálogo, mas menos técnico.",
               feedback: "O grupo falou mais, mas ainda faltou detalhe.",
               reply:
-                "Sim, isso prejudica o igarapé e a saúde da água.\n\nQuero ouvir vocês: o que mudou primeiro — a cor, o cheiro, a espuma ou os peixes? Quando a gente junta os relatos, fica mais fácil ligar as causas aos sinais.",
-              next: "a3"
+                "Sim, isso prejudica o igarapé e a saúde da água.\n\n Geralmente muda a cor, o cheiro e começa a formar espuma. O óleo presente na água impossibilita os peixes de respirarem.",
+              next: "a3",
             },
             {
-              repDelta: -2, icon: "alerta",
+              repDelta: -2,
+              icon: "alerta",
               label: "Dizer que é errado e que precisam parar imediatamente.",
               sub: "Tom duro e pouco educativo.",
               feedback: "O tom pesou e gerou resistência.",
               reply:
                 "Isso precisa parar, porque faz mal.\n\nMas vamos fazer do jeito certo: eu explico o porquê e a gente combina alternativas práticas para o descarte do óleo, sem complicar a rotina de vocês.",
-              next: "a3"
+              next: "a3",
             },
-          ]
+          ],
         },
 
         a3: {
@@ -139,101 +150,111 @@
           text: "E essa espuma e cheiro forte… tem a ver com sabão e água de limpeza?",
           choices: [
             {
-              repDelta: +2, icon: "frasco",
-              label: "Explicar que detergentes aumentam espuma e podem vir com esgoto e nutrientes.",
+              repDelta: +2,
+              icon: "frasco",
+              label: "Explicar que detergentes aumentam espuma, pois possuem tensoativos.",
               sub: "Conecta a observação ao cotidiano.",
               feedback: "Agora fez sentido para o grupo.",
               reply:
-                "Pode ter relação, sim.\n\nDetergentes aumentam a espuma e, muitas vezes, a água de limpeza vem com resíduos orgânicos e nutrientes. Isso pode favorecer algas, piorar o cheiro e reduzir o oxigênio na água.",
-              next: "a3b"
+                "Pode ter relação, sim.\n\nDetergentes aumentam a espuma porque contêm tensoativos, substâncias que reduzem a tensão da água e facilitam a formação de bolhas. Em excesso, esses tensoativos formam uma camada de espuma na superfície do igarapé, dificultam a entrada de oxigênio e podem prejudicar peixes e outros organismos. Além disso, a água de limpeza traz resíduos orgânicos e nutrientes, o que favorece algas, piora o cheiro e reduz ainda mais o oxigênio da água.",
+              next: "a3b",
             },
             {
-              repDelta: 0, icon: "livro",
+              repDelta: 0,
+              icon: "livro",
               label: "Dizer que pode ser poluição em geral e que vocês vão observar mais sinais juntos.",
               sub: "Correto, mas menos direto.",
               feedback: "A comunidade entendeu parcialmente.",
               reply:
-                "Pode ser poluição em geral, mas a gente consegue afinar melhor.\n\nVamos observar juntos: onde a espuma aparece mais, em que horários o cheiro é pior e se há descarte visível. Esse mapa de sinais ajuda a identificar as fontes.",
-              next: "a3b"
+                "Pode ser poluição em geral, mas a gente consegue apurar melhor.\n\nVamos observar juntos: onde a espuma aparece mais, em que horários o cheiro é pior e se há descarte visível. Esse mapa de sinais ajuda a identificar as fontes.",
+              next: "a3b",
             },
             {
-              repDelta: -2, icon: "alerta",
+              repDelta: -2,
+              icon: "alerta",
               label: "Dizer que é sujeira e falta de cuidado das pessoas.",
               sub: "Generaliza e culpabiliza.",
               feedback: "Parte do grupo se sentiu atacada.",
               reply:
                 "Quando há descarte errado, realmente piora.\n\nMas eu prefiro focar na solução: vamos ver o que é mais comum no dia a dia (óleo, água de limpeza, restos) e criar um jeito simples de reduzir isso.",
-              next: "a3b"
+              next: "a3b",
             },
-          ]
+          ],
         },
 
         a3b: {
           speaker: "Moradores",
-          text: "E os peixes mortos… por que isso acontece? E o que é essa tal de eutrofização?",
+          text: "E os peixes mortos… por que isso acontece?",
           choices: [
             {
-              repDelta: +3, icon: "livro",
-              label: "Explicar eutrofização: excesso de nutrientes → algas → falta de oxigênio → peixes morrem.",
+              repDelta: +3,
+              icon: "livro",
+              label: "Explicar sobre a eutrofização.",
               sub: "Explicação completa e fácil de visualizar.",
               feedback: "Agora a comunidade entendeu a causa dos peixes mortos.",
               reply:
-                "Ótima pergunta. Muitas mortes de peixes acontecem por falta de oxigênio na água.\n\nEutrofização é quando entram nutrientes demais (principalmente nitrogênio e fósforo) — por exemplo, de esgoto, restos orgânicos e até alguns detergentes. Isso faz as algas crescerem muito, deixando a água mais verde.\n\nDepois, quando essas algas morrem, as bactérias “decompõem” esse material e consomem muito oxigênio. Aí o oxigênio dissolve menos na água, e os peixes podem sufocar.\n\nVocês já perceberam a água mais esverdeada ou com “lodo”/algas perto da margem?",
-              next: "a4"
+                "Ótima pergunta. Muitas mortes de peixes acontecem por falta de oxigênio na água.\n\nIsso acontece por causa da eutrofização, que é quando entram nutrientes demais na água (principalmente nitrogênio e fósforo), por exemplo, de esgoto, restos orgânicos e até alguns detergentes. Isso faz as algas crescerem muito, deixando a água mais verde.\n\nDepois, quando essas algas morrem, as bactérias decompõem esse material e consomem muito oxigênio. Aí o oxigênio dissolve menos na água, ou seja, sobra menos oxigênio disponível e os peixes podem sufocar.\n\nVocês já perceberam a água mais esverdeada ou com “lodo”/algas perto da margem?",
+              next: "a4", // ✅ VOLTA AO FLUXO NORMAL (tintas não entra aqui)
             },
             {
-              repDelta: +1, icon: "dialogo",
-              label: "Fazer uma pergunta sobre o que eles notaram e explicar de forma bem simples.",
+              repDelta: +1,
+              icon: "dialogo",
+              label: "Explicar de uma forma bem simples o porquê isso acontece.",
               sub: "Participativo, conecta o cotidiano aos sinais.",
               feedback: "O grupo participou e a explicação ficou clara.",
               reply:
-                "Vamos ligar os sinais: vocês notaram água mais verde, lodo na margem ou muita espuma?\n\nQuando tem “comida” demais na água (nutrientes), as algas aumentam. Só que isso pode reduzir o oxigênio, principalmente à noite e na decomposição. Sem oxigênio, os peixes ficam fracos e podem morrer.\n\nSe vocês me disserem quando começou e onde aparece mais, a gente identifica a principal fonte.",
-              next: "a4"
+                "Vamos ligar os sinais: vocês notaram água mais verde, lodo na margem ou muita espuma?\n\nQuando tem nutrientes demais na água, as algas aumentam. Só que isso pode reduzir o oxigênio, principalmente à noite e na decomposição. Sem oxigênio, os peixes ficam fracos e podem morrer.\n\n",
+              next: "a4", // ✅ VOLTA AO FLUXO NORMAL
             },
             {
-              repDelta: -2, icon: "alerta",
+              repDelta: -2,
+              icon: "alerta",
               label: "Responder de forma dura, sem explicar o processo direito.",
               sub: "Pode gerar resistência e cortar o diálogo.",
               feedback: "A comunidade ficou insegura e menos aberta.",
               reply:
-                "Isso acontece porque estão poluindo o igarapé.\n\nMas, para resolver de verdade, precisamos entender as fontes (óleo, esgoto, água de limpeza) e organizar ações simples para reduzir nutrientes e melhorar o oxigênio na água.",
-              next: "a4"
+                "Isso acontece porque vocês estão poluindo o igarapé.\n\nMas, para resolver de verdade, precisamos entender as fontes (óleo, esgoto, água de limpeza) e organizar ações simples para reduzir nutrientes e melhorar o oxigênio na água.",
+              next: "a4", // ✅ VOLTA AO FLUXO NORMAL
             },
-          ]
+          ],
         },
 
         a4: {
           speaker: "Pesquisadora",
-          text: "Se a gente quiser melhorar isso juntos, precisamos de ações simples e constantes. O que vocês acham mais viável começar ainda esta semana?",
+          text:
+            "Se a gente quiser melhorar isso juntos, precisamos de ações simples e constantes. O que vocês acham mais viável começar ainda esta semana?",
           choices: [
             {
-              repDelta: +3, icon: "check",
-              label: "Propor ponto de coleta de óleo + campanha curta + oficina de sabão.",
+              repDelta: +3,
+              icon: "check",
+              label: "Propor uma campanha de conscientização + oficina de produção de sabão.",
               sub: "Ação concreta e comunitária.",
               feedback: "A ideia animou muita gente.",
               reply:
-                "Minha sugestão é bem prática: combinar um ponto de coleta para o óleo usado e fazer uma campanha curta aqui no bairro.\n\nSe vocês toparem, a gente organiza uma oficina de sabão com segurança (EPI e cuidado com a soda), para transformar o óleo em algo útil e evitar que ele vá pro igarapé.",
-              next: "a5"
+                "Minha sugestão é bem prática: fazer uma campanha de conscientização para que não se jogue mais lixo e óleo no igarapé. Podemos também, contactar o prefeito para pensarmos na possibilidade da criação de um ecoponto.\n\nPara além disso, se vocês toparem, a gente pode fazer uma oficina de reaproveitamento de óleo para produzir sabão, com segurança e orientação.",
+              next: "a5",
             },
             {
-              repDelta: +1, icon: "dialogo",
+              repDelta: +1,
+              icon: "dialogo",
               label: "Começar com conversa nas casas e cartazes, sem cobrar muito no início.",
               sub: "Acolhe o ritmo da comunidade.",
               feedback: "Boa aceitação, com adesão gradual.",
               reply:
                 "Acho ótimo começar leve: conversa nas casas, cartazes e combinados simples.\n\nO importante é todo mundo entender o porquê e ter uma alternativa fácil. Depois a gente fortalece com ponto de coleta e acompanhamento.",
-              next: "a5"
+              next: "a5",
             },
             {
-              repDelta: -1, icon: "raio",
+              repDelta: -1,
+              icon: "raio",
               label: "Dizer que a prefeitura é quem tem que resolver.",
               sub: "Terceiriza e reduz engajamento local.",
               feedback: "A conversa perdeu força.",
               reply:
-                "A prefeitura tem responsabilidade, sim.\n\nMas enquanto isso, pequenas ações locais já reduzem muito o impacto: não jogar óleo na água, guardar em garrafa e combinar um ponto de entrega. Isso já muda o cenário.",
-              next: "a5"
+                "Isso é responsabilidade da prefeitura, são eles que tem de resolver esse problema.\n\nMas enquanto isso, pequenas ações locais já reduzem muito o impacto: não jogar óleo na água, guardar em garrafa e combinar um ponto de entrega. Isso já muda o cenário.",
+              next: "a5",
             },
-          ]
+          ],
         },
 
         a5: {
@@ -241,78 +262,60 @@
           text: "E como a gente vai saber se está melhorando? Só olhando a água?",
           choices: [
             {
-              repDelta: +2, icon: "frasco",
+              repDelta: +2,
+              icon: "frasco",
               label: "Sugerir registro semanal + observações + testes simples quando possível.",
               sub: "Monitoramento básico e realista.",
               feedback: "O grupo gostou de acompanhar a evolução.",
               reply:
-                "Dá para fazer um acompanhamento simples.\n\nUma vez por semana: foto do mesmo ponto, anotar cheiro, cor e presença de espuma. Se der, a gente inclui testes básicos com orientação. Assim vocês enxergam a melhora ao longo do tempo.",
-              next: "a6"
+                "Dá para fazer um acompanhamento simples.\n\nUma vez por semana: registrar foto do mesmo ponto, anotar cheiro, cor e presença de espuma. Se der, a gente inclui testes básicos com orientação. Assim vocês enxergam a melhora ao longo do tempo.",
+              next: "aEnd",
             },
             {
-              repDelta: 0, icon: "dialogo",
+              repDelta: 0,
+              icon: "dialogo",
               label: "Dizer que dá para observar sinais, mas que é melhor registrar mudanças em conjunto.",
               sub: "Ok, mas sem método claro.",
               feedback: "Ficou mais claro, porém ainda genérico.",
               reply:
                 "Observar ajuda, mas registrar junto ajuda mais.\n\nSe vocês toparem, a gente combina um ponto e um dia fixo para comparar: foto, anotações e conversa rápida. Isso dá um “termômetro” do igarapé.",
-              next: "a6"
+              next: "aEnd",
             },
             {
-              repDelta: -2, icon: "alerta",
+              repDelta: -2,
+              icon: "alerta",
               label: "Dizer que é complicado demais e não tem como saber.",
               sub: "Desanima e encerra o assunto.",
               feedback: "O grupo desanimou.",
               reply:
                 "É verdade que medir com precisão pode ser difícil.\n\nMas dá para acompanhar com sinais simples e registro. Se vocês quiserem, eu ajudo a organizar um jeito bem fácil de fazer isso sem atrapalhar a rotina.",
-              next: "a6"
+              next: "aEnd",
             },
-          ]
-        },
-
-        /* ===== NOVO FINAL: GANCHO PARA OFICINA DE SABÃO ===== */
-        a6: {
-          speaker: "Moradores",
-          text:
-            "Professora… a gente quer fazer do jeito certo. Você consegue ajudar a gente a organizar a oficina de sabão com o óleo usado?",
-          choices: [
-            {
-              repDelta: +3, icon: "check",
-              label: "Sim. Vamos para a oficina agora e fazer com segurança.",
-              sub: "Encaminhar direto para a cena da oficina.",
-              feedback: "A comunidade topou participar da oficina.",
-              reply:
-                "Consigo, sim.\n\nVamos organizar direitinho: segurança primeiro (EPI), cuidado com a soda e passo a passo bem claro.\n\nSe vocês estiverem prontos, vamos para a oficina agora.",
-              next: "goto:../cenaoficina/oficina.html"
-            },
-            {
-              repDelta: +1, icon: "dialogo",
-              label: "Sim, mas combinando um horário e separando os materiais primeiro.",
-              sub: "Planejamento antes de executar.",
-              feedback: "A comunidade aceitou combinar a organização.",
-              reply:
-                "Sim. A gente faz, mas com organização.\n\nPrimeiro: separar os materiais, combinar o local e garantir os EPIs. Depois a oficina fica segura e dá certo.\n\nQuando estiverem prontos, a gente segue para a oficina.",
-              next: "aEnd"
-            },
-            {
-              repDelta: -1, icon: "alerta",
-              label: "Dizer que é melhor alguém experiente fazer (mas orientar o caminho).",
-              sub: "Menos engajamento direto.",
-              feedback: "O grupo ficou menos animado, mas entendeu o cuidado.",
-              reply:
-                "Eu entendo a vontade, mas com soda cáustica precisa ter muito cuidado.\n\nO ideal é fazer com alguém que siga segurança e orientação. Se vocês quiserem, eu ajudo a montar um roteiro de segurança e a checar os materiais antes de começar.",
-              next: "aEnd"
-            },
-          ]
+          ],
         },
 
         aEnd: {
           speaker: "Sistema",
           text: "A conversa terminou. A reputação influencia os próximos eventos da comunidade.",
-          next: null
-        }
-      }
-    }
+          next: "goto:../cenaoficina/oficina.html",
+        },
+
+        /* ===== BLOCO TINTAS (APÓS O GATE FINAL, SEM ENTRAR NO FLUXO PRINCIPAL) ===== */
+        aTintas: {
+          speaker: "Moradores",
+          text: "Você pode ajudar a gente com a produção de tinta? A gente está sem tinta aqui na comunidade.",
+          next: "aTintasResp",
+        },
+
+        aTintasResp: {
+          speaker: "Pesquisadora",
+          text:
+            "Sim, posso ajudar, claro!\n\nDá pra fazer tinta usando pigmentos naturais do dia a dia, como urucum, cúrcuma e repolho roxo.\n\nA ideia é extrair a cor (com água morna, álcool ou água com um pouquinho de vinagre, dependendo do pigmento) e misturar com um “ligante” simples para fixar melhor (por exemplo: cola branca escolar, goma, ou uma mistura bem fina de farinha e água, dependendo do que vocês tiverem).\n\nSe vocês toparem, a gente organiza uma oficina rápida: separar os pigmentos, testar a intensidade da cor e ver qual mistura funciona melhor para o que vocês precisam.",
+          next: "a4", // (não mexi no diálogo) -> será interceptado quando estiver no pós-gate
+        },
+        /* ===== FIM TINTAS ===== */
+      },
+    },
   };
 
   const el = {
@@ -364,8 +367,11 @@
     return { label: "Crítica", emoji: "😠" };
   }
 
-  function repLabel(rep) {
-    return repMood(rep).label;
+  // ===== rótulo final em 3 níveis
+  function repTier3(rep) {
+    if (rep >= 3) return "Excelente";
+    if (rep >= 0) return "Regular";
+    return "Péssima";
   }
 
   function updateRepUI() {
@@ -450,17 +456,15 @@
 
   // =========================
   // POSICIONAMENTO DA UI (balões, choices, toast, start)
-  // Agora ancorado na área útil da imagem (contain box)
+  // Ancorado na área útil da imagem (contain box)
   // =========================
   function applyContainLayout() {
     const b = getContainBox();
     if (!b) return;
 
-    // NPC bubble
     if (el.bubbleNpc) {
       const npc = el.bubbleNpc;
 
-      // zera estilos anteriores para evitar acumulo
       npc.style.left = "";
       npc.style.right = "";
       npc.style.top = "";
@@ -472,21 +476,16 @@
         npc.style.top = `${b.tm + b.h * 0.05}px`;
         npc.style.transform = "translateX(-50%)";
       } else if (npc.classList.contains("is-right")) {
-        // Pesquisadora (topo, direita)
         npc.style.top = `${b.tm + b.h * 0.012}px`;
         npc.style.right = `${b.rm + b.w * 0.10}px`;
       } else {
-        // Moradores (mais abaixo, esquerda)
         npc.style.top = `${b.tm + b.h * 0.105}px`;
         npc.style.left = `${b.lm + b.w * 0.06}px`;
       }
     }
 
-    // Player choices
     if (el.bubblePlayer) {
       const p = el.bubblePlayer;
-
-      // breakpoint simples (mantém “cheio” em telas pequenas)
       const isSmall = window.matchMedia("(max-width: 720px)").matches;
 
       p.style.left = "";
@@ -504,17 +503,14 @@
       }
     }
 
-    // Start button (sempre centralizado na área útil)
     if (el.btnStartTalk) {
       el.btnStartTalk.style.left = `${b.lm + b.w / 2}px`;
       el.btnStartTalk.style.bottom = `${b.bm + 18}px`;
-      // mantém transform translateX(-50%) no CSS
     }
 
-    // Toast (centralizado na área útil)
     if (el.toast) {
-      el.toast.style.left = `${b.lm + b.w / 2}px`;
-      el.toast.style.bottom = `${b.bm + b.h * 0.18}px`;
+      el.toast.style.left = `${b.lm + b.w / 5.5}px`;
+      el.toast.style.bottom = `${b.bm + b.h * 0.122}px`;
       el.toast.style.transform = "translateX(-50%)";
     }
   }
@@ -551,7 +547,6 @@
 
   function setNpcBubbleBySpeaker(speaker) {
     const s = (speaker || "").toLowerCase();
-
     if (!el.bubbleNpc) return;
 
     el.bubbleNpc.classList.remove("is-left", "is-right", "is-system");
@@ -561,13 +556,11 @@
       scheduleLayout();
       return;
     }
-
     if (s.includes("morador") || s.includes("moradora")) {
       el.bubbleNpc.classList.add("is-left");
       scheduleLayout();
       return;
     }
-
     if (s.includes("sistema")) {
       el.bubbleNpc.classList.add("is-system");
       scheduleLayout();
@@ -583,21 +576,107 @@
     if (buttons[index]) buttons[index].classList.add("is-active");
   }
 
-  // ===== Interpreta "next" especial: goto:arquivo.html
+  // ===== Botão final "Ir para ..." (usado APÓS o bloco de tintas)
+  function renderProceedButton(url, tier) {
+    showConversationUI(true);
+    if (!el.playerChoices) return;
+
+    el.playerChoices.innerHTML = "";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "choice-btn is-active";
+    btn.innerHTML = `
+      <span class="choice-ico" aria-hidden="true">${getIcon("check")}</span>
+      <span class="choice-main">
+        <span class="choice-text">Ir para a campanha de conscientizção e depois para oficina</span>
+        <span class="choice-sub">Avançar.</span>
+      </span>
+    `;
+
+    btn.onclick = () => {
+      if (url) window.location.href = url;
+    };
+
+    el.playerChoices.appendChild(btn);
+    state._choiceButtons = [btn];
+    state.activeChoiceIndex = 0;
+
+    setHint(`✅ Reputação: ${tier}.`);
+    scheduleLayout();
+  }
+
+  // ===== Gate final: reputação -> (Péssima = retry) | (Regular/Excelente = dispara TINTAS e só depois mostra avançar)
+  function renderFinalGate(url) {
+    const tier = repTier3(state.reputation);
+
+    showToast(`Reputação: ${tier}`);
+    showConversationUI(true);
+
+    if (!el.playerChoices) return;
+    el.playerChoices.innerHTML = "";
+
+    // Péssima: mantém o botão de tentar novamente (como você pediu)
+    if (tier === "Péssima") {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "choice-btn is-active";
+      btn.innerHTML = `
+        <span class="choice-ico" aria-hidden="true">${getIcon("alerta")}</span>
+        <span class="choice-main">
+          <span class="choice-text">Tentar novamente</span>
+          <span class="choice-sub">Refazer a conversa para melhorar a reputação.</span>
+        </span>
+      `;
+      btn.onclick = () => {
+        startConversation();
+        scheduleLayout();
+      };
+
+      el.playerChoices.appendChild(btn);
+      state._choiceButtons = [btn];
+      state.activeChoiceIndex = 0;
+
+      setHint("❗ Reputação: Péssima.");
+      scheduleLayout();
+      return;
+    }
+
+    // Regular/Excelente: depois do gate, entra no bloco de tintas
+    state._inPostGateTintas = true;
+    state._pendingGotoUrl = url || "";
+    state._pendingTier = tier;
+
+    // Dispara imediatamente a pergunta de tintas (ordem correta)
+    renderNode("agua", "aTintas");
+  }
+
   function handleNext(nextToken) {
     if (!nextToken) {
       endConversation(true);
       return;
     }
 
-    if (typeof nextToken === "string" && nextToken.startsWith("goto:")) {
-      const url = nextToken.slice("goto:".length).trim();
-      if (url) window.location.href = url;
-      else endConversation(true);
+    // Intercepta retorno do bloco de tintas: aTintasResp -> (next: a4)
+    // Aqui, em vez de voltar ao fluxo normal, mostramos o botão de avançar.
+    if (state._inPostGateTintas && nextToken === "a4") {
+      const url = state._pendingGotoUrl;
+      const tier = state._pendingTier;
+
+      state._inPostGateTintas = false;
+      state._pendingGotoUrl = "";
+      state._pendingTier = "";
+
+      renderProceedButton(url, tier);
       return;
     }
 
-    // default: renderiza próximo nó na thread atual
+    if (typeof nextToken === "string" && nextToken.startsWith("goto:")) {
+      const url = nextToken.slice("goto:".length).trim();
+      renderFinalGate(url);
+      return;
+    }
+
     renderNode(state.activeThread, nextToken);
   }
 
@@ -629,13 +708,11 @@
     scheduleLayout();
   }
 
-  /* ===== Clique na resposta: mostra fala da Pesquisadora e só depois avança ===== */
   function onPickChoice(choice) {
     state.reputation = clamp(state.reputation + (choice.repDelta || 0), state.repMin, state.repMax);
     updateRepUI();
     showToast(choice.feedback);
 
-    // mostra resposta da pesquisadora
     if (el.npcName) el.npcName.textContent = "Pesquisadora";
     if (el.npcText) el.npcText.textContent = choice.reply || "Certo. Vamos seguir.";
     setNpcBubbleBySpeaker("Pesquisadora");
@@ -730,6 +807,12 @@
   function startConversation() {
     state.activeThread = "agua";
     state.reputation = 0;
+
+    // reseta também o pós-gate
+    state._inPostGateTintas = false;
+    state._pendingGotoUrl = "";
+    state._pendingTier = "";
+
     updateRepUI();
 
     if (el.btnStartTalk) el.btnStartTalk.style.display = "none";
@@ -748,7 +831,7 @@
       else resumo = "A comunidade ficou resistente. Tente um tom mais acolhedor.";
 
       setHint(`✅ ${resumo}`);
-      showToast(`Reputação final: ${repMood(state.reputation).emoji} ${repLabel(state.reputation)}`);
+      showToast(`Reputação: ${repTier3(state.reputation)}`);
     } else {
       setHint("💡 Clique em “Iniciar conversa” para conversar novamente.");
     }
@@ -788,18 +871,21 @@
 
   el.btnReiniciar?.addEventListener("click", () => {
     state.reputation = 0;
+
+    // reseta também o pós-gate
+    state._inPostGateTintas = false;
+    state._pendingGotoUrl = "";
+    state._pendingTier = "";
+
     updateRepUI();
     endConversation(false);
   });
 
-  // Layout: recalcula quando imagem carregar + resize
   if (el.bg) {
     el.bg.addEventListener("load", scheduleLayout);
     if (el.bg.complete && el.bg.naturalWidth > 0) scheduleLayout();
   }
   window.addEventListener("resize", scheduleLayout);
 
-  // roda uma primeira vez (mesmo antes de conversar)
   scheduleLayout();
-
 })();
