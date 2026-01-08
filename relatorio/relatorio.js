@@ -24,7 +24,10 @@
     return `${dd}/${mm}/${yy} ${hh}:${mi}`;
   }
 
-  function setHint(text) { $("hint").textContent = text; }
+  function setHint(text) {
+    const el = $("hint");
+    if (el) el.textContent = text;
+  }
 
   function getCheckedValue(formEl, name) {
     const input = formEl.querySelector(`input[name="${name}"]:checked`);
@@ -93,11 +96,9 @@
   const btnBack3 = $("btnBack3");
   const btnBack4 = $("btnBack4");
 
-  // Vídeo final
+  // Vídeo final (sem botões Som/Pular no HTML)
   const finalVideoOverlay = $("finalVideoOverlay");
   const finalVideoEl = $("finalVideoEl");
-  const btnVideoSkip = $("btnVideoSkip");
-  const btnVideoSound = $("btnVideoSound");
   const videoTap = $("videoTap");
 
   // Validação (mínimos)
@@ -157,7 +158,7 @@
   const BONUS_FOR_TEXT = 3;
 
   function bindCounter(textarea, counterEl, max) {
-    const update = () => counterEl.textContent = `${textarea.value.length}/${max}`;
+    const update = () => { if (counterEl) counterEl.textContent = `${textarea.value.length}/${max}`; };
     textarea.addEventListener("input", update);
     update();
   }
@@ -262,20 +263,25 @@
     ].join("\n");
   }
 
-  // ====== VÍDEO ======
-  function setVideoUI(){
-    btnVideoSound.textContent = finalVideoEl.muted ? "Som: OFF" : "Som: ON";
-  }
+  // ====== VÍDEO (sem botões Som/Pular) ======
+  async function tryPlayVideo({ preferSound }) {
+    if (!finalVideoEl) return false;
 
-  async function tryPlayVideo(preferSound) {
-    videoTap.hidden = true;
+    // Sem botão de som, tentamos:
+    // - se preferSound=true: desmutado (pode falhar por autoplay policy)
+    // - se preferSound=false: mutado (maior chance de autoplay)
     finalVideoEl.muted = !preferSound;
-    setVideoUI();
-    try { await finalVideoEl.play(); return true; } catch { return false; }
+
+    try {
+      await finalVideoEl.play();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async function startFinalVideo() {
-    if (!reportCompleted) return;        // GARANTIA: só depois de finalizar relatório
+    if (!reportCompleted) return; // GARANTIA: só depois de finalizar relatório
     if (videoStarted) return;
     videoStarted = true;
 
@@ -287,18 +293,23 @@
     finalVideoEl.currentTime = 0;
     finalVideoEl.load();
 
-    let ok = await tryPlayVideo(true);
-    if (!ok) ok = await tryPlayVideo(false);
+    // Primeiro tenta autoplay mutado (mais compatível)
+    let ok = await tryPlayVideo({ preferSound: false });
 
+    // Se não deu, mostra botão de toque/clique (gesto do usuário libera áudio em muitos navegadores)
     if (!ok) {
       videoTap.hidden = false;
       setHint("Clique/toque para iniciar o vídeo final.");
+      return;
     }
+
+    // Se tocou mutado, e você quiser orientar:
+    setHint("Vídeo final em execução. Pressione ESC para sair.");
   }
 
   function endVideoAndExit() {
     try { finalVideoEl.pause(); } catch {}
-    finalVideoEl.currentTime = 0;
+    try { finalVideoEl.currentTime = 0; } catch {}
 
     if (END_URL && END_URL.trim()) {
       window.location.href = END_URL;
@@ -310,17 +321,25 @@
     document.body.classList.remove("video-mode");
   }
 
-  btnVideoSkip.addEventListener("click", endVideoAndExit);
-  btnVideoSound.addEventListener("click", async () => {
-    finalVideoEl.muted = !finalVideoEl.muted;
-    setVideoUI();
-    try { await finalVideoEl.play(); } catch {}
-  });
-  videoTap.addEventListener("click", async () => {
-    const ok = await tryPlayVideo(true);
-    if (!ok) await tryPlayVideo(false);
-  });
-  finalVideoEl.addEventListener("ended", endVideoAndExit);
+  // Clique do “Toque/Clique para iniciar”
+  if (videoTap) {
+    videoTap.addEventListener("click", async () => {
+      videoTap.hidden = true;
+
+      // Com gesto do usuário, tentamos com som primeiro
+      let ok = await tryPlayVideo({ preferSound: true });
+      if (!ok) ok = await tryPlayVideo({ preferSound: false });
+
+      if (!ok) {
+        videoTap.hidden = false;
+        setHint("Não foi possível iniciar o vídeo automaticamente. Tente novamente.");
+      }
+    });
+  }
+
+  if (finalVideoEl) {
+    finalVideoEl.addEventListener("ended", endVideoAndExit);
+  }
 
   window.addEventListener("keydown", (e) => {
     if (!videoStarted) return;
@@ -354,7 +373,7 @@
       report
     }));
 
-    reportCompleted = true; // <-- marcou que o relatório foi de fato concluído
+    reportCompleted = true; // relatório concluído
     resultModal.showModal();
   }
 
@@ -418,21 +437,36 @@
   // ====== Navegação ======
   btnNext1.addEventListener("click", () => {
     const ok = validateStep1(); if (!ok) return;
-    if (!state.answers.cause) { applyAnswerSingle("cause", ok.v); state.notes.cause = ok.note; applyTextBonus(); updateScoreUI(); }
+    if (!state.answers.cause) {
+      applyAnswerSingle("cause", ok.v);
+      state.notes.cause = ok.note;
+      applyTextBonus();
+      updateScoreUI();
+    }
     setActiveStep(2);
   });
 
   btnBack2.addEventListener("click", () => setActiveStep(1));
   btnNext2.addEventListener("click", () => {
     const ok = validateStep2(); if (!ok) return;
-    if (!state.answers.risk) { applyAnswerSingle("risk", ok.v); state.notes.risk = ok.note; applyTextBonus(); updateScoreUI(); }
+    if (!state.answers.risk) {
+      applyAnswerSingle("risk", ok.v);
+      state.notes.risk = ok.note;
+      applyTextBonus();
+      updateScoreUI();
+    }
     setActiveStep(3);
   });
 
   btnBack3.addEventListener("click", () => setActiveStep(2));
   btnNext3.addEventListener("click", () => {
     const ok = validateStep3(); if (!ok) return;
-    if (state.answers.reco.length === 0) { applyAnswerReco(ok.vals); state.notes.reco = ok.note; applyTextBonus(); updateScoreUI(); }
+    if (state.answers.reco.length === 0) {
+      applyAnswerReco(ok.vals);
+      state.notes.reco = ok.note;
+      applyTextBonus();
+      updateScoreUI();
+    }
     setActiveStep(4);
   });
 
@@ -450,7 +484,7 @@
     chipProgress.textContent = "100%";
     progressFill.style.width = "100%";
 
-    openResult(); // <-- só aqui o relatório é concluído e o modal abre
+    openResult(); // só aqui o relatório é concluído e o modal abre
   });
 
   // ====== Ajuda/Modais ======
@@ -496,6 +530,7 @@
     countGuid.textContent = "0/280";
 
     // garante vídeo escondido
+    if (videoTap) videoTap.hidden = true;
     finalVideoOverlay.hidden = true;
     finalVideoOverlay.setAttribute("aria-hidden", "true");
     document.body.classList.remove("video-mode");
@@ -513,12 +548,16 @@
 
   // ====== Boot ======
   function boot() {
-    finalVideoOverlay.hidden = true;              // garante invisível
+    // garante invisível desde o início
+    finalVideoOverlay.hidden = true;
     finalVideoOverlay.setAttribute("aria-hidden", "true");
+    if (videoTap) videoTap.hidden = true;
 
-    finalVideoEl.src = FINAL_VIDEO_SRC;
-    finalVideoEl.muted = false;
-    setVideoUI();
+    // prepara src sem tocar
+    if (finalVideoEl) {
+      finalVideoEl.src = FINAL_VIDEO_SRC;
+      finalVideoEl.muted = false;
+    }
 
     updateScoreUI();
     setActiveStep(1);

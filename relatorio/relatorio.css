@@ -489,12 +489,13 @@ body.video-mode .video-overlay{
 }
 
 .final-video{
-  width: 80%;
-  height: 85%;
+  width: 93%;
+  height: 95%;
   object-fit: contain;   /* mostra inteiro */
   object-position: cover;
   transform: none !important;
   background:#000;
+  margin-top: -90px;
 }
 
 
