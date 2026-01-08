@@ -10,8 +10,16 @@
   --scene-h: clamp(560px, 74vh, 760px);
 
   --shadow: 0 18px 60px rgba(0,0,0,.45);
-
   --stroke: rgba(255,255,255,.12);
+
+  /* ====== NOVO: medidas auxiliares p/ posicionar HUD fora da cena ====== */
+  --scene-w: min(var(--scene-max), 96vw);
+  --scene-left: calc((100vw - var(--scene-w)) / 2);
+
+  --hud-w: 360px;      /* largura do HUD */
+  --hud-gap: 22px;     /* distância entre HUD e a cena */
+  --hud-top: 170px;    /* >>> AQUI você baixa/sobe o HUD <<< */
+  --hud-max-h: 550px !important;   /* >>> AQUI você encurta/alonga o HUD <<< */
 
   --hs-border: rgba(110,168,254,.0);
   --hs-border-hover: rgba(110,168,254,.22);
@@ -114,11 +122,11 @@ body{
 /* Pergaminho */
 .scroll{
   position:absolute;
-  right: -84px;
-  top: 14px;
+  right: 0px;
+  top: 26px;
   z-index: 420;
 
-  width: clamp(-50px, 26vw, 270px);
+  width: clamp(220px, 26vw, 240px);
   height: auto;
 
   border: 0;
@@ -134,7 +142,7 @@ body{
 }
 
 .scroll.is-zoomed{
-  transform: rotate(0.6deg) scale(1.35);
+  transform: rotate(0.6deg) scale(1.15);
   z-index: 900;
 }
 
@@ -145,21 +153,55 @@ body{
   border-radius: 16px;
 }
 
-/* HUD */
+/* =========================
+   HUD (fora da cena + mais baixo + mais curto)
+   ========================= */
 .hud{
-  position:absolute;
-  left: -1px;
-  top: 0px;
-  z-index: 400;
-  width: min(520px, calc(100% - 28px));
+  position: fixed;
+  z-index: 9999;
+
+  /* ajuste para baixar/sobe */
+  top: var(--hud-top);
+
+  /* coloca o HUD à esquerda da cena (fora do quadro) */
+  left: clamp(
+    14px,
+    calc(var(--scene-left) - var(--hud-w) - var(--hud-gap)),
+    calc(var(--scene-left) - var(--hud-gap))
+  );
+
+  width: var(--hud-w);
+  max-width: calc(100vw - 58px);
 }
+
+/* se a tela for estreita, o HUD volta para dentro com largura maior */
+@media (max-width: 1100px){
+  .hud{
+    left: 14px;
+    width: min(520px, calc(100vw - 28px));
+  }
+}
+
 .hud-card{
   background: rgba(10,12,18,.55);
   border: 1px solid rgba(255,255,255,.10);
   border-radius: 16px;
   padding: 12px 12px 10px;
   backdrop-filter: blur(10px);
+
+  /* encurta na vertical */
+  max-height: none;
+  overflow: visible;
 }
+
+/* opcional: scrollbar mais discreta */
+.hud-card::-webkit-scrollbar{ width: 10px; }
+.hud-card::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.16);
+  border-radius: 999px;
+  border: 2px solid rgba(10,12,18,.55);
+}
+
 .hud-top{
   display:flex;
   align-items:flex-start;
@@ -234,6 +276,18 @@ body{
 }
 
 /* Hotspots */
+:root{
+  --hs-border: rgba(110,168,254,.35);
+  --hs-fill: rgba(110,168,254,.10);
+  --hs-glow: rgba(110,168,254,.22);
+
+  --hs-border-hover: rgba(110,168,254,.60);
+  --hs-fill-hover: rgba(110,168,254,.14);
+
+  --hs-border-active: rgba(110,168,254,.95);
+  --hs-fill-active: rgba(110,168,254,.18);
+}
+
 .hotspot{
   position:absolute;
   left: calc(var(--x) * 1%);
@@ -243,25 +297,49 @@ body{
   transform: translate(-50%, -50%);
   z-index: 200;
 
-  background: transparent;
-  border: 2px dashed var(--hs-border);
+  background: var(--hs-fill);
+  border: 2px solid var(--hs-border);
   border-radius: 14px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease, transform .08s ease;
 
   cursor: pointer;
   outline: none;
+
+  /* Some por padrão (controle por etapa) */
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(.98);
 }
-.hotspot:hover{ border-color: var(--hs-border-hover); }
+
+.hotspot:hover{
+  border-color: var(--hs-border-hover);
+  background: var(--hs-fill-hover);
+  box-shadow: 0 0 0 6px var(--hs-glow);
+}
+
 .hotspot.active{
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+
   border-color: var(--hs-border-active);
-  box-shadow: 0 0 0 6px rgba(110,168,254,.12);
+  background: var(--hs-fill-active);
+  box-shadow: 0 0 0 8px rgba(110,168,254,.20);
   animation: pulse 1.1s ease-in-out infinite;
 }
+
 @keyframes pulse{
   0%{ box-shadow: 0 0 0 6px rgba(110,168,254,.10); }
   50%{ box-shadow: 0 0 0 10px rgba(110,168,254,.18); }
   100%{ box-shadow: 0 0 0 6px rgba(110,168,254,.10); }
 }
-.hotspot.locked{ pointer-events: none; opacity: .35; }
+
+.hotspot.locked{
+  opacity: 0;
+  pointer-events: none;
+  filter: none;
+}
 
 /* Modal */
 .modal{ position:absolute; inset:0; z-index: 1000; }
@@ -329,9 +407,7 @@ body{
 .toast.good{ border-color: rgba(90, 200, 120, .45); }
 .toast.bad{ border-color: rgba(240, 90, 90, .45); }
 
-/* =========================
-   Barra superior de instruções
-   ========================= */
+/* Barra superior de instruções */
 .topbar{
   position:absolute;
   left: 14px;
@@ -356,11 +432,7 @@ body{
   letter-spacing: .2px;
 }
 
-/* Empurra HUD e pergaminho pra baixo (pra não colidir com a topbar) */
-.hud{ top: -1px;}
-.scroll{ top: 26px; right: -0px; }
-
-/* Barra superior (igual ao print: abaixo do header, centralizada e larga) */
+/* Barra superior (abaixo do header) */
 .stagebar{
   width: min(var(--scene-max), calc(100% - 28px));
   margin: 12px auto 0;
@@ -386,74 +458,7 @@ body{
   padding-top: 14px;
 }
 
-/* Hotspots — mais visíveis */
-:root{
-  --hs-border: rgba(110,168,254,.35);
-  --hs-fill: rgba(110,168,254,.10);
-  --hs-glow: rgba(110,168,254,.22);
-
-  --hs-border-hover: rgba(110,168,254,.60);
-  --hs-fill-hover: rgba(110,168,254,.14);
-
-  --hs-border-active: rgba(110,168,254,.95);
-  --hs-fill-active: rgba(110,168,254,.18);
-}
-
-.hotspot{
-  background: var(--hs-fill);
-  border: 2px solid var(--hs-border);
-  border-radius: 14px;
-  box-shadow: 0 10px 22px rgba(0,0,0,.18);
-  transition: border-color .12s ease, background .12s ease, box-shadow .12s ease, transform .08s ease;
-}
-
-/* Hover mais claro */
-.hotspot:hover{
-  border-color: var(--hs-border-hover);
-  background: var(--hs-fill-hover);
-  box-shadow: 0 0 0 6px var(--hs-glow);
-}
-
-/* Ativo (etapa atual) */
-.hotspot.active{
-  border-color: var(--hs-border-active);
-  background: var(--hs-fill-active);
-  box-shadow: 0 0 0 8px rgba(110,168,254,.20);
-  animation: pulse 1.1s ease-in-out infinite;
-}
-
-/* Locked: bem evidente que está travado */
-.hotspot.locked{
-  opacity: .18;
-  filter: grayscale(1);
-  pointer-events: none;
-}
-
-/* ============ Hotspots por etapa ============ */
-/* Some tudo por padrão */
-.hotspot{
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(.98);
-}
-
-/* Só o hotspot da etapa atual aparece e fica clicável */
-.hotspot.active{
-  opacity: 1;
-  pointer-events: auto;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-/* Locked permanece invisível (mesmo se existir) */
-.hotspot.locked{
-  opacity: 0;
-  pointer-events: none;
-  filter: none;
-}
-
-/* =========================
-   FINAL FX (sem popup)
-   ========================= */
+/* FINAL FX (sem popup) */
 .final-fx{
   position:absolute;
   inset:0;
@@ -461,7 +466,6 @@ body{
   display:flex;
   align-items:flex-end;
   justify-content:center;
-
   pointer-events:none;
 }
 
@@ -481,14 +485,11 @@ body{
   border-radius: 14px;
 }
 
-/* garante que o overlay final nunca aparece quando estiver hidden */
 .final-fx[hidden]{
   display: none !important;
 }
 
-/* =========================
-   Overlay do "Parabéns" dentro do canvas (modal)
-   ========================= */
+/* Overlay do "Parabéns" dentro do canvas (modal) */
 .fw-wrap{
   position:relative;
   width:100%;
@@ -533,3 +534,46 @@ body{
   color: rgba(255,255,255,.92);
   text-shadow: 0 10px 26px rgba(0,0,0,.55);
 }
+
+/* =========================
+   HUD — AJUSTE MANUAL (FIXO)
+   ========================= */
+:root{
+  /* largura do HUD */
+  --hud-w: 350px;
+
+  /* distância do topo (baixa/sobe) */
+  --hud-top: 145px;
+
+  /* altura máxima (ALONGA VERTICALMENTE AQUI) */
+  --hud-max-h: 1000px !important;
+
+  /* empurra para a direita (+) ou esquerda (-) */
+  --hud-x: -15px;
+
+  /* (opcional) força altura mínima pra ficar “alta” mesmo com pouco conteúdo */
+  --hud-min-h: 150px; /* ex: 520px */
+}
+
+.hud{
+  position: fixed;
+  z-index: 9999;
+
+  top: var(--hud-top);
+  left: calc(14px + var(--hud-x));
+
+  width: var(--hud-w);
+  max-width: calc(100vw - 28px);
+}
+
+.hud-card{
+  /* se quiser altura mínima, ative mudando --hud-min-h */
+  min-height: var(--hud-min-h);
+
+  /* controla o “alongamento” */
+  max-height: var(--hud-max-h);
+
+  /* scroll só se passar da altura */
+  overflow: auto;
+}
+
