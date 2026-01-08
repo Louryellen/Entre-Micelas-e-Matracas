@@ -34,7 +34,7 @@
   --bubble-pad-x: 12px;
 
   /* limita altura do TEXTO para não cobrir personagem */
-  --npc-text-max-h: 16vh;  /* ajuste aqui se quiser menor/maior */
+  --npc-text-max-h: 16vh;
   --npc-text-scrollbar-w: 8px;
 
   /* Tail (padrão) */
@@ -51,7 +51,7 @@
   --tailL-outline-half: 17px;
   --tailL-fill-h: 12px;
   --tailL-fill-half: 12px;
-  --tailL-y: 4px; /* desce o triângulo dos moradores */
+  --tailL-y: 4px;
 
   /* PLAYER choices */
   --choices-w: min(520px, 44vw);
@@ -263,6 +263,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.14);
   overflow:hidden;
+  z-index: 2;
 }
 
 .rep-fill{
@@ -334,8 +335,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   pointer-events:none;
 }
 
-.rep-track{ z-index: 2; }
-
 .topbar-right{
   min-width: 110px;
   text-align:right;
@@ -365,8 +364,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   line-height: 1.5;
   font-size: 15px;
   font-weight: 700;
-
-  /* pedido: justificado */
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
@@ -374,7 +371,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 
 /* NPC base (HQ) */
 .bubble.npc{
-  top: 0.4%;
   width: var(--bubble-npc-w);
   padding: var(--bubble-pad-y) var(--bubble-pad-x);
   border-radius: 22px;
@@ -386,7 +382,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   --npc-fill: var(--bubble-fill-researcher);
   background: var(--npc-fill);
 
-  overflow: visible; /* IMPORTANTÍSSIMO: não cortar o triângulo */
+  overflow: visible;
 }
 
 .bubble.npc .bubble-title,
@@ -394,7 +390,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 
 .bubble.npc .bubble-title{ margin-bottom: 6px; }
 
-/* limita altura SÓ do texto (para o balão não crescer demais) */
+/* limita altura SÓ do texto */
 .bubble.npc .bubble-text{
   max-height: var(--npc-text-max-h);
   overflow: auto;
@@ -414,20 +410,14 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 
 /* Pesquisadora (direita) */
 .bubble.npc.is-right{
-  right: 13%;
-  left: auto;
   --npc-fill: var(--bubble-fill-researcher);
   width: var(--bubble-npc-right-w);
 }
 
 /* Moradores (esquerda) */
 .bubble.npc.is-left{
-  left: 7%;
-  right: auto;
-  top: 10.5%;
   --npc-fill: var(--bubble-fill-resident);
 
-  /* aplica tail menor só para moradores */
   --tail-outline-h: var(--tailL-outline-h);
   --tail-outline-half: var(--tailL-outline-half);
   --tail-fill-h: var(--tailL-fill-h);
@@ -435,7 +425,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   --tail-y: var(--tailL-y);
 }
 
-/* Tail base — FIX: posicionamento consistente (não “entorta” como na sua última imagem) */
+/* Tail base */
 .bubble.npc::before,
 .bubble.npc::after{
   content:"";
@@ -464,7 +454,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   right: 26px;
   left: auto;
 
-  /* “encaixe” do preenchimento dentro do contorno */
   top: calc(100% + var(--tail-y) + 2px);
 }
 
@@ -488,10 +477,8 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   top: calc(100% + var(--tail-y) + 2px);
 }
 
-/* Sistema (opcional): central */
+/* Sistema: central */
 .bubble.npc.is-system{
-  left: 50%;
-  right: auto;
   transform: translateX(-50%);
   width: min(720px, 86vw);
   --npc-fill: rgba(0,0,0,.62);
@@ -503,10 +490,8 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 .bubble.npc.is-system::before,
 .bubble.npc.is-system::after{ display:none; }
 
-/* PLAYER (Witcher-ish) à direita */
+/* PLAYER */
 .bubble.player{
-  right: 5%;
-  bottom: 10%;
   width: var(--choices-w);
   padding: 0;
   background: transparent;
@@ -598,8 +583,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   font-weight: 900;
   color: rgba(255,255,255,.92);
   line-height: 1.25;
-
-  /* pedido: justificado */
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
@@ -609,13 +592,11 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   font-size: 12px;
   color: var(--choice-muted);
   font-weight: 650;
-
   text-align: justify;
   text-justify: inter-word;
   hyphens: auto;
 }
 
-/* ATIVO — sem azul */
 .choice-btn.is-active{
   border-color: var(--choice-active-border);
   box-shadow: 0 12px 26px rgba(0,0,0,.26);
@@ -625,8 +606,6 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 .start-talk{
   position:absolute;
   z-index: var(--z-ui);
-  left: 50%;
-  bottom: 18px;
   transform: translateX(-50%);
   padding: 10px 14px;
   border-radius: 999px;
@@ -648,9 +627,7 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
 .toast{
   position:absolute;
   z-index: var(--z-ui);
-  left: 50%;
-  bottom: 18%;
-  transform: translateX(calc(-50% - 220px)); 
+  transform: translateX(-50%);
   padding: 10px 12px;
   border-radius: 12px;
   background: rgba(0,0,0,.62);
@@ -662,16 +639,12 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   text-align:center;
 }
 
-
 @media (max-width: 720px){
-  .bubble.player{
-    right: 4%;
-    left: 4%;
-    width: auto;
-    bottom: 8%;
-  }
-
   :root{
     --npc-text-max-h: 18vh;
+  }
+
+  .bubble.player{
+    width: auto;
   }
 }
