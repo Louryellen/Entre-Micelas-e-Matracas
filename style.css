@@ -447,11 +447,6 @@ body.is-video-playing #btnReiniciar{
   display:none !important;        /* Reiniciar some */
 }
 
-/* ===== DEBUG HOTSPOTS (CENA 1 e geral) ===== */
-body.debug-hotspots .hotspot{
-  outline: 2px dashed rgba(0,255,0,.95) !important;
-  background: rgba(0,255,0,.18) !important;
-}
 
 /* =========================
    HOTSPOT "INVISÍVEL, MAS JUSTO"
