@@ -489,4 +489,70 @@ body.cena1.help-hotspots .hotspot::after{
   50%     { filter:brightness(1.2); }
 }
 
+.btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* =========================
+   CENA 0 (Sala da Pesquisadora)
+   - hover no PC
+   - toque no celular (active + botão "Ver áreas")
+========================= */
+
+body.cena0 .hud{
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* no celular, evita zoom/duplo-toque estranho em elementos clicáveis */
+body.cena0 .hotspot{
+  touch-action: manipulation;
+}
+
+/* garante área mínima para toque (Apple/Google recomendam ~44px) */
+body.cena0 #hs-email{
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* brilho: só nesta cena */
+body.cena0 .hotspot::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:12px;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.985);
+  transition:opacity .12s ease, transform .12s ease;
+  box-shadow:
+    0 0 0 2px rgba(110,168,254,.75),
+    0 0 18px rgba(110,168,254,.35);
+}
+
+/* PC: hover; Mobile: active */
+body.cena0 .hotspot:hover::after,
+body.cena0 .hotspot:active::after{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* Modo ajuda: revela por alguns segundos (ativado via JS) */
+body.cena0.help-hotspots .hotspot::after{
+  opacity:1;
+  transform:scale(1);
+  animation: hotspotPulse 1.05s ease-in-out infinite;
+}
+
+@keyframes hotspotPulse{
+  0%,100% { filter:brightness(1); }
+  50%     { filter:brightness(1.2); }
+}
+
+/* opcional: botão "Ver áreas" aparecer só em telas touch */
+@media (hover: hover) and (pointer: fine){
+  body.cena0 #btnAreas{ display:none; }
+}
 

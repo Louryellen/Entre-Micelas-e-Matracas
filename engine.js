@@ -47,6 +47,50 @@ export function initCena0(){
 
   if(!hs || !icon || !hint || !mail) return;
 
+    const btnAreas = document.getElementById('btnAreas');
+
+  const isTouch =
+    (window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches) ||
+    ('ontouchstart' in window);
+
+  function revelarAreasPorUmTempo(ms = 2200){
+    document.body.classList.add('help-hotspots');
+    // no celular, ajuda muito manter o ícone visível
+    icon.classList.add('active');
+
+    clearTimeout(revelarAreasPorUmTempo._t);
+    revelarAreasPorUmTempo._t = setTimeout(() => {
+      document.body.classList.remove('help-hotspots');
+    }, ms);
+  }
+
+  if (isTouch) {
+    hint.textContent = '💡 Toque no ícone próximo ao notebook para ler o e-mail. Toque em "Ver áreas" se precisar.';
+    // opcional: já dá uma pista inicial rápida
+    revelarAreasPorUmTempo(1600);
+  }
+
+  btnAreas?.addEventListener('click', () => revelarAreasPorUmTempo());
+     const scene = document.getElementById('scene');
+  let tHold = null;
+
+  scene?.addEventListener('pointerdown', () => {
+    if (!isTouch) return;
+    tHold = setTimeout(() => revelarAreasPorUmTempo(), 450); // toque longo
+  }, { passive:true });
+
+  scene?.addEventListener('pointerup', () => {
+    if (tHold) clearTimeout(tHold);
+    tHold = null;
+  }, { passive:true });
+
+  scene?.addEventListener('pointercancel', () => {
+    if (tHold) clearTimeout(tHold);
+    tHold = null;
+  }, { passive:true });
+
+
+
   Object.assign(hs.style, {
     position:'absolute',
     left:'59%',
@@ -400,44 +444,82 @@ document.addEventListener('keydown', onKeyDebugCena1);
     if (fogosContainer) fogosContainer.innerHTML = '';
   }
 
-  function mostrarResultado(pontos){
-    if (!overlayRes || resultadoMostrado) return;
-    resultadoMostrado = true;
+ function mostrarResultado(pontos){
+  if (!overlayRes || resultadoMostrado) return;
+  resultadoMostrado = true;
 
-    const total     = Object.keys(estado).length;
-    const maxPontos = total * PONTOS_POR_ITEM;
-    const perc      = pontos / maxPontos;
+  const total     = Object.keys(estado).length;
+  const maxPontos = total * PONTOS_POR_ITEM;
 
-    let ranking;
-    let texto;
+  // ===== NOVAS FAIXAS =====
+  const THRESH_BRONZE = 70;
+  const THRESH_PRATA  = 90;
+  const THRESH_OURO   = 120;
 
-    trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
+  let ranking = '';
+  let texto   = '';
 
-    if (pontos >= META_PONTOS) {
-      ranking = 'Ouro';
-      texto   = 'Excelente! Você montou um kit muito completo para a investigação.';
-      trofeuIcon?.classList.add('trofeu-ouro');
-      iniciarFogosLoop();
-    } else if (perc >= 0.5) {
-      ranking = 'Prata';
-      texto   = 'Bom trabalho! Seu kit está razoável, mas ainda faltaram alguns itens importantes.';
-      trofeuIcon?.classList.add('trofeu-prata');
-    } else {
-      ranking = 'Bronze';
-      texto   = 'Você esqueceu vários itens essenciais. Que tal tentar novamente e melhorar o kit?';
-      trofeuIcon?.classList.add('trofeu-bronze');
-    }
+  // reset classes (mantém seu efeito de premiação intacto)
+  trofeuIcon?.classList.remove('trofeu-ouro','trofeu-prata','trofeu-bronze');
 
-    if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
-    if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
+  // controle de botões
+  const showRestart = (on) => {
+    if (!btnRecomecarFase) return;
+    btnRecomecarFase.style.display = on ? '' : 'none';
+  };
+  const lockGo = (locked) => {
+    if (!btnIrInvestigacao) return;
+    btnIrInvestigacao.disabled = !!locked;
+    btnIrInvestigacao.title = locked
+      ? 'Pontuação insuficiente. Recomece a fase para poder avançar.'
+      : '';
+  };
 
-    overlayRes.classList.add('visible');
+  // regra: <70 refaz; 70 bronze; 90 prata; 120 ouro
+  if (pontos >= THRESH_OURO) {
+    ranking = 'Ouro';
+    texto   = 'Excelente! Você montou um kit perfeito para a investigação.';
+    trofeuIcon?.classList.add('trofeu-ouro');
+    iniciarFogosLoop();
+
+    showRestart(false);
+    lockGo(false);
+
+  } else if (pontos >= THRESH_PRATA) {
+    ranking = 'Prata';
+    texto   = 'Muito bom! Seu kit está muito bem montado para a investigação.';
+    trofeuIcon?.classList.add('trofeu-prata');
+    pararFogosLoop();
+
+    showRestart(false);
+    lockGo(false);
+
+  } else if (pontos >= THRESH_BRONZE) {
+    ranking = 'Bronze';
+    texto   = 'Você conseguiu o básico, mas pode melhorar o kit antes de avançar.';
+    trofeuIcon?.classList.add('trofeu-bronze');
+    pararFogosLoop();
+
+    // bronze: mostra recomeçar ao lado do ir
+    showRestart(true);
+    lockGo(false);
+
+  } else {
+    ranking = 'Insuficiente';
+    texto   = 'Pontuação abaixo de 70. Você precisa refazer a fase para avançar.';
+    pararFogosLoop();
+
+    // abaixo de 70: refaz obrigatório (ir desativado)
+    showRestart(true);
+    lockGo(true);
   }
 
-  btnFecharRes?.addEventListener('click', () => {
-    overlayRes.classList.remove('visible');
-    pararFogosLoop();
-  });
+  if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
+  if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
+
+  overlayRes.classList.add('visible');
+}
+;
 
   // ========= VÍDEOS EM SEQUÊNCIA (COM SOM + FALLBACK) =========
   async function playWithSound(videoEl){
@@ -521,6 +603,16 @@ document.addEventListener('keydown', onKeyDebugCena1);
   }
 
   btnIrInvestigacao?.addEventListener('click', tocarSequenciaDeVideos);
+  const btnRecomecarFase = $('#btnRecomecarFase');
+
+  btnRecomecarFase?.addEventListener('click', () => {
+  // fecha overlay e reaproveita o reset já existente no botão Reiniciar
+  overlayRes?.classList.remove('visible');
+  pararFogosLoop();
+  btnReiniciar?.click();
+});
+
+
 
   // ========= HOTSPOTS RESPONSIVOS =========
   const mqSmall = window.matchMedia('(max-width: 1400px)');
