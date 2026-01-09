@@ -72,9 +72,10 @@ body{
   cursor:pointer;
   padding: 10px 12px;
   border-radius: 14px;
-  font-weight: 800;
-  background: rgba(10,12,18,.35);
+  font-weight: 700;
+  background: rgba(18, 65, 205, 0.35);
   color: var(--text);
+  font-size: 18px;
 }
 
 .icon-btn{
@@ -142,7 +143,7 @@ body{
 }
 
 .scroll.is-zoomed{
-  transform: rotate(0.6deg) scale(1.15);
+  transform: rotate(0.6deg) scale(1.25);
   z-index: 900;
 }
 
@@ -209,7 +210,7 @@ body{
   gap: 10px;
 }
 .hud-title{ font-weight: 800; letter-spacing: .2px; }
-.hud-sub{ margin-top: 2px; color: var(--muted); font-size: 13px; }
+.hud-sub{ margin-top: 2px; color: var(--muted); font-size: 15px; }
 
 .hud-row{
   display:flex;
@@ -218,7 +219,7 @@ body{
   flex-wrap: wrap;
 }
 .chip{
-  font-size: 12px;
+  font-size: 14px;
   padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,.12);
@@ -240,9 +241,9 @@ body{
   display:grid;
   gap: 2px;
 }
-.t-label{ color: var(--muted); font-size: 12px; }
+.t-label{ color: var(--muted); font-size: 14px; }
 .t-value{ font-weight: 800; }
-.t-mini{ color: var(--muted); font-size: 12px; }
+.t-mini{ color: var(--muted); font-size: 14px; }
 
 .hint{
   margin-top: 10px;
