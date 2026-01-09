@@ -6,39 +6,33 @@
   <title>Sala da Pesquisadora</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
-<!-- ✅ Classe para aplicar regras somente nesta cena -->
-<body class="cena0">
+<body>
 <header>
   <div>
     <div class="title">Entre Micelas e Matracas</div>
     <div class="subtitle">Sala da Pesquisadora</div>
   </div>
-  <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+  <button class="btn" id="btnReiniciar">Reiniciar</button>
 </header>
 
 <main class="main">
   <!-- HUD fora da cena (não cobre o PNG) -->
   <div class="hud">
     <div class="hint" id="hint">
-      💡 Toque no ícone próximo ao notebook para ler o e-mail. Se precisar, toque em “Ver áreas”.
+      💡 Clique no ícone próximo ao notebook para ler o e-mail. (Tecle G para ver áreas)!!!
     </div>
-
-    <!-- ✅ Botão para celular (revela hotspots por alguns segundos via JS/engine) -->
-    <button class="btn btn-ghost" id="btnAreas" type="button">Ver áreas</button>
   </div>
 
   <div class="scene" id="scene">
     <!-- Fundo da sala -->
-    <img class="bg"
-         src="../../assets/bg/cenario_sala.png"
-         alt="Sala da pesquisadora com vista para o mar"
-         id="bg"/>
+    <img class="bg" src="../../assets/bg/cenario_sala.png"
+         alt="Sala da pesquisadora com vista para o mar" id="bg"/>
 
     <!-- Vídeo de transição (começa escondido) -->
-    <video id="introVideo" class="scene-video" playsinline>
-      <source src="../../assets/bg/animação.mp4" type="video/mp4">
-    </video>
+   <video id="introVideo" class="scene-video" playsinline>
+  <source src="../../assets/bg/animação.mp4" type="video/mp4">
+</video>
+
 
     <!-- Hotspot clicável (área do ícone / perto do notebook) -->
     <div id="hs-email" class="hotspot" title="Abrir e-mail"></div>
@@ -54,14 +48,12 @@
         INBOX — UFMA
         <span class="pixel-close" id="closeMail">✕</span>
       </div>
-
       <div class="pixel-body">
         <p><strong>De:</strong> coord.extensao@ufma.br</p>
         <p><strong>Assunto:</strong> Pedido urgente — alterações preocupantes no igarapé</p>
         <p id="mailText"></p>
-
         <div class="pixel-actions">
-          <button class="btn" id="acceptCase" type="button">ACEITAR INVESTIGAÇÃO</button>
+          <button class="btn" id="acceptCase">ACEITAR INVESTIGAÇÃO</button>
         </div>
       </div>
     </div>
@@ -71,7 +63,6 @@
 <script type="module">
   import { initCena0 } from "./engine.js";
   initCena0();
-
   // ===== Ocultar header/HUD SOMENTE durante o vídeo desta cena =====
   const video = document.getElementById("introVideo");
 
@@ -80,14 +71,19 @@
   };
 
   if (video) {
+    // cobre play/auto-play e transições
     video.addEventListener("play", () => setVideoMode(true));
     video.addEventListener("playing", () => setVideoMode(true));
 
+    // se pausar ou terminar, volta header/HUD
     video.addEventListener("pause", () => setVideoMode(false));
     video.addEventListener("ended", () => setVideoMode(false));
 
+    // segurança extra
     video.addEventListener("error", () => setVideoMode(false));
   }
+  
 </script>
-</body>
-</html>
+
+</script>
+

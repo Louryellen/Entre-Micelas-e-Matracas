@@ -41,20 +41,6 @@ header .subtitle{
   cursor:pointer;
 }
 
-.btn:disabled{
-  opacity:.55;
-  cursor:not-allowed;
-}
-
-/* botões alternativos */
-.btn-ghost{
-  background: rgba(110,168,254,0.14);
-  border: 1px solid rgba(110,168,254,0.85);
-  color: #eaf2ff;
-}
-.btn-ghost:hover{ background: rgba(110,168,254,0.22); }
-.btn-ghost:active{ transform: translateY(1px); }
-
 .main{
   height:calc(100vh - var(--header-h));
   padding:0 12px 12px;
@@ -125,20 +111,14 @@ header .subtitle{
   inset:0;
   width:100%;
   height:100%;
+
+  /* sem corte / sem zoom */
   object-fit: contain;
   object-position: center;
+
   display:none;
   background:#000;
   z-index:80;
-}
-
-/* hotspots */
-.hotspot{
-  position:absolute;
-  cursor:pointer;
-  border-radius:10px;
-  z-index:50;
-  touch-action: manipulation; /* ajuda no celular */
 }
 
 /* Ícone de e-mail */
@@ -149,7 +129,7 @@ header .subtitle{
   image-rendering:pixelated;
   display:none;
   pointer-events:none;
-  z-index:60;
+  z-index:10;
 }
 .email-icon.active{
   display:block;
@@ -157,15 +137,15 @@ header .subtitle{
   filter:drop-shadow(0 0 8px rgba(110,168,254,0.8));
 }
 
-@keyframes bounce{
-  0%{transform:translateY(0);}
-  100%{transform:translateY(-6px);}
-}
-
 #mailText{
   white-space: pre-line;
   margin-top: 10px;
   line-height: 1.5;
+}
+
+@keyframes bounce{
+  0%{transform:translateY(0);}
+  100%{transform:translateY(-6px);}
 }
 
 /* Janela pixel */
@@ -179,7 +159,7 @@ header .subtitle{
   border-radius:10px;
   box-shadow:0 10px 40px rgba(0,0,0,.6);
   image-rendering:pixelated;
-  z-index:120;
+  z-index:20;
 }
 
 .pixel-title{
@@ -220,6 +200,14 @@ header .subtitle{
   header .subtitle{font-size:12px;}
 }
 
+/* hotspots */
+.hotspot{
+  position:absolute;
+  cursor:pointer;
+  border-radius:10px;
+  z-index:50;
+}
+
 /* popup */
 .info-popup-backdrop{
   position:fixed;
@@ -228,7 +216,7 @@ header .subtitle{
   align-items:center;
   justify-content:center;
   background:rgba(0,0,0,0.55);
-  z-index:200;
+  z-index:120;
 }
 .info-popup-backdrop.visible{ display:flex; }
 
@@ -271,6 +259,8 @@ header .subtitle{
   margin:0 0 8px;
   text-align:justify;
 }
+.info-popup-body p:last-child{ margin-bottom:0; }
+
 .info-popup-actions{
   margin-top:1rem;
   display:flex;
@@ -282,6 +272,17 @@ header .subtitle{
   max-width:190px;
 }
 
+/* mochila */
+.mochila{
+  position:absolute;
+  right:5%;
+  bottom:5%;
+  width:120px;
+  image-rendering:pixelated;
+  z-index:30;
+  pointer-events:none;
+}
+
 /* overlay resultado */
 .resultado-overlay{
   position:fixed;
@@ -290,7 +291,7 @@ header .subtitle{
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:220;
+  z-index:200;
 }
 .resultado-overlay.visible{ display:flex; }
 
@@ -308,12 +309,11 @@ header .subtitle{
   overflow:hidden;
 }
 
-.resultado-actions{
-  display:flex;
-  justify-content:center;
-  gap:.75rem;
-  margin-top:1.5rem;
+.resultado-card h2{
+  margin-bottom:.75rem;
+  font-size:1.3rem;
 }
+.resultado-card p{ margin:.25rem 0; }
 
 .trofeu-wrap{
   position:relative;
@@ -362,10 +362,11 @@ header .subtitle{
   100%{ transform:translate(var(--dx),var(--dy)) scale(1.2); opacity:0; }
 }
 
-/* fogos por trás do texto */
-.resultado-card > *:not(#fogosContainer){
-  position:relative;
-  z-index:1;
+.resultado-actions{
+  display:flex;
+  justify-content:center;
+  gap:.75rem;
+  margin-top:1.5rem;
 }
 
 /* erro X */
@@ -401,6 +402,21 @@ body.debug-hotspots .hs-erro{
   background: rgba(0, 255, 0, 0.18) !important;
 }
 
+/* botões alternativos */
+.btn-ghost{
+  background: rgba(110,168,254,0.14);
+  border: 1px solid rgba(110,168,254,0.85);
+  color: #eaf2ff;
+}
+.btn-ghost:hover{ background: rgba(110,168,254,0.22); }
+.btn-ghost:active{ transform: translateY(1px); }
+
+/* fogos por trás do texto */
+.resultado-card > *:not(#fogosContainer){
+  position:relative;
+  z-index:1;
+}
+
 /* labels */
 .scene-label{
   position:absolute;
@@ -424,23 +440,24 @@ body.debug-hotspots .hs-erro{
 #lbl-frascos{ left: 15.5%; top: 77%; }
 
 /* ===== MODO VÍDEO (durante playback) ===== */
-body.is-video-playing .hud{ display:none !important; }
-body.is-video-playing #btnReiniciar{ display:none !important; }
-
-/* =========================================================
-   Hotspot highlight (Cena 1 e Cena 0)
-   - hover no PC
-   - active no touch
-   - help-hotspots (via JS) para “revelar áreas” por alguns segundos
-   ========================================================= */
-
-body.cena1 .hotspot,
-body.cena0 .hotspot{
-  background: transparent;
+body.is-video-playing .hud{
+  display:none !important;        /* HUD some */
+}
+body.is-video-playing #btnReiniciar{
+  display:none !important;        /* Reiniciar some */
 }
 
-body.cena1 .hotspot::after,
-body.cena0 .hotspot::after{
+
+/* =========================
+   HOTSPOT "INVISÍVEL, MAS JUSTO" — SOMENTE CENA 1
+========================= */
+
+body.cena1 .hotspot{
+  background: transparent; /* continua invisível */
+}
+
+/* brilho leve ao hover/touch */
+body.cena1 .hotspot::after{
   content:"";
   position:absolute;
   inset:-6px;
@@ -455,14 +472,74 @@ body.cena0 .hotspot::after{
 }
 
 body.cena1 .hotspot:hover::after,
-body.cena1 .hotspot:active::after,
+body.cena1 .hotspot:active::after{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* MODO AJUDA: revela todos por alguns segundos (só na cena 1) */
+body.cena1.help-hotspots .hotspot::after{
+  opacity:1;
+  transform:scale(1);
+  animation: hotspotPulse 1.05s ease-in-out infinite;
+}
+
+@keyframes hotspotPulse{
+  0%,100% { filter:brightness(1); }
+  50%     { filter:brightness(1.2); }
+}
+
+.btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* =========================
+   CENA 0 (Sala da Pesquisadora)
+   - hover no PC
+   - toque no celular (active + botão "Ver áreas")
+========================= */
+
+body.cena0 .hud{
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* no celular, evita zoom/duplo-toque estranho em elementos clicáveis */
+body.cena0 .hotspot{
+  touch-action: manipulation;
+}
+
+/* garante área mínima para toque (Apple/Google recomendam ~44px) */
+body.cena0 #hs-email{
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* brilho: só nesta cena */
+body.cena0 .hotspot::after{
+  content:"";
+  position:absolute;
+  inset:-6px;
+  border-radius:12px;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.985);
+  transition:opacity .12s ease, transform .12s ease;
+  box-shadow:
+    0 0 0 2px rgba(110,168,254,.75),
+    0 0 18px rgba(110,168,254,.35);
+}
+
+/* PC: hover; Mobile: active */
 body.cena0 .hotspot:hover::after,
 body.cena0 .hotspot:active::after{
   opacity:1;
   transform:scale(1);
 }
 
-body.cena1.help-hotspots .hotspot::after,
+/* Modo ajuda: revela por alguns segundos (ativado via JS) */
 body.cena0.help-hotspots .hotspot::after{
   opacity:1;
   transform:scale(1);
@@ -474,21 +551,5 @@ body.cena0.help-hotspots .hotspot::after{
   50%     { filter:brightness(1.2); }
 }
 
-/* =========================
-   CENA 0 — HUD com botão "Ver áreas"
-========================= */
-body.cena0 .hud{
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
 
-#btnAreas{
-  max-width: 240px;
-  width: 100%;
-}
 
-/* Em PC (hover disponível), você pode esconder o botão se quiser */
-@media (hover:hover) and (pointer:fine){
-  #btnAreas{ display:none; }
-}
