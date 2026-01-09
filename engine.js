@@ -103,7 +103,7 @@ export function initCena0(){
     position:'absolute',
     left:'55.5%',
     top:'54.25%',
-    width:'65gpx',
+    width:'55px',
     imageRendering:'pixelated'
   });
 
