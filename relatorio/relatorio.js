@@ -8,7 +8,7 @@
   "use strict";
 
   const END_URL = "fim.html";
-  const FINAL_VIDEO_SRC = "final.mp4"; // se estiver em assets, use: "assets/final.mp4"
+  const FINAL_VIDEO_SRC = "antes.mp4"; // se estiver em assets, use: "assets/antes.mp4"
   const STORAGE_KEY = "emm_relatorio_igarape_v2";
 
   const $ = (id) => document.getElementById(id);
@@ -35,15 +35,48 @@
   }
 
   function getCheckedValues(formEl, name) {
-    return Array.from(formEl.querySelectorAll(`input[name="${name}"]:checked`)).map(i => i.value);
+    return Array.from(formEl.querySelectorAll(`input[name="${name}"]:checked`)).map((i) => i.value);
   }
 
   function normalizeText(s) {
     return String(s || "").replace(/\s+/g, " ").trim();
   }
 
-  // Elementos
-  const btnReiniciar = $("btnReiniciar");
+  // ============================
+  // EMBARALHAR ALTERNATIVAS (UI)
+  // ============================
+  function shuffleInPlace(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function shuffleOptionsInside(rootEl) {
+    if (!rootEl) return;
+
+    // embaralha cada bloco .options
+    const optionGroups = rootEl.querySelectorAll(".options");
+    optionGroups.forEach((group) => {
+      const items = Array.from(group.querySelectorAll(".option"));
+      if (items.length <= 1) return;
+
+      shuffleInPlace(items);
+      items.forEach((el) => group.appendChild(el));
+    });
+  }
+
+  // Robusto: embaralha sem depender de step1/step2 const
+  function shuffleAllStepsOnce() {
+    const steps = document.querySelectorAll(".step");
+    steps.forEach((step) => shuffleOptionsInside(step));
+  }
+
+  // ============================
+  // ELEMENTOS
+  // ============================
+  const btnReiniciar = $("btnReiniciar"); // pode ser removido do HTML sem quebrar
   const btnAjuda = $("btnAjuda");
 
   const chipStep = $("chipStep");
@@ -58,14 +91,14 @@
   const step4 = $("step4");
 
   const txtCause = $("txtCause");
-  const txtRisk  = $("txtRisk");
-  const txtReco  = $("txtReco");
-  const txtGuid  = $("txtGuid");
+  const txtRisk = $("txtRisk");
+  const txtReco = $("txtReco");
+  const txtGuid = $("txtGuid");
 
   const countCause = $("countCause");
-  const countRisk  = $("countRisk");
-  const countReco  = $("countReco");
-  const countGuid  = $("countGuid");
+  const countRisk = $("countRisk");
+  const countReco = $("countReco");
+  const countGuid = $("countGuid");
 
   const helpModal = $("helpModal");
   const btnCloseHelp = $("btnCloseHelp");
@@ -96,17 +129,20 @@
   const btnBack3 = $("btnBack3");
   const btnBack4 = $("btnBack4");
 
-  // Vídeo final (sem botões Som/Pular no HTML)
+  // Vídeo final
   const finalVideoOverlay = $("finalVideoOverlay");
   const finalVideoEl = $("finalVideoEl");
-  const videoTap = $("videoTap"); // fica oculto; não será usado para “ativar som”
+  const videoTap = $("videoTap"); // fica oculto; não será usado
 
   // Validação (mínimos)
   const MIN = { cause: 90, risk: 80, reco: 100, guid: 120 };
 
   function requireMinText(text, minChars, msg) {
     const t = normalizeText(text);
-    if (t.length < minChars) { setHint(msg); return null; }
+    if (t.length < minChars) {
+      setHint(msg);
+      return null;
+    }
     return t;
   }
 
@@ -121,7 +157,7 @@
     score: 0,
     criticalMistakes: 0,
     answers: { cause: null, risk: null, reco: [], guid: null },
-    notes: { cause: "", risk: "", reco: "", guid: "" }
+    notes: { cause: "", risk: "", reco: "", guid: "" },
   };
 
   // GATE: só pode iniciar vídeo após concluir relatório
@@ -132,62 +168,68 @@
     cause: {
       A: { points: 30, critical: 0, label: "Carga orgânica elevada por descarte de resíduos e óleo no entorno do igarapé" },
       B: { points: 10, critical: 0, label: "Variação natural (chuvas/estiagem) como principal explicação" },
-      C: { points: 5,  critical: 0, label: "Contaminação por substância específica sem evidências suficientes" },
-      D: { points: 0,  critical: 1, label: "Alteração apenas visual, sem impacto na qualidade da água" }
+      C: { points: 5, critical: 0, label: "Contaminação por substância específica sem evidências suficientes" },
+      D: { points: 0, critical: 1, label: "Alteração apenas visual, sem impacto na qualidade da água" },
     },
     risk: {
       A: { points: 25, critical: 0, label: "Alto" },
       B: { points: 15, critical: 0, label: "Moderado" },
-      C: { points: 5,  critical: 0, label: "Baixo" },
-      D: { points: 0,  critical: 1, label: "Nenhum" }
+      C: { points: 5, critical: 0, label: "Baixo" },
+      D: { points: 0, critical: 1, label: "Nenhum" },
     },
     reco: {
       A: { points: 15, critical: 0, label: "Pontos de coleta de óleo + mobilização + limpeza monitorada do entorno" },
       B: { points: 12, critical: 0, label: "Monitoramento periódico + registro + encaminhamento para análise quando necessário" },
-      C: { points: 0,  critical: 2, label: "Aplicar produtos químicos diretamente no igarapé para neutralizar" },
-      D: { points: 4,  critical: 0, label: "Somente fiscalização punitiva, sem alternativa/educação" }
+      C: { points: 0, critical: 2, label: "Aplicar produtos químicos diretamente no igarapé para neutralizar" },
+      D: { points: 4, critical: 0, label: "Somente fiscalização punitiva, sem alternativa/educação" },
     },
     guid: {
       A: { points: 20, critical: 0, label: "Não descarte óleo no ralo; armazene e entregue em ponto de coleta" },
-      B: { points: 0,  critical: 2, label: "Usar químicos fortes e despejar no esgoto para limpar" },
-      C: { points: 5,  critical: 0, label: "Responsabilidade exclusiva do poder público; não mudar hábitos" },
-      D: { points: 0,  critical: 1, label: "Se parecer normal, pode usar sem cuidados" }
-    }
+      B: { points: 0, critical: 2, label: "Usar químicos fortes e despejar no esgoto para limpar" },
+      C: { points: 5, critical: 0, label: "Responsabilidade exclusiva do poder público; não mudar hábitos" },
+      D: { points: 0, critical: 1, label: "Se parecer normal, pode usar sem cuidados" },
+    },
   };
 
   const BONUS_FOR_TEXT = 3;
 
   function bindCounter(textarea, counterEl, max) {
-    const update = () => { if (counterEl) counterEl.textContent = `${textarea.value.length}/${max}`; };
+    if (!textarea || !counterEl) return;
+    const update = () => {
+      counterEl.textContent = `${textarea.value.length}/${max}`;
+    };
     textarea.addEventListener("input", update);
     update();
   }
 
   bindCounter(txtCause, countCause, 240);
-  bindCounter(txtRisk,  countRisk,  240);
-  bindCounter(txtReco,  countReco,  260);
-  bindCounter(txtGuid,  countGuid,  280);
+  bindCounter(txtRisk, countRisk, 240);
+  bindCounter(txtReco, countReco, 260);
+  bindCounter(txtGuid, countGuid, 280);
 
   function setActiveStep(step) {
     state.step = clamp(step, 1, 4);
-    [step1, step2, step3, step4].forEach(el => el.classList.remove("active"));
-    $(`step${state.step}`).classList.add("active");
+    [step1, step2, step3, step4].forEach((el) => el && el.classList.remove("active"));
+    const current = $(`step${state.step}`);
+    if (current) current.classList.add("active");
 
     const pct = Math.round(((state.step - 1) / 4) * 100);
-    chipStep.textContent = `${state.step}/4`;
-    chipProgress.textContent = `${pct}%`;
-    progressFill.style.width = `${pct}%`;
+    if (chipStep) chipStep.textContent = `${state.step}/4`;
+    if (chipProgress) chipProgress.textContent = `${pct}%`;
+    if (progressFill) progressFill.style.width = `${pct}%`;
 
     const subByStep = {
       1: "Etapa 1: indique a causa provável e registre as evidências que sustentam sua análise.",
       2: "Etapa 2: classifique o risco e justifique o impacto para comunidade e ambiente.",
       3: "Etapa 3: selecione até 2 recomendações e descreva um plano de ação curto e executável.",
-      4: "Etapa 4: defina a orientação principal e escreva a mensagem final para a comunidade."
+      4: "Etapa 4: defina a orientação principal e escreva a mensagem final para a comunidade.",
     };
-    panelSub.textContent = subByStep[state.step] || "";
+    if (panelSub) panelSub.textContent = subByStep[state.step] || "";
   }
 
-  function updateScoreUI(){ chipScore.textContent = String(state.score); }
+  function updateScoreUI() {
+    if (chipScore) chipScore.textContent = String(state.score);
+  }
 
   function applyAnswerSingle(key, value) {
     state.answers[key] = value;
@@ -198,39 +240,48 @@
 
   function applyAnswerReco(values) {
     state.answers.reco = values;
-    let sum = 0, crit = 0;
-    values.forEach(v => { sum += RUBRIC.reco[v].points; crit += RUBRIC.reco[v].critical; });
+    let sum = 0,
+      crit = 0;
+    values.forEach((v) => {
+      sum += RUBRIC.reco[v].points;
+      crit += RUBRIC.reco[v].critical;
+    });
     state.score = clamp(state.score + sum, 0, 100);
     state.criticalMistakes += crit;
   }
 
-  function applyTextBonus(){ state.score = clamp(state.score + BONUS_FOR_TEXT, 0, 100); }
+  function applyTextBonus() {
+    state.score = clamp(state.score + BONUS_FOR_TEXT, 0, 100);
+  }
 
   function computeEnding() {
-    const s = state.score, c = state.criticalMistakes;
+    const s = state.score,
+      c = state.criticalMistakes;
     if (s >= 78 && c === 0) return "BOM";
     if (s >= 55 && c <= 2) return "MÉDIO";
     return "RUIM";
   }
 
-  function consistencyLabel(ending){
+  function consistencyLabel(ending) {
     if (ending === "BOM") return "Alta";
     if (ending === "MÉDIO") return "Média";
     return "Baixa";
   }
 
   function buildEndingNarrative(ending) {
-    if (ending === "BOM") return "O relatório foi consistente com as evidências do igarapé e propôs medidas seguras e executáveis. A comunidade recebe orientação clara e as ações priorizam prevenção, mitigação e monitoramento contínuo.";
-    if (ending === "MÉDIO") return "O relatório apresenta boa intenção e parte das decisões é adequada, mas há lacunas que podem reduzir a efetividade. Com ajustes nas recomendações e reforço da comunicação comunitária, a resposta pode se tornar mais robusta.";
+    if (ending === "BOM")
+      return "O relatório foi consistente com as evidências do igarapé e propôs medidas seguras e executáveis. A comunidade recebe orientação clara e as ações priorizam prevenção, mitigação e monitoramento contínuo.";
+    if (ending === "MÉDIO")
+      return "O relatório apresenta boa intenção e parte das decisões é adequada, mas há lacunas que podem reduzir a efetividade. Com ajustes nas recomendações e reforço da comunicação comunitária, a resposta pode se tornar mais robusta.";
     return "O relatório apresenta inconsistências e/ou decisões de risco. Isso compromete a resposta ao problema do igarapé e pode agravar impactos. É necessário reavaliar diagnóstico, priorizar segurança e buscar suporte técnico antes de intervenções.";
   }
 
   function buildReportText(ending) {
     const a = state.answers;
     const cause = a.cause ? RUBRIC.cause[a.cause].label : "—";
-    const risk  = a.risk  ? RUBRIC.risk[a.risk].label  : "—";
-    const guid  = a.guid  ? RUBRIC.guid[a.guid].label  : "—";
-    const recoLabels = (a.reco || []).map(v => `- ${RUBRIC.reco[v].label}`).join("\n") || "- —";
+    const risk = a.risk ? RUBRIC.risk[a.risk].label : "—";
+    const guid = a.guid ? RUBRIC.guid[a.guid].label : "—";
+    const recoLabels = (a.reco || []).map((v) => `- ${RUBRIC.reco[v].label}`).join("\n") || "- —";
 
     return [
       "RELATÓRIO FINAL — IGARAPÉ",
@@ -259,61 +310,70 @@
       "4.1) Parecer final para circulação comunitária (texto)",
       `- ${state.notes.guid || "—"}`,
       "",
-      `Desfecho: ${ending}`
+      `Desfecho: ${ending}`,
     ].join("\n");
   }
 
-  // ====== VÍDEO (tenta com som usando o clique do fechamento do modal) ======
+  // ============================
+  // VÍDEO
+  // ============================
   async function startFinalVideo({ fromUserGesture = false } = {}) {
     if (!reportCompleted) return;
     if (videoStarted) return;
     videoStarted = true;
 
-    if (videoTap) videoTap.hidden = true; // não usar clique extra
+    if (videoTap) videoTap.hidden = true;
 
-    finalVideoOverlay.hidden = false;
-    finalVideoOverlay.setAttribute("aria-hidden", "false");
+    if (finalVideoOverlay) {
+      finalVideoOverlay.hidden = false;
+      finalVideoOverlay.setAttribute("aria-hidden", "false");
+    }
     document.body.classList.add("video-mode");
 
-    if (!finalVideoEl.src) finalVideoEl.src = FINAL_VIDEO_SRC;
-    finalVideoEl.currentTime = 0;
-    finalVideoEl.load();
+    if (finalVideoEl) {
+      if (!finalVideoEl.src) finalVideoEl.src = FINAL_VIDEO_SRC;
+      finalVideoEl.currentTime = 0;
+      finalVideoEl.load();
 
-    // 1) Tentativa principal: SOM LIGADO
-    finalVideoEl.muted = false;
-    finalVideoEl.volume = 1;
+      finalVideoEl.muted = false;
+      finalVideoEl.volume = 1;
 
-    try {
-      await finalVideoEl.play();
-      return;
-    } catch {
-      // 2) Fallback inevitável (política do navegador)
-      // Se mesmo vindo de clique o browser bloquear, não tem como forçar som sem interação específica.
       try {
-        finalVideoEl.muted = true;
         await finalVideoEl.play();
-        setHint(
-          fromUserGesture
-            ? "Seu navegador bloqueou o autoplay com som. O vídeo iniciou sem áudio por política do navegador."
-            : "O vídeo iniciou sem áudio por política do navegador."
-        );
+        return;
       } catch {
-        setHint("Não foi possível iniciar o vídeo automaticamente.");
+        try {
+          finalVideoEl.muted = true;
+          await finalVideoEl.play();
+          setHint(
+            fromUserGesture
+              ? "Seu navegador bloqueou o autoplay com som. O vídeo iniciou sem áudio por política do navegador."
+              : "O vídeo iniciou sem áudio por política do navegador."
+          );
+        } catch {
+          setHint("Não foi possível iniciar o vídeo automaticamente.");
+        }
       }
     }
   }
 
   function endVideoAndExit() {
-    try { finalVideoEl.pause(); } catch {}
-    try { finalVideoEl.currentTime = 0; } catch {}
+    try {
+      finalVideoEl && finalVideoEl.pause();
+    } catch {}
+    try {
+      if (finalVideoEl) finalVideoEl.currentTime = 0;
+    } catch {}
 
     if (END_URL && END_URL.trim()) {
       window.location.href = END_URL;
       return;
     }
 
-    finalVideoOverlay.hidden = true;
-    finalVideoOverlay.setAttribute("aria-hidden", "true");
+    if (finalVideoOverlay) {
+      finalVideoOverlay.hidden = true;
+      finalVideoOverlay.setAttribute("aria-hidden", "true");
+    }
     document.body.classList.remove("video-mode");
   }
 
@@ -326,82 +386,110 @@
     if (e.key === "Escape") endVideoAndExit();
   });
 
-  // ====== RESULTADO ======
+  // ============================
+  // RESULTADO
+  // ============================
   function openResult() {
     const ending = computeEnding();
     const report = buildReportText(ending);
     const narrative = buildEndingNarrative(ending);
 
-    resultTitle.textContent = `Final ${ending}`;
-    resultSub.textContent = "Relatório consolidado com base nas marcações e nos pareceres.";
-    resultBadge.textContent = `FINAL ${ending}`;
+    if (resultTitle) resultTitle.textContent = `Final ${ending}`;
+    if (resultSub) resultSub.textContent = "Relatório consolidado com base nas marcações e nos pareceres.";
+    if (resultBadge) resultBadge.textContent = `FINAL ${ending}`;
 
-    kpiScore.textContent = String(state.score);
-    kpiConsistency.textContent = consistencyLabel(ending);
-    endingText.textContent = narrative;
+    if (kpiScore) kpiScore.textContent = String(state.score);
+    if (kpiConsistency) kpiConsistency.textContent = consistencyLabel(ending);
+    if (endingText) endingText.textContent = narrative;
 
-    paperMeta.textContent = `Data: ${nowBR()} • Pontuação: ${state.score} • Erros críticos: ${state.criticalMistakes}`;
-    reportText.textContent = report;
+    if (paperMeta) paperMeta.textContent = `Data: ${nowBR()} • Pontuação: ${state.score} • Erros críticos: ${state.criticalMistakes}`;
+    if (reportText) reportText.textContent = report;
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      endedAt: new Date().toISOString(),
-      score: state.score,
-      criticalMistakes: state.criticalMistakes,
-      ending,
-      answers: state.answers,
-      notes: state.notes,
-      report
-    }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        endedAt: new Date().toISOString(),
+        score: state.score,
+        criticalMistakes: state.criticalMistakes,
+        ending,
+        answers: state.answers,
+        notes: state.notes,
+        report,
+      })
+    );
 
     reportCompleted = true;
-    resultModal.showModal();
+    if (resultModal) resultModal.showModal();
   }
 
-  // IMPORTANTE: não iniciar vídeo no "close" (perde o gesto do clique)
-  // Em vez disso, iniciar no MESMO clique do botão que fecha o modal:
   function closeResultAndStartVideo() {
-    // garante que o modal feche e o vídeo inicie ainda no contexto do clique
-    try { resultModal.close(); } catch {}
+    try {
+      resultModal && resultModal.close();
+    } catch {}
     startFinalVideo({ fromUserGesture: true });
   }
 
-  // Cancel (ESC) fecha modal e mantém fluxo (ESC também é gesto do usuário)
-  resultModal.addEventListener("cancel", (e) => {
-    e.preventDefault();
-    closeResultAndStartVideo();
-  });
+  if (resultModal) {
+    resultModal.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      closeResultAndStartVideo();
+    });
+  }
 
-  // ====== Validações ======
+  // ============================
+  // VALIDAÇÕES
+  // ============================
   function validateStep1() {
     const v = getCheckedValue(step1, "cause");
-    if (!v) { setHint("Selecione uma causa provável antes de avançar."); return null; }
-    const note = requireMinText(txtCause.value, MIN.cause, `Escreva um parecer mais completo (mín. ${MIN.cause} caracteres) com evidências do igarapé.`);
+    if (!v) {
+      setHint("Selecione uma causa provável antes de avançar.");
+      return null;
+    }
+    const note = requireMinText(
+      txtCause && txtCause.value,
+      MIN.cause,
+      `Escreva um parecer mais completo (mín. ${MIN.cause} caracteres) com evidências do igarapé.`
+    );
     if (!note) return null;
     return { v, note };
   }
 
   function validateStep2() {
     const v = getCheckedValue(step2, "risk");
-    if (!v) { setHint("Selecione o nível de risco antes de avançar."); return null; }
-    const note = requireMinText(txtRisk.value, MIN.risk, `Escreva uma justificativa mais completa (mín. ${MIN.risk} caracteres) para o risco.`);
+    if (!v) {
+      setHint("Selecione o nível de risco antes de avançar.");
+      return null;
+    }
+    const note = requireMinText(
+      txtRisk && txtRisk.value,
+      MIN.risk,
+      `Escreva uma justificativa mais completa (mín. ${MIN.risk} caracteres) para o risco.`
+    );
     if (!note) return null;
     return { v, note };
   }
 
   function validateStep3() {
     const valsRaw = getCheckedValues(step3, "reco");
-    if (valsRaw.length === 0) { setHint("Selecione pelo menos 1 recomendação."); return null; }
+    if (valsRaw.length === 0) {
+      setHint("Selecione pelo menos 1 recomendação.");
+      return null;
+    }
 
     const vals = enforceMaxTwoRecommendations(valsRaw);
     if (valsRaw.length > 2) {
       const allowed = new Set(vals);
-      Array.from(step3.querySelectorAll('input[name="reco"]')).forEach(i => {
+      Array.from(step3.querySelectorAll('input[name="reco"]')).forEach((i) => {
         if (!allowed.has(i.value)) i.checked = false;
       });
-      setHint("Você pode selecionar no máximo 2 recomendações. Mantive as 2 primeiras marcadas.");
+      setHint("Você pode selecionar no máximo 2 recomendações. Desmarquei o excedente e mantive 2 selecionadas.");
     }
 
-    const note = requireMinText(txtReco.value, MIN.reco, `Descreva um plano de ação mais completo (mín. ${MIN.reco} caracteres).`);
+    const note = requireMinText(
+      txtReco && txtReco.value,
+      MIN.reco,
+      `Descreva um plano de ação mais completo (mín. ${MIN.reco} caracteres).`
+    );
     if (!note) return null;
 
     return { vals, note };
@@ -409,88 +497,117 @@
 
   function validateStep4() {
     const v = getCheckedValue(step4, "guid");
-    if (!v) { setHint("Selecione a orientação principal antes de finalizar."); return null; }
+    if (!v) {
+      setHint("Selecione a orientação principal antes de finalizar.");
+      return null;
+    }
 
-    const note = requireMinText(txtGuid.value, MIN.guid, `Escreva uma mensagem final mais completa (mín. ${MIN.guid} caracteres) para a comunidade.`);
+    const note = requireMinText(
+      txtGuid && txtGuid.value,
+      MIN.guid,
+      `Escreva uma mensagem final mais completa (mín. ${MIN.guid} caracteres) para a comunidade.`
+    );
     if (!note) return null;
 
     return { v, note };
   }
 
-  // ====== Navegação ======
-  btnNext1.addEventListener("click", () => {
-    const ok = validateStep1(); if (!ok) return;
-    if (!state.answers.cause) {
-      applyAnswerSingle("cause", ok.v);
-      state.notes.cause = ok.note;
-      applyTextBonus();
-      updateScoreUI();
-    }
-    setActiveStep(2);
-  });
+  // ============================
+  // NAVEGAÇÃO
+  // ============================
+  if (btnNext1) {
+    btnNext1.addEventListener("click", () => {
+      const ok = validateStep1();
+      if (!ok) return;
 
-  btnBack2.addEventListener("click", () => setActiveStep(1));
-  btnNext2.addEventListener("click", () => {
-    const ok = validateStep2(); if (!ok) return;
-    if (!state.answers.risk) {
-      applyAnswerSingle("risk", ok.v);
-      state.notes.risk = ok.note;
-      applyTextBonus();
-      updateScoreUI();
-    }
-    setActiveStep(3);
-  });
+      if (!state.answers.cause) {
+        applyAnswerSingle("cause", ok.v);
+        state.notes.cause = ok.note;
+        applyTextBonus();
+        updateScoreUI();
+      }
+      setActiveStep(2);
+    });
+  }
 
-  btnBack3.addEventListener("click", () => setActiveStep(2));
-  btnNext3.addEventListener("click", () => {
-    const ok = validateStep3(); if (!ok) return;
-    if (state.answers.reco.length === 0) {
-      applyAnswerReco(ok.vals);
-      state.notes.reco = ok.note;
-      applyTextBonus();
-      updateScoreUI();
-    }
-    setActiveStep(4);
-  });
+  if (btnBack2) btnBack2.addEventListener("click", () => setActiveStep(1));
+  if (btnNext2) {
+    btnNext2.addEventListener("click", () => {
+      const ok = validateStep2();
+      if (!ok) return;
 
-  btnBack4.addEventListener("click", () => setActiveStep(3));
-  btnFinish.addEventListener("click", () => {
-    const ok = validateStep4(); if (!ok) return;
+      if (!state.answers.risk) {
+        applyAnswerSingle("risk", ok.v);
+        state.notes.risk = ok.note;
+        applyTextBonus();
+        updateScoreUI();
+      }
+      setActiveStep(3);
+    });
+  }
 
-    if (!state.answers.guid) {
-      applyAnswerSingle("guid", ok.v);
-      state.notes.guid = ok.note;
-      applyTextBonus();
-      updateScoreUI();
-    }
+  if (btnBack3) btnBack3.addEventListener("click", () => setActiveStep(2));
+  if (btnNext3) {
+    btnNext3.addEventListener("click", () => {
+      const ok = validateStep3();
+      if (!ok) return;
 
-    chipProgress.textContent = "100%";
-    progressFill.style.width = "100%";
+      if (state.answers.reco.length === 0) {
+        applyAnswerReco(ok.vals);
+        state.notes.reco = ok.note;
+        applyTextBonus();
+        updateScoreUI();
+      }
+      setActiveStep(4);
+    });
+  }
 
-    openResult();
-  });
+  if (btnBack4) btnBack4.addEventListener("click", () => setActiveStep(3));
+  if (btnFinish) {
+    btnFinish.addEventListener("click", () => {
+      const ok = validateStep4();
+      if (!ok) return;
 
-  // ====== Ajuda/Modais ======
-  btnAjuda.addEventListener("click", () => helpModal.showModal());
-  btnCloseHelp.addEventListener("click", () => helpModal.close());
-  btnOkHelp.addEventListener("click", () => helpModal.close());
+      if (!state.answers.guid) {
+        applyAnswerSingle("guid", ok.v);
+        state.notes.guid = ok.note;
+        applyTextBonus();
+        updateScoreUI();
+      }
 
-  // Fechar resultado (×) e Encerrar jogo: FECHA e já INICIA VÍDEO COM SOM no mesmo clique
-  btnCloseResult.addEventListener("click", closeResultAndStartVideo);
-  btnFinishGame.addEventListener("click", closeResultAndStartVideo);
+      if (chipProgress) chipProgress.textContent = "100%";
+      if (progressFill) progressFill.style.width = "100%";
 
-  btnCopy.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(reportText.textContent || "");
-      setHint("Relatório copiado para a área de transferência.");
-    } catch {
-      setHint("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.");
-    }
-  });
+      openResult();
+    });
+  }
 
-  btnPrint.addEventListener("click", () => window.print());
+  // ============================
+  // AJUDA / MODAIS
+  // ============================
+  if (btnAjuda) btnAjuda.addEventListener("click", () => helpModal && helpModal.showModal());
+  if (btnCloseHelp) btnCloseHelp.addEventListener("click", () => helpModal && helpModal.close());
+  if (btnOkHelp) btnOkHelp.addEventListener("click", () => helpModal && helpModal.close());
 
-  // ====== Reset ======
+  if (btnCloseResult) btnCloseResult.addEventListener("click", closeResultAndStartVideo);
+  if (btnFinishGame) btnFinishGame.addEventListener("click", closeResultAndStartVideo);
+
+  if (btnCopy) {
+    btnCopy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText((reportText && reportText.textContent) || "");
+        setHint("Relatório copiado para a área de transferência.");
+      } catch {
+        setHint("Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.");
+      }
+    });
+  }
+
+  if (btnPrint) btnPrint.addEventListener("click", () => window.print());
+
+  // ============================
+  // RESET
+  // ============================
   function hardReset() {
     localStorage.removeItem(STORAGE_KEY);
 
@@ -503,35 +620,46 @@
     reportCompleted = false;
     videoStarted = false;
 
-    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(i => (i.checked = false));
-    [txtCause, txtRisk, txtReco, txtGuid].forEach(t => (t.value = ""));
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((i) => (i.checked = false));
+    [txtCause, txtRisk, txtReco, txtGuid].forEach((t) => t && (t.value = ""));
 
-    countCause.textContent = "0/240";
-    countRisk.textContent = "0/240";
-    countReco.textContent = "0/260";
-    countGuid.textContent = "0/280";
+    if (countCause) countCause.textContent = "0/240";
+    if (countRisk) countRisk.textContent = "0/240";
+    if (countReco) countReco.textContent = "0/260";
+    if (countGuid) countGuid.textContent = "0/280";
 
-    // garante vídeo escondido
     if (videoTap) videoTap.hidden = true;
-    finalVideoOverlay.hidden = true;
-    finalVideoOverlay.setAttribute("aria-hidden", "true");
+    if (finalVideoOverlay) {
+      finalVideoOverlay.hidden = true;
+      finalVideoOverlay.setAttribute("aria-hidden", "true");
+    }
     document.body.classList.remove("video-mode");
-    try { finalVideoEl.pause(); } catch {}
+    try {
+      finalVideoEl && finalVideoEl.pause();
+    } catch {}
+
+    // ✅ embaralha novamente no reset (se você mantiver o botão)
+    shuffleAllStepsOnce();
 
     updateScoreUI();
     setActiveStep(1);
-    chipProgress.textContent = "0%";
-    progressFill.style.width = "0%";
+
+    if (chipProgress) chipProgress.textContent = "0%";
+    if (progressFill) progressFill.style.width = "0%";
 
     setHint("Monte o relatório técnico do igarapé. Marque decisões e escreva pareceres curtos para justificar.");
   }
 
-  btnReiniciar.addEventListener("click", hardReset);
+  if (btnReiniciar) btnReiniciar.addEventListener("click", hardReset);
 
-  // ====== Boot ======
+  // ============================
+  // BOOT
+  // ============================
   function boot() {
-    finalVideoOverlay.hidden = true;
-    finalVideoOverlay.setAttribute("aria-hidden", "true");
+    if (finalVideoOverlay) {
+      finalVideoOverlay.hidden = true;
+      finalVideoOverlay.setAttribute("aria-hidden", "true");
+    }
     if (videoTap) videoTap.hidden = true;
 
     if (finalVideoEl) {
@@ -539,6 +667,9 @@
       finalVideoEl.muted = false;
       finalVideoEl.volume = 1;
     }
+
+    // ✅ EMBARALHA A ORDEM VISUAL DAS ALTERNATIVAS (sem mudar o value A/B/C/D)
+    shuffleAllStepsOnce();
 
     updateScoreUI();
     setActiveStep(1);

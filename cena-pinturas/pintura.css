@@ -32,12 +32,12 @@ body{
   overflow:hidden;
 }
 
-.ui-compact :root{
+/* CORREÇÃO: este bloco precisa bater com a classe no <html> */
+:root.ui-compact{
   --header-h: 72px;
   --scene-h: clamp(380px, 58vh, 680px);
   --gap: 14px;
 }
-
 
 /* ---------------------------
    Header + Stagebar
@@ -557,3 +557,61 @@ body{
   .bottom-row{ grid-template-columns: 1fr; }
   .diary{ max-width: 100%; }
 }
+
+/* =========================
+   VIDEO FINAL (modo festa)
+   - mantém o HEADER (topbar)
+   - esconde stagebar + main
+   - vídeo grande abaixo do header
+========================= */
+/* =========================
+   VIDEO FINAL (modo festa)
+   - mais largo (menos margem lateral)
+========================= */
+body.video-mode .stagebar,
+body.video-mode .main{
+  display:none;
+}
+
+body.video-mode .video-scene{
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--header-h);
+  bottom: 0;
+  z-index: 99998;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  /* MENOS “bordas” laterais */
+  padding: 6px; /* antes: 14px */
+  background: #000;
+}
+
+body.video-mode .video-shell{
+  /* AUMENTA a largura máxima (mais lateral) */
+  width: min(1700px, 99.5vw);  /* antes usava --scene-max e 96vw */
+  height: calc(100vh - var(--header-h) - 12px);
+
+  border-radius: var(--radius);
+  overflow:hidden;
+
+  background:#000;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: var(--shadow);
+}
+
+body.video-mode .final-video{
+  width:100%;
+  height:100%;
+  display:block;
+
+  /* mantém sem corte (pode sobrar barra preta dependendo do vídeo) */
+  object-fit: contain;
+  background:#000;
+}
+
+
+#btnReiniciar{ display:none !important; }

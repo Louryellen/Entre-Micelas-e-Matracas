@@ -51,6 +51,8 @@
   const achievement = $("#achievement");
 
   const toast = $("#toast");
+  const stagebar = $("#stagebar");
+  const imgPreview = $("#imgPreview");
 
   // Canvas do vestido (preview)
   const fitCanvas = $("#fitCanvas");
@@ -68,6 +70,10 @@
   const EPS = 1e-6;
 
   const PIGMENTS = ["repolho", "curcuma", "urucum"];
+
+  // ===== FINAL VÍDEO =====
+  const FINAL_VIDEO_SRC = "final.mp4"; // ajuste o caminho se necessário
+  const NEXT_AFTER_VIDEO_URL = new URL("../relatorio/relatorio.html", window.location.href).href;
 
   // =========================
   // UTIL
@@ -147,8 +153,8 @@
   }
 
   function curcumaColorByPH(ph) {
-    if (ph < 7.5) return { hex: "#f1c40f", name: "Amarelo" };
-    if (ph < 9.0) return { hex: "#f39c12", name: "Amarelo-alaranjado" };
+    if (ph >= 10.0) return { hex: "#f39c12", name: "Amarelo-alaranjado" };
+    if (ph >= 8.5) return { hex: "#f1c40f", name: "Amarelo" };
     return { hex: "#e67e22", name: "Alaranjado" };
   }
 
@@ -176,13 +182,13 @@
     if (pigment === "curcuma") {
       return {
         name: "CÚRCUMA",
-        phMin: 3.0,
-        phMax: 4.0,
+        phMin: 10.0,
+        phMax: 12.0,
         concMin: 15,
         concMax: 25,
         requireMeio: null,
         recommendedMeio: "agua",
-        text: "pH 3,0–4,0 + C 15–25 g/L (cúrcuma)"
+        text: "pH 10–12 + C 15–25 g/L (cúrcuma)"
       };
     }
 
@@ -260,7 +266,7 @@
     if (state.pigment === "repolho") {
       state.goal = `Atingir a faixa do repolho roxo: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} e C ${t.concMin}–${t.concMax} g/L.`;
     } else if (state.pigment === "curcuma") {
-      state.goal = `Atingir a faixa da cúrcuma: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (bem ácido) e C ${t.concMin}–${t.concMax} g/L.`;
+      state.goal = `Atingir a faixa da cúrcuma: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (bem básico) e C ${t.concMin}–${t.concMax} g/L.`;
     } else {
       state.goal = `Urucum: usar meio oleoso e atingir pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} com C ${t.concMin}–${t.concMax} g/L.`;
     }
@@ -277,9 +283,9 @@
         "Dica: repolho roxo funciona melhor em água. Ajuste limão/bicarbonato até entrar no alvo.";
     } else if (state.pigment === "curcuma") {
       miniExp.textContent =
-        `Cúrcuma: curcumina responde ao pH. Meta: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (ácido) para manter o amarelo.`;
+        `Cúrcuma: curcumina responde ao pH. Meta: pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)} (bem básico).`;
       helpMeio.textContent =
-        "Dica: cúrcuma em água. Deixe o meio bem ácido com limão (pH alvo 3–4).";
+        "Dica: cúrcuma em água. Deixe o meio bem básico com bicarbonato (pH alvo 10–12).";
     } else {
       miniExp.textContent =
         `Urucum: bixina é apolar. Meta: meio oleoso + pH ${t.phMin.toFixed(1)}–${t.phMax.toFixed(1)}.`;
@@ -507,7 +513,7 @@
 
     fitCtx.globalCompositeOperation = "destination-in";
     fitCtx.globalAlpha = 1;
-    fitCtx.drawImage(fitBase, dx, dy, dw, dh);
+    fitCtx.drawImage(dressMask.canvas, dx, dy, dw, dh);
 
     fitCtx.globalCompositeOperation = "source-over";
   }
@@ -668,14 +674,6 @@
     document.head.appendChild(style);
   }
 
-  // Fogos CONTÍNUOS porém leves:
-  // - menos partículas por burst
-  // - spawn espaçado
-  // - cap duro de partículas
-  // - DPR limitado
-  // - 30fps (ou 20fps se reduce motion)
-  // - sem glow/shadowBlur e sem "lighter"
-  // - fade com destination-out (não “escurece” o overlay)
   function makeFireworks(canvas) {
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
     const ctx = canvas.getContext("2d", { alpha: true });
@@ -711,8 +709,6 @@
       canvas.width = Math.max(1, Math.floor(W * dpr));
       canvas.height = Math.max(1, Math.floor(H * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // limpa ao redimensionar
       ctx.clearRect(0, 0, W, H);
     }
 
@@ -758,22 +754,19 @@
       const elapsed = ts - lastDraw;
       if (elapsed < frameMS) return;
 
-      const dt = Math.min(3, elapsed / 16.666); // normaliza p/ ~60fps
+      const dt = Math.min(3, elapsed / 16.666);
       lastDraw = ts;
 
-      // Fade “transparente” (não escurece)
       ctx.globalCompositeOperation = "destination-out";
       ctx.fillStyle = "rgba(0,0,0,0.16)";
       ctx.fillRect(0, 0, W, H);
       ctx.globalCompositeOperation = "source-over";
 
-      // Spawn contínuo, mas espaçado
       if (ts >= nextSpawn) {
         spawn();
         nextSpawn = ts + (reduceMotion ? rand(700, 1050) : rand(360, 650));
       }
 
-      // Atualiza/desenha partículas
       const dragPow = Math.pow(drag, dt);
       const decayPow = Math.pow(alphaDecay, dt);
 
@@ -806,7 +799,6 @@
     resize();
     window.addEventListener("resize", resize);
 
-    // início com 2 bursts (sem pesar)
     spawn();
     if (!reduceMotion) spawn();
 
@@ -821,6 +813,59 @@
         try { ctx.clearRect(0, 0, W, H); } catch (_) {}
       }
     };
+  }
+
+  // =========================
+  // VÍDEO FINAL (estilo 2ª foto)
+  // - mantém o HEADER (topbar)
+  // - esconde stagebar + main
+  // - cria uma “tela” grande com o vídeo
+  // =========================
+  function openFinalVideoScene() {
+    // evita duplicar
+    const existing = document.querySelector(".video-scene");
+    if (existing) {
+      const v = existing.querySelector("video");
+      if (v) {
+        v.currentTime = 0;
+        const p = v.play();
+        if (p && typeof p.catch === "function") p.catch(() => (v.controls = true));
+      }
+      return;
+    }
+
+    document.body.classList.add("video-mode");
+
+    const wrap = document.createElement("div");
+    wrap.className = "video-scene";
+    wrap.innerHTML = `
+      <div class="video-shell">
+        <video class="final-video" id="finalVideo" playsinline preload="auto"></video>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+
+    const video = wrap.querySelector("#finalVideo");
+    video.src = FINAL_VIDEO_SRC;
+
+    // visual limpo
+    video.controls = false;
+
+    // com clique do usuário, normalmente toca com som
+    video.muted = false;
+    video.volume = 1;
+
+    video.addEventListener("ended", () => {
+      window.location.href = NEXT_AFTER_VIDEO_URL;
+    });
+
+    const p = video.play();
+    if (p && typeof p.catch === "function") {
+      p.catch(() => {
+        // fallback se o navegador implicar: libera controles
+        video.controls = true;
+      });
+    }
   }
 
   function showWinPopup() {
@@ -849,7 +894,7 @@
       <div class="win-title">Parabéns!</div>
       <div class="win-text">Você coloriu o traje para festa do bumba meu boi.</div>
       <div class="win-actions">
-        <button class="win-btn win-btn-primary" type="button" data-action="advance">Avançar</button>
+        <button class="win-btn win-btn-primary" type="button" data-action="advance">Hora de aproveitar a festa do bumba</button>
       </div>
     `;
 
@@ -877,7 +922,8 @@
     });
 
     card.querySelector('[data-action="advance"]')?.addEventListener("click", () => {
-      window.location.href = new URL("../relatorio/relatorio.html", window.location.href).href;
+      cleanup();
+      openFinalVideoScene();
     });
 
     card.querySelector('[data-action="advance"]')?.focus();
