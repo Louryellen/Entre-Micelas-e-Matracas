@@ -2,6 +2,9 @@
    Cena: Conversa com a Comunidade
    Mecânica: diálogo com escolhas (boa / média / ruim), reputação e ramificações
    FIX: layout responsivo relativo à área útil da imagem (object-fit: contain)
+
+   ALTERAÇÃO (pedido): embaralhar a ordem das escolhas (choices) aleatoriamente,
+   sem mudar absolutamente nada nos diálogos.
 */
 
 (() => {
@@ -126,7 +129,7 @@
               repDelta: 0,
               icon: "dialogo",
               label: "Dizer que faz mal ao meio ambiente.",
-              sub: "Mantém o diálogo, mas menos técnico.",
+              sub: "Mantém o diálogo, mas de forma rasa.",
               feedback: "O grupo falou mais, mas ainda faltou detalhe.",
               reply:
                 "Sim, isso prejudica o igarapé e a saúde da água.\n\n Geralmente muda a cor, o cheiro e começa a formar espuma. O óleo presente na água impossibilita os peixes de respirarem.",
@@ -200,7 +203,7 @@
               repDelta: +1,
               icon: "dialogo",
               label: "Explicar de uma forma bem simples o porquê isso acontece.",
-              sub: "Participativo, conecta o cotidiano aos sinais.",
+              sub: "Explicação básica.",
               feedback: "O grupo participou e a explicação ficou clara.",
               reply:
                 "Vamos ligar os sinais: vocês notaram água mais verde, lodo na margem ou muita espuma?\n\nQuando tem nutrientes demais na água, as algas aumentam. Só que isso pode reduzir o oxigênio, principalmente à noite e na decomposição. Sem oxigênio, os peixes ficam fracos e podem morrer.\n\n",
@@ -333,6 +336,8 @@
     repTrack: document.querySelector(".rep-track"),
     repFace: document.getElementById("repFace"),
 
+    subtitleCena: document.getElementById("subtituloCena"),
+
     bubbleNpc: document.getElementById("bubbleNpc"),
     bubblePlayer: document.getElementById("bubblePlayer"),
     npcName: document.getElementById("npcName"),
@@ -348,6 +353,10 @@
     endVideo: document.getElementById("endVideo"),
     btnSkipVideo: document.getElementById("btnSkipVideo"),
   };
+
+  // ===== NOVO: subtítulo dinâmico durante o vídeo
+  const SUBTITLE_DEFAULT = el.subtitleCena?.textContent || "Conversa com a Comunidade";
+  const SUBTITLE_VIDEO   = "Campanha de conscientização e divulgação da oficina de sabão"; 
 
   // =========================
   // HOTSPOTS NORMALIZADOS (0..1) RELATIVOS À IMAGEM
@@ -422,19 +431,17 @@
   }
 
   function enterVideoMode() {
-    // ativa modo fullscreen via body (CSS)
     document.body.classList.add("is-fullscreen-video");
-
-    // marca cena (opcional)
     el.scene?.classList.add("video-mode");
 
-    // garante que aparece
+    // ===== NOVO: muda o subtítulo durante o vídeo
+    if (el.subtitleCena) el.subtitleCena.textContent = SUBTITLE_VIDEO;
+
     if (el.videoLayer) {
       el.videoLayer.style.display = "block";
       el.videoLayer.setAttribute("aria-hidden", "false");
     }
 
-    // remove topbar por cima do vídeo
     if (el.topbar) {
       el.topbar.style.display = "none";
       el.topbar.setAttribute("aria-hidden", "true");
@@ -447,12 +454,14 @@
     document.body.classList.remove("is-fullscreen-video");
     el.scene?.classList.remove("video-mode");
 
+    // ===== NOVO: restaura o subtítulo ao sair do vídeo
+    if (el.subtitleCena) el.subtitleCena.textContent = SUBTITLE_DEFAULT;
+
     if (el.videoLayer) {
       el.videoLayer.style.display = "none";
       el.videoLayer.setAttribute("aria-hidden", "true");
     }
 
-    // volta topbar somente se conversa estiver ativa
     if (el.topbar) {
       const show = state.conversationOn;
       el.topbar.style.display = show ? "flex" : "none";
@@ -465,8 +474,6 @@
     if (!v) { onDone?.(); return; }
 
     enterVideoMode();
-
-    // reset
     stopFinalVideo();
 
     let finished = false;
@@ -499,7 +506,6 @@
       el.btnSkipVideo.onclick = () => finish();
     }
 
-    // tenta tocar (funciona por clique do usuário)
     const p = v.play();
     if (p && typeof p.catch === "function") {
       p.catch(() => {
@@ -679,6 +685,30 @@
     if (buttons[index]) buttons[index].classList.add("is-active");
   }
 
+  // =========================
+  // EMBARALHAMENTO (NOVO)
+  // =========================
+  function rand01() {
+    // tenta usar crypto para melhor aleatoriedade, cai no Math.random se não existir
+    if (window.crypto && window.crypto.getRandomValues) {
+      const a = new Uint32Array(1);
+      window.crypto.getRandomValues(a);
+      return a[0] / 4294967296; // 2^32
+    }
+    return Math.random();
+  }
+
+  function shuffleCopy(arr) {
+    const out = Array.isArray(arr) ? arr.slice() : [];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(rand01() * (i + 1));
+      const tmp = out[i];
+      out[i] = out[j];
+      out[j] = tmp;
+    }
+    return out;
+  }
+
   // ===== Botão final "Ir para ..." (usado APÓS o bloco de tintas)
   function renderProceedButton(url, tier) {
     showConversationUI(true);
@@ -835,7 +865,10 @@
     el.playerChoices.innerHTML = "";
     const buttons = [];
 
-    node.choices.forEach((choice) => {
+    // ===== NOVO: embaralha a ordem SEM alterar node.choices original
+    const shuffledChoices = shuffleCopy(node.choices);
+
+    shuffledChoices.forEach((choice) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "choice-btn";

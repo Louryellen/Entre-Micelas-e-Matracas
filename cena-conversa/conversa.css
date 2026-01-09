@@ -696,3 +696,57 @@ header .subtitle{ margin-top:2px; color: var(--muted); font-size: 13px; }
   display: block;
 }
 /* ===== /CENA EM VÍDEO ===== */
+
+/* =========================================================
+   VÍDEO OCUPANDO QUASE A TELA TODA (deixa só o HEADER visível)
+   Usa a classe que seu JS já liga: body.is-fullscreen-video
+========================================================= */
+body.is-fullscreen-video .hud{
+  display:none !important; /* tira a dica e libera espaço */
+}
+
+body.is-fullscreen-video #btnReiniciar{
+  display:none !important; /* opcional: fica só o título/subtítulo */
+}
+
+/* o main vira “área total” abaixo do header */
+body.is-fullscreen-video .main{
+  height: calc(100vh - var(--header-h));
+  padding: 0 !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+}
+
+/* a cena vira um “palco” gigante */
+body.is-fullscreen-video .scene{
+  width: 100vw !important;
+  max-width: none !important;
+
+  height: 100% !important;      /* ocupa todo o main */
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+
+  border-radius: 0 !important;  /* tira borda arredondada (opcional) */
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+
+  box-shadow: none !important;  /* opcional: remove sombra */
+}
+
+/* garante que o layer/vídeo preencham o palco */
+body.is-fullscreen-video .video-layer{
+  inset: 0 !important;
+}
+
+body.is-fullscreen-video .bg-video{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain; /* sem corte; se quiser preencher, troque p/ cover */
+  object-position: center;
+}
+
+.video-skip{
+  display: none !important;
+}

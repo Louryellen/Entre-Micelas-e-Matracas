@@ -366,7 +366,7 @@ function ensureUIPanel() {
 
   const hint = document.createElement("div");
   hint.className = "mini-hint";
-  hint.textContent = "Dica: acerte Espaço na faixa verde (3 acertos).";
+  hint.textContent = "Dica: Aperte a tecla Espaço na faixa verde (3 acertos).";
 
   panel.appendChild(top);
   panel.appendChild(sub);
@@ -634,7 +634,7 @@ function isNeedleInGood() {
 }
 
 function updatePanelText(point) {
-  openPanel(`${point.label}. Segure [E] e acerte Espaço na faixa verde (${hitsNeed}x).`);
+  openPanel(`${point.label}. Segure a tecla [E] e Aperte a tecla [Espaço] quando estiver na faixa verde (${hitsNeed}x).`);
 }
 
 let collected = 0;
@@ -713,7 +713,7 @@ function tick() {
         spaceWasDown = false;
       }
     } else {
-      if (collected < points.length) setHint("Use WASD ou as setinhas para mover o barco e ir aos pontos de interesse.");
+      if (collected < points.length) setHint("Use as teclas [W A S D] ou as setinhas para mover o barco e ir aos pontos de interesse.");
       else setHint('Coleta finalizada. Clique em "Iniciar a análise".');
     }
 

@@ -685,3 +685,38 @@ header .subtitle{ color:var(--muted); font-size:13px; }
   100% { transform: translateY(0) rotate(-8deg) scale(1); }
 }
 
+/* ===== OVERRIDE: painel COLETA maior ===== */
+.mini-panel{
+  width: min(580px, calc(100% - 36px)) !important;
+  padding: 16px !important;
+  gap: 12px !important;
+  border-radius: 18px !important;
+  left: 22px !important;
+  bottom: 22px !important;
+}
+
+/* títulos e textos */
+.mini-title{ font-size: 15px !important; }
+.mini-sub{
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+}
+
+/* "Segure E | Aperte Espaço" (no seu JS tem fontSize inline = 12px) */
+.mini-top > div:last-child{
+  font-size: 13px !important;
+}
+
+/* chips e dica */
+.mini-stats{ font-size: 13px !important; gap: 12px !important; }
+.chip{ padding: 6px 10px !important; font-size: 13px !important; }
+.mini-hint{ font-size: 13px !important; }
+
+/* barra e agulha */
+.track{ height: 22px !important; }
+.needle{
+  width: 12px !important;
+  height: 36px !important;
+  top: -7px !important; /* centraliza visualmente na barra de 22px */
+}
+
