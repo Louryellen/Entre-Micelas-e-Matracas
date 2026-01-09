@@ -50,9 +50,9 @@ export function initCena0(){
   Object.assign(hs.style, {
     position:'absolute',
     left:'59%',
-    top:'57%',
+    top:'52%',
     width:'6%',
-    height:'9%'
+    height:'10%'
   });
 
   Object.assign(icon.style, {
@@ -527,17 +527,17 @@ document.addEventListener('keydown', onKeyDebugCena1);
 
   const MAP_LARGE = {
     jaleco:      { x:0.14, y:0.20,  w:0.110,  h:0.41 },
-    frascos:     { x:0.197, y:0.63,  w:0.099,  h:0.15 },
-    reagentes:   { x:0.30,  y:0.74,  w:0.140,  h:0.16 },
+    frascos:     { x:0.145, y:0.63,  w:0.099,  h:0.15 },
+    reagentes:   { x:0.257,  y:0.74,  w:0.157,  h:0.16 },
     checklist:   { x:0.46,  y:0.492, w:0.102,  h:0.18 },
     prancheta:   { x:0.462, y:0.733, w:0.058,  h:0.198 },
-    equipFrascos:{ x:0.55,  y:0.810, w:0.019,  h:0.122 },
-    medidor:     { x:0.586, y:0.8233,w:0.085,  h:0.111 },
-    termometro:  { x:0.528, y:0.765, w:0.0119, h:0.16 },
+    equipFrascos:{ x:0.56,  y:0.810, w:0.019,  h:0.122 },
+    medidor:     { x:0.604, y:0.8233, w:0.089,  h:0.111 },
+    termometro:  { x:0.533, y:0.765, w:0.0119, h:0.16 },
     residuos:    { x:0.28,  y:0.12,  w:0.14,   h:0.13 },
     microondas:  { x:0.34,  y:0.41,  w:0.094,  h:0.18 },
-    cafe:        { x:0.61,  y:0.57,  w:0.041,  h:0.12 },
-    plantas:     { x:0.68,  y:0.55,  w:0.09,   h:0.14 }
+    cafe:        { x:0.641,  y:0.57,  w:0.041,  h:0.12 },
+    plantas:     { x:0.735,  y:0.55,  w:0.09,   h:0.14 }
   };
 
   const MAP_SMALL = {

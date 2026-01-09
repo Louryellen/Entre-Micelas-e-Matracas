@@ -1,110 +1,110 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Laboratório da UFMA</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-<header>
-  <div>
-    <div class="title">Entre Micelas e Matracas</div>
-    <div class="subtitle">Laboratório da UFMA</div>
-  </div>
-  <button class="btn" id="btnReiniciar">Reiniciar</button>
-</header>
 
-<main class="main">
-  <!-- HUD / dica -->
-  <div class="hud">
-    <div class="hint" id="hint">
-      💡 Clique nos itens necessários para levar para a pesquisa: jaleco, frascos de coleta, reagentes e equipamentos de campo.
+<body class="cena1">
+  <header>
+    <div>
+      <div class="title">Entre Micelas e Matracas</div>
+      <div class="subtitle">Laboratório da UFMA</div>
     </div>
-  </div>
+    <button class="btn" id="btnReiniciar" type="button">Reiniciar</button>
+  </header>
 
-  <div class="scene" id="scene">
-    <!-- Fundo do laboratório -->
-    <img
-      class="bg"
-      src="assets/bg/cenário 1.png"
-      alt="Laboratório de química da UFMA"
-      id="bg-lab"
-    />
-      <!-- Labels (textos por cima do cenário) -->
-  <div id="lbl-reagentes" class="scene-label">Reagentes da Análise</div>
-  <div id="lbl-frascos" class="scene-label">Frascos de Coleta</div>
-
-
-    <!-- Hotspots principais -->
-    <div id="hs-jaleco"      class="hotspot"></div>
-    <div id="hs-frascos"     class="hotspot"></div>
-    <div id="hs-reagentes"   class="hotspot"></div>
-    <div id="hs-checklist"   class="hotspot"></div>
-
-    <!-- Equipamentos de campo -->
-    <div id="hs-equip-prancheta"  class="hotspot"></div>
-    <div id="hs-equip-frascos"    class="hotspot"></div>
-    <div id="hs-equip-medidor"    class="hotspot"></div>
-    <div id="hs-equip-termometro" class="hotspot"></div>
-
-    <!-- NOVO: distrações do laboratório -->
-    <div id="hs-residuos"   class="hotspot"></div>  <!-- frascos da prateleira -->
-    <div id="hs-microondas" class="hotspot"></div>
-    <div id="hs-cafe"       class="hotspot"></div>
-    <div id="hs-plantas"    class="hotspot"></div>
-
-    <video id="viagemVideo" class="scene-video">
-  <source src="assets/viagem.mp4" type="video/mp4" />
-</video>
-
-  </div>
-  <!-- Pop-up de informação do item -->
-  <div class="info-popup-backdrop" id="infoBackdrop">
-    <div class="info-popup" id="infoPopup">
-      <div class="info-popup-header">
-        <span id="infoTitle"></span>
-        <button class="info-popup-close" id="infoClose">✕</button>
+  <main class="main">
+    <!-- HUD / dica -->
+    <div class="hud">
+      <div class="hint" id="hint">
+        💡 Clique nos itens necessários para levar para a pesquisa: jaleco, frascos de coleta, reagentes e equipamentos de campo.
       </div>
-      <div class="info-popup-body">
-        <p id="infoGeneral"></p>
-        <p id="infoUse"></p>
+    </div>
 
-        <!-- Botões de decisão -->
-        <div class="info-popup-actions">
-          <button class="btn" id="btnLevar">Levar para o campo</button>
-          <button class="btn" id="btnNaoLevar">Não levar</button>
+    <div class="scene" id="scene">
+      <!-- Fundo do laboratório -->
+      <img
+        class="bg"
+        src="assets/bg/cenário 1.png"
+        alt="Laboratório de química da UFMA"
+        id="bg-lab"
+      />
+
+      <!-- Labels (textos por cima do cenário) -->
+      <div id="lbl-reagentes" class="scene-label">Reagentes da Análise</div>
+      <div id="lbl-frascos" class="scene-label">Frascos de Coleta</div>
+
+      <!-- Hotspots principais -->
+      <div id="hs-jaleco" class="hotspot"></div>
+      <div id="hs-frascos" class="hotspot"></div>
+      <div id="hs-reagentes" class="hotspot"></div>
+      <div id="hs-checklist" class="hotspot"></div>
+
+      <!-- Equipamentos de campo -->
+      <div id="hs-equip-prancheta" class="hotspot"></div>
+      <div id="hs-equip-frascos" class="hotspot"></div>
+      <div id="hs-equip-medidor" class="hotspot"></div>
+      <div id="hs-equip-termometro" class="hotspot"></div>
+
+      <!-- Distrações do laboratório -->
+      <div id="hs-residuos" class="hotspot"></div>
+      <div id="hs-microondas" class="hotspot"></div>
+      <div id="hs-cafe" class="hotspot"></div>
+      <div id="hs-plantas" class="hotspot"></div>
+
+      <!-- Vídeo -->
+      <video id="viagemVideo" class="scene-video" playsinline>
+        <source src="assets/viagem.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <!-- Pop-up de informação do item -->
+    <div class="info-popup-backdrop" id="infoBackdrop">
+      <div class="info-popup" id="infoPopup">
+        <div class="info-popup-header">
+          <span id="infoTitle"></span>
+          <button class="info-popup-close" id="infoClose" type="button">✕</button>
+        </div>
+
+        <div class="info-popup-body">
+          <p id="infoGeneral"></p>
+          <p id="infoUse"></p>
+
+          <!-- Botões de decisão -->
+          <div class="info-popup-actions">
+            <button class="btn" id="btnLevar" type="button">Levar para o campo</button>
+            <button class="btn" id="btnNaoLevar" type="button">Não levar</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Overlay de resultado / ranking -->
-  <div class="resultado-overlay" id="resultadoOverlay">
-    <!-- Fogos ocupando toda a área do overlay -->
-    <div id="fogosContainer"></div>
+    <!-- Overlay de resultado / ranking -->
+    <div class="resultado-overlay" id="resultadoOverlay">
+      <div id="fogosContainer"></div>
 
-    <div class="resultado-card">
-      <h2>Preparação para o campo</h2>
-      <p id="resultadoPontuacao"></p>
-      <p id="resultadoRanking"></p>
+      <div class="resultado-card">
+        <h2>Preparação para o campo</h2>
+        <p id="resultadoPontuacao"></p>
+        <p id="resultadoRanking"></p>
 
-      <div class="trofeu-wrap">
-        <span id="trofeuIcon">🏆</span>
-      </div>
+        <div class="trofeu-wrap">
+          <span id="trofeuIcon">🏆</span>
+        </div>
 
-      <!-- Grupo de botões -->
-      <div class="resultado-actions">
-
-        <button class="btn" id="btnIrInvestigacao">Ir para a investigação</button>
+        <div class="resultado-actions">
+          <button class="btn" id="btnIrInvestigacao" type="button">Ir para a investigação</button>
+        </div>
       </div>
     </div>
-  </div>
-</main>
+  </main>
 
-<script type="module">
-  import { initCena1 } from "./engine.js";
-  initCena1();
-</script>
+  <script type="module">
+    import { initCena1 } from "./engine.js";
+    initCena1();
+  </script>
 </body>
 </html>

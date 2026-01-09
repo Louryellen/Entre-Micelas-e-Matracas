@@ -124,7 +124,7 @@ header .subtitle{
 /* Ícone de e-mail */
 .email-icon{
   position:absolute;
-  width:72px;
+  width:82px;
   height:auto;
   image-rendering:pixelated;
   display:none;
@@ -449,21 +449,18 @@ body.is-video-playing #btnReiniciar{
 
 
 /* =========================
-   HOTSPOT "INVISÍVEL, MAS JUSTO"
-   - não mostra caixa o tempo todo
-   - mostra brilho ao hover/active
-   - modo ajuda: revela por poucos segundos
+   HOTSPOT "INVISÍVEL, MAS JUSTO" — SOMENTE CENA 1
 ========================= */
 
-.hotspot{
+body.cena1 .hotspot{
   background: transparent; /* continua invisível */
 }
 
-/* brilho leve ao passar o mouse (desktop) ou tocar (mobile) */
-.hotspot::after{
+/* brilho leve ao hover/touch */
+body.cena1 .hotspot::after{
   content:"";
   position:absolute;
-  inset:-6px;                 /* um pouco maior que a área clicável */
+  inset:-6px;
   border-radius:12px;
   opacity:0;
   pointer-events:none;
@@ -474,15 +471,14 @@ body.is-video-playing #btnReiniciar{
     0 0 18px rgba(110,168,254,.35);
 }
 
-/* aparece quando o usuário "encosta" na área */
-.hotspot:hover::after,
-.hotspot:active::after{
+body.cena1 .hotspot:hover::after,
+body.cena1 .hotspot:active::after{
   opacity:1;
   transform:scale(1);
 }
 
-/* === MODO AJUDA: revela TODOS por alguns segundos === */
-body.help-hotspots .hotspot::after{
+/* MODO AJUDA: revela todos por alguns segundos (só na cena 1) */
+body.cena1.help-hotspots .hotspot::after{
   opacity:1;
   transform:scale(1);
   animation: hotspotPulse 1.05s ease-in-out infinite;
