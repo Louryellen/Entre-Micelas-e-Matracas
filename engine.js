@@ -299,21 +299,26 @@ export function initCena1(){
   });
 
   function atualizarHint(){
-    const total     = Object.keys(estado).length;
-    const acertos   = Object.values(estado).filter(v=>v).length;
-    const erros     = Object.values(errados).filter(v=>v).length;
-    const decididos = acertos + erros;
-    const pontos    = acertos * PONTOS_POR_ITEM;
+  const total     = Object.keys(estado).length;
+  const acertos   = Object.values(estado).filter(v=>v).length;
+  const erros     = Object.values(errados).filter(v=>v).length;
+  const decididos = acertos + erros;
+  const pontos    = acertos * PONTOS_POR_ITEM;
 
-    if (decididos < total) {
-      hint.textContent =
-        `Itens decididos: ${decididos}/${total} — Pontos: ${pontos}.`;
-    } else {
-      hint.textContent =
-        `Itens decididos: ${decididos}/${total} — Pontos finais: ${pontos}.`;
-      mostrarResultado(pontos);
-    }
+  // ✅ Enquanto ninguém escolheu nada, mantém o aviso inicial (não mostra 0/12)
+  if (decididos === 0) {
+    hint.textContent = defaultHintText;
+    return;
   }
+
+  if (decididos < total) {
+    hint.textContent = `Itens decididos: ${decididos}/${total} — Pontos: ${pontos}.`;
+  } else {
+    hint.textContent = `Itens decididos: ${decididos}/${total} — Pontos finais: ${pontos}.`;
+    mostrarResultado(pontos);
+  }
+}
+
 
   function marcarAcerto(chave){
     if(!estado[chave]){

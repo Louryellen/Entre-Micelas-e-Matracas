@@ -436,8 +436,8 @@ body.debug-hotspots .hs-erro{
   white-space: nowrap;
 }
 
-#lbl-reagentes{ left: 31%; top: 89%; }
-#lbl-frascos{ left: 20.5%; top: 77%; }
+#lbl-reagentes{ left: 28%; top: 89%; }
+#lbl-frascos{ left: 15.5%; top: 77%; }
 
 /* ===== MODO VÍDEO (durante playback) ===== */
 body.is-video-playing .hud{
