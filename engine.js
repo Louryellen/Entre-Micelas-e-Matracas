@@ -337,6 +337,15 @@ export function initCena1(){
     }
   }
 
+  // DEBUG: tecla H liga/desliga hotspots na Cena 1
+function onKeyDebugCena1(e){
+  if (e.key.toLowerCase() === 'h') {
+    document.body.classList.toggle('debug-hotspots');
+  }
+}
+document.addEventListener('keydown', onKeyDebugCena1);
+
+
   function dispararFogos(){
     if (!fogosContainer) return;
 
@@ -517,7 +526,7 @@ export function initCena1(){
   const mqSmall = window.matchMedia('(max-width: 1400px)');
 
   const MAP_LARGE = {
-    jaleco:      { x:0.210, y:0.20,  w:0.094,  h:0.41 },
+    jaleco:      { x:0.14, y:0.20,  w:0.110,  h:0.41 },
     frascos:     { x:0.197, y:0.63,  w:0.099,  h:0.15 },
     reagentes:   { x:0.30,  y:0.74,  w:0.140,  h:0.16 },
     checklist:   { x:0.46,  y:0.492, w:0.102,  h:0.18 },
@@ -525,8 +534,8 @@ export function initCena1(){
     equipFrascos:{ x:0.55,  y:0.810, w:0.019,  h:0.122 },
     medidor:     { x:0.586, y:0.8233,w:0.085,  h:0.111 },
     termometro:  { x:0.528, y:0.765, w:0.0119, h:0.16 },
-    residuos:    { x:0.32,  y:0.12,  w:0.12,   h:0.13 },
-    microondas:  { x:0.37,  y:0.41,  w:0.081,  h:0.18 },
+    residuos:    { x:0.28,  y:0.12,  w:0.14,   h:0.13 },
+    microondas:  { x:0.34,  y:0.41,  w:0.094,  h:0.18 },
     cafe:        { x:0.61,  y:0.57,  w:0.041,  h:0.12 },
     plantas:     { x:0.68,  y:0.55,  w:0.09,   h:0.14 }
   };

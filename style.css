@@ -446,3 +446,56 @@ body.is-video-playing .hud{
 body.is-video-playing #btnReiniciar{
   display:none !important;        /* Reiniciar some */
 }
+
+/* ===== DEBUG HOTSPOTS (CENA 1 e geral) ===== */
+body.debug-hotspots .hotspot{
+  outline: 2px dashed rgba(0,255,0,.95) !important;
+  background: rgba(0,255,0,.18) !important;
+}
+
+/* =========================
+   HOTSPOT "INVISÍVEL, MAS JUSTO"
+   - não mostra caixa o tempo todo
+   - mostra brilho ao hover/active
+   - modo ajuda: revela por poucos segundos
+========================= */
+
+.hotspot{
+  background: transparent; /* continua invisível */
+}
+
+/* brilho leve ao passar o mouse (desktop) ou tocar (mobile) */
+.hotspot::after{
+  content:"";
+  position:absolute;
+  inset:-6px;                 /* um pouco maior que a área clicável */
+  border-radius:12px;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(.985);
+  transition:opacity .12s ease, transform .12s ease;
+  box-shadow:
+    0 0 0 2px rgba(110,168,254,.75),
+    0 0 18px rgba(110,168,254,.35);
+}
+
+/* aparece quando o usuário "encosta" na área */
+.hotspot:hover::after,
+.hotspot:active::after{
+  opacity:1;
+  transform:scale(1);
+}
+
+/* === MODO AJUDA: revela TODOS por alguns segundos === */
+body.help-hotspots .hotspot::after{
+  opacity:1;
+  transform:scale(1);
+  animation: hotspotPulse 1.05s ease-in-out infinite;
+}
+
+@keyframes hotspotPulse{
+  0%,100% { filter:brightness(1); }
+  50%     { filter:brightness(1.2); }
+}
+
+
