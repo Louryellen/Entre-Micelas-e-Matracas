@@ -426,12 +426,142 @@ function zoneUnderProbe(){
   return null;
 }
 
+// =====================
+// ÁUDIO (BGM + SFX por contato de zona)
+// =====================
+const AUDIO_BASE = (() => {
+  // Base relativo ao próprio arquivo JS (robusto mesmo em subpastas)
+  const url = document.currentScript?.src || location.href;
+  return new URL(".", url);
+})();
+
+const AUDIO = {
+  bgm:   new URL("audios/trilha5.mp3", AUDIO_BASE).href,
+  sonda: new URL("audios/amostras.mp3",   AUDIO_BASE).href,
+  ap5:   new URL("audios/ap5.mp3",     AUDIO_BASE).href,
+};
+
+const EMM_AUDIO = {
+  unlocked: false,
+  bgmEl: null,
+
+  // >>> NOVO: referência persistente do ap5 para poder PARAR <<<
+  ap5El: null,
+};
+
+function safePlay(audioEl) {
+  const p = audioEl.play();
+  if (p?.catch) p.catch(() => {});
+}
+
+function initBgm() {
+  if (EMM_AUDIO.bgmEl) return;
+
+  const a = new Audio(AUDIO.bgm);
+  a.loop = true;
+  a.preload = "auto";
+  a.volume = 0.35; // ajuste aqui se quiser (0 a 1)
+
+  EMM_AUDIO.bgmEl = a;
+
+  // tenta autoplay (pode ser bloqueado pelo navegador)
+  safePlay(a);
+}
+
+function unlockAudioOnce() {
+  if (EMM_AUDIO.unlocked) return;
+  EMM_AUDIO.unlocked = true;
+
+  // tenta retomar o BGM após gesto do usuário
+  if (EMM_AUDIO.bgmEl) safePlay(EMM_AUDIO.bgmEl);
+}
+
+// one-shot (para sonda/padrões)
+function playSfx(src, { volume = 1, rate = 1 } = {}) {
+  unlockAudioOnce();
+
+  const a = new Audio(src);
+  a.preload = "auto";
+  a.volume = clamp(volume, 0, 1);
+  a.playbackRate = rate;
+
+  safePlay(a);
+}
+
+// ===== NOVO: helpers do ap5 (loopável + stop controlado) =====
+function isSampleZone(z){
+  return z === "sample1" || z === "sample2" || z === "sample3";
+}
+
+function ensureAp5(){
+  if (EMM_AUDIO.ap5El) return EMM_AUDIO.ap5El;
+
+  const a = new Audio(AUDIO.ap5);
+  a.preload = "auto";
+  a.loop = true;          // fica tocando enquanto estiver na amostra
+  a.volume = 1.0;
+
+  EMM_AUDIO.ap5El = a;
+  return a;
+}
+
+function playAp5(){
+  unlockAudioOnce();
+  const a = ensureAp5();
+
+  // se já está tocando, não reinicia
+  if (!a.paused) return;
+
+  // reinicia para tocar do começo ao encostar
+  try { a.currentTime = 0; } catch (_) {}
+  safePlay(a);
+}
+
+function stopAp5(){
+  const a = EMM_AUDIO.ap5El;
+  if (!a) return;
+  a.pause();
+  try { a.currentTime = 0; } catch (_) {}
+}
+
+function playZoneContactSfx(zone) {
+  // Água destilada e padrões: sonda.mp3
+  if (zone === "rinse" || zone === "ph7" || zone === "ph4" || zone === "ec1413") {
+    playSfx(AUDIO.sonda, { volume: 0.95 });
+    return;
+  }
+
+  // Amostras 1–3: ap5.mp3 (persistente / loop)
+  if (isSampleZone(zone)) {
+    playAp5();
+    return;
+  }
+
+  // waste e qualquer outra zona: sem som
+}
+
+// “Desbloqueio” no primeiro gesto (arrastar a sonda já resolve)
+window.addEventListener("pointerdown", unlockAudioOnce, { once: true, capture: true });
+window.addEventListener("keydown", unlockAudioOnce, { once: true, capture: true });
+
+// =====================
+// Zona / estabilidade + regra de PARAR o ap5 ao sair da amostra
+// =====================
 function commitZone(zone){
   if (zone === state.currentZone) return;
 
+  const prev = state.currentZone; // <<< NOVO: guarda anterior
   state.currentZone = zone;
 
+  // >>> NOVO: se saiu de uma AMOSTRA para qualquer coisa que não seja amostra, PARA o ap5
+  if (isSampleZone(prev) && !isSampleZone(zone)) {
+    stopAp5();
+  }
+
   if (zone){
+    // SFX ao encostar (não toca em waste; toca sonda/padrões e amostras conforme regra)
+    playZoneContactSfx(zone);
+
     startStability(zone);
     probe.classList.add("dip");
   } else {
@@ -950,6 +1080,11 @@ function doAction(){
   if (state.currentZone !== req) return;
   if (!isStable()) return;
 
+  // >>> NOVO: ao apertar MEDIR, parar ap5.mp3 imediatamente
+  if (state.step === "measure") {
+    stopAp5();
+  }
+
   const q = qualityFromConfirm();
 
   // ---------- ENXÁGUES (inclui rinseBetween) ----------
@@ -1130,14 +1265,14 @@ function bindDiagnosis(){
         if (diagBox) diagBox.hidden = true;
 
         setTimeout(() => {
-        showFinalSheetModal();
-        // redireciona automaticamente após 2,5s (ajuste se quiser)
-        setTimeout(() => window.location.href = cena/conversa.html, 2500);
-      }, 120);
+          showFinalSheetModal();
 
-      setHint("Ficha final disponível. Indo para a conversa...");
-return;
+          // >>> FIX: redireciona corretamente para a conversa
+          setHint("Ficha final disponível. Indo para a conversa...");
+          setTimeout(() => { window.location.href = NEXT_SCENE_URL; }, 2500);
+        }, 120);
 
+        return;
       }
 
       // reseta rep para a próxima amostra e vai direto medir (o descarte já foi feito antes do diagnóstico)
@@ -1213,7 +1348,7 @@ function bind(){
 
 function init(){
   syncHeaderH();
-
+  initBgm();
   const start = () => {
     fitStageToScene();
     placeProbeHome();

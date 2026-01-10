@@ -1,6 +1,35 @@
 // engine.js
 const $ = (sel) => document.querySelector(sel);
 
+/**
+ * =========================
+ * BGM helpers (compatível com audio.js antigo e novo)
+ * =========================
+ */
+function bgmLock(on) {
+  const api = window.EMM_BGM;
+  if (!api) return;
+
+  if (typeof api.lock === "function") {
+    api.lock(!!on);
+    return;
+  }
+
+  if (on) {
+    if (typeof api.stop === "function") api.stop();
+  }
+}
+
+// ✅ quando destravar, pode retomar imediatamente (está dentro de clique => gesto do usuário)
+function bgmUnlockAndResume() {
+  bgmLock(false);
+  window.EMM_BGM?.start?.();
+}
+
+function sfx(name, opts) {
+  window.EMM_SFX?.play?.(name, opts);
+}
+
 function fitHeader() {
   const h = document.querySelector("header")?.offsetHeight || 86;
   document.documentElement.style.setProperty("--header-h", h + "px");
@@ -35,11 +64,9 @@ export function typeInto(node, text, speed = 18, done) {
 
     icon.classList.toggle("active", show);
 
-    // toca notificação quando o ícone aparece
-    if (show) window.EMM_SFX?.play("notify", { volume: 0.85 });
+    if (show) sfx("notify", { volume: 0.85 });
   });
 })();
-
 
 // =====================
 // CENA 0
@@ -63,7 +90,6 @@ export function initCena0() {
 
   function revelarAreasPorUmTempo(ms = 2200) {
     document.body.classList.add("help-hotspots");
-    // no celular, ajuda muito manter o ícone visível
     icon.classList.add("active");
 
     clearTimeout(revelarAreasPorUmTempo._t);
@@ -75,7 +101,6 @@ export function initCena0() {
   if (isTouch) {
     hint.textContent =
       '💡 Toque no ícone próximo ao notebook para ler o e-mail. Toque em "Ver áreas" se precisar.';
-    // opcional: já dá uma pista inicial rápida
     revelarAreasPorUmTempo(1600);
   }
 
@@ -88,7 +113,7 @@ export function initCena0() {
     "pointerdown",
     () => {
       if (!isTouch) return;
-      tHold = setTimeout(() => revelarAreasPorUmTempo(), 450); // toque longo
+      tHold = setTimeout(() => revelarAreasPorUmTempo(), 450);
     },
     { passive: true }
   );
@@ -140,8 +165,9 @@ Atenciosamente,
 Coordenação de Extensão – UFMA`;
 
   function openMail() {
-    window.EMM_SFX?.play("email", { volume: 0.9 });
+    sfx("email", { volume: 0.9 });
     hint.style.display = "none";
+
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const W = 520;
@@ -169,16 +195,16 @@ Coordenação de Extensão – UFMA`;
   }
 
   function playIntroVideo() {
+    bgmLock(true);
+
     if (bg) bg.style.display = "none";
     hs.style.pointerEvents = "none";
-
     if (!video) return;
 
     video.style.display = "block";
     video.currentTime = 0;
     video.playsInline = true;
 
-    // tenta com som; se bloquear, cai para mutado
     video.muted = false;
     video.volume = 1;
 
@@ -187,7 +213,6 @@ Coordenação de Extensão – UFMA`;
       p.catch(() => {
         video.muted = true;
         video.play().catch(() => {});
-        // dica para o usuário destravar som
         hint.style.display = "";
         hint.textContent =
           "🔊 Vídeo sem som por bloqueio do navegador. Clique no vídeo para ativar o áudio.";
@@ -216,6 +241,8 @@ Coordenação de Extensão – UFMA`;
   });
 
   $("#btnReiniciar")?.addEventListener("click", () => {
+    bgmUnlockAndResume();
+
     hint.style.display = "";
     hint.textContent =
       "💡 Clique no ícone próximo ao notebook para ler o e-mail. (Tecle G para ver áreas)!!!";
@@ -275,9 +302,8 @@ export function initCena1() {
   const trofeuIcon = $("#trofeuIcon");
   const btnFecharRes = $("#btnFecharResultado");
   const btnIrInvestigacao = $("#btnIrInvestigacao");
-  const btnRecomecarFase = $("#btnRecomecarFase"); // ✅ (evita ReferenceError)
+  const btnRecomecarFase = $("#btnRecomecarFase");
 
-  // vídeos (IDs do HTML)
   const videoViagem = $("#viagemVideo");
   const videoVilarejo = $("#vilarejoVideo");
 
@@ -324,7 +350,6 @@ export function initCena1() {
   let resultadoMostrado = false;
 
   let itemAtual = null;
-
   let fogosLoopId = null;
 
   const configItens = {
@@ -401,7 +426,6 @@ export function initCena1() {
     const decididos = acertos + erros;
     const pontos = acertos * PONTOS_POR_ITEM;
 
-    // ✅ Enquanto ninguém escolheu nada, mantém o aviso inicial (não mostra 0/12)
     if (decididos === 0) {
       hint.textContent = defaultHintText;
       return;
@@ -432,7 +456,6 @@ export function initCena1() {
     }
   }
 
-  // DEBUG: tecla H liga/desliga hotspots na Cena 1
   function onKeyDebugCena1(e) {
     if (e.key.toLowerCase() === "h") {
       document.body.classList.toggle("debug-hotspots");
@@ -493,6 +516,13 @@ export function initCena1() {
     if (fogosContainer) fogosContainer.innerHTML = "";
   }
 
+  function tocarResultadoSFX(isWin) {
+    // ✅ no ranking: BGM para
+    bgmLock(true);
+    if (isWin) sfx("vitoria", { volume: 0.95 });
+    else sfx("derrota", { volume: 0.95 });
+  }
+
   function mostrarResultado(pontos) {
     if (!overlayRes || resultadoMostrado) return;
     resultadoMostrado = true;
@@ -500,7 +530,6 @@ export function initCena1() {
     const total = Object.keys(estado).length;
     const maxPontos = total * PONTOS_POR_ITEM;
 
-    // ===== NOVAS FAIXAS =====
     const THRESH_BRONZE = 70;
     const THRESH_PRATA = 80;
     const THRESH_OURO = 100;
@@ -510,7 +539,6 @@ export function initCena1() {
 
     trofeuIcon?.classList.remove("trofeu-ouro", "trofeu-prata", "trofeu-bronze");
 
-    // controle de botões
     const showRestart = (on) => {
       if (!btnRecomecarFase) return;
       btnRecomecarFase.style.display = on ? "" : "none";
@@ -531,6 +559,8 @@ export function initCena1() {
 
       showRestart(false);
       lockGo(false);
+
+      tocarResultadoSFX(true);
     } else if (pontos >= THRESH_PRATA) {
       ranking = "Prata";
       texto = "Muito bom! Seu kit está muito bem montado para a investigação.";
@@ -539,6 +569,8 @@ export function initCena1() {
 
       showRestart(false);
       lockGo(false);
+
+      tocarResultadoSFX(true);
     } else if (pontos >= THRESH_BRONZE) {
       ranking = "Bronze";
       texto = "Você conseguiu o básico, mas pode melhorar o kit antes de avançar.";
@@ -547,6 +579,8 @@ export function initCena1() {
 
       showRestart(true);
       lockGo(false);
+
+      tocarResultadoSFX(true);
     } else {
       ranking = "Insuficiente";
       texto = "Pontuação abaixo de 70. Você precisa refazer a fase para avançar.";
@@ -554,6 +588,9 @@ export function initCena1() {
 
       showRestart(true);
       lockGo(true);
+
+      // ✅ derrota
+      tocarResultadoSFX(false);
     }
 
     if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
@@ -566,15 +603,16 @@ export function initCena1() {
   async function playWithSound(videoEl) {
     if (!videoEl) return false;
 
+    bgmLock(true);
+
     videoEl.playsInline = true;
     videoEl.muted = false;
     videoEl.volume = 1;
 
     try {
-      await videoEl.play(); // tenta com som
+      await videoEl.play();
       return true;
     } catch (e) {
-      // fallback: toca mutado para não travar
       videoEl.muted = true;
       try {
         await videoEl.play();
@@ -598,16 +636,16 @@ export function initCena1() {
     }
   }
 
-  // ✅ utilitário: esconder/mostrar HUD enquanto vídeo roda
   function setVideoMode(isOn) {
     document.body.classList.toggle("is-video-playing", !!isOn);
   }
 
   async function tocarSequenciaDeVideos() {
+    bgmLock(true);
+
     overlayRes?.classList.remove("visible");
     pararFogosLoop();
 
-    // ✅ esconde a barrinha (HUD) enquanto roda vídeo
     setVideoMode(true);
     setSubtitulo("Viagem à comunidade para conhecer o igarapé...");
 
@@ -624,7 +662,6 @@ export function initCena1() {
       return;
     }
 
-    // vídeo 1
     videoViagem.style.display = "block";
     videoViagem.currentTime = 0;
     await playWithSound(videoViagem);
@@ -641,7 +678,6 @@ export function initCena1() {
           return;
         }
 
-        // vídeo 2
         videoVilarejo.style.display = "block";
         videoVilarejo.currentTime = 0;
         await playWithSound(videoVilarejo);
@@ -661,7 +697,6 @@ export function initCena1() {
   }
 
   // ========= HOTSPOTS RESPONSIVOS =========
-  // (NÃO ALTEREI POSIÇÕES / MAPS)
   const mqSmall = window.matchMedia("(max-width: 1400px)");
 
   const MAP_LARGE = {
@@ -736,6 +771,9 @@ export function initCena1() {
 
   // ========= BOTÕES POPUP =========
   btnLevar.addEventListener("click", () => {
+    // ✅ check ao decidir
+    sfx("check", { volume: 0.15 });
+
     if (itemAtual) {
       const cfg = configItens[itemAtual];
       if (cfg && cfg.tipo === "distracao") marcarErro(itemAtual);
@@ -746,6 +784,9 @@ export function initCena1() {
   });
 
   btnNaoLevar.addEventListener("click", () => {
+    // ✅ check ao decidir
+    sfx("check", { volume: 0.15 });
+
     if (itemAtual) {
       const cfg = configItens[itemAtual];
       if (cfg && cfg.tipo === "distracao") marcarAcerto(itemAtual);
@@ -758,6 +799,8 @@ export function initCena1() {
   // ========= BOTÕES RESULTADO =========
   btnFecharRes?.addEventListener("click", () => {
     overlayRes?.classList.remove("visible");
+    // ✅ ao sair do ranking, pode voltar a trilha
+    bgmUnlockAndResume();
   });
 
   btnRecomecarFase?.addEventListener("click", () => {
@@ -843,7 +886,8 @@ export function initCena1() {
     openInfo({
       key: "equipTermometro",
       title: "Termômetro / copo de amostra",
-      general: "Instrumentos usados para medir a temperatura da água e realizar pequenas leituras ou testes rápidos.",
+      general:
+        "Instrumentos usados para medir a temperatura da água e realizar pequenas leituras ou testes rápidos.",
       use: "A temperatura influencia a solubilidade de gases, a atividade biológica e a toxicidade de poluentes, sendo um parâmetro importante na avaliação do igarapé.",
     })
   );
@@ -890,6 +934,8 @@ export function initCena1() {
 
   // ========= REINICIAR =========
   btnReiniciar?.addEventListener("click", () => {
+    bgmUnlockAndResume();
+
     setVideoMode(false);
     setSubtitulo(SUBTITULO_PADRAO);
 
@@ -914,7 +960,6 @@ export function initCena1() {
 
     applyHotspots();
 
-    // reset vídeos
     if (videoViagem) {
       videoViagem.pause();
       videoViagem.currentTime = 0;
@@ -932,7 +977,7 @@ export function initCena1() {
 
     atualizarHint();
   });
-} // ✅ FECHA initCena1 
+} // ✅ FECHA initCena1
 
 // =====================
 // CENA 2
@@ -1039,7 +1084,6 @@ export function initCena2() {
   let pontos = 0;
   let resultadoMostrado = false;
   let errosEncontrados = 0;
-
   let misclicks = 0;
 
   const errosClicados = new Set();
@@ -1050,9 +1094,9 @@ export function initCena2() {
     erro2: { x: 0.39, y: 0.58, w: 0.09, h: 0.21 },
     erro3: { x: 0.42, y: 0.44, w: 0.14, h: 0.07 },
     erro4: { x: 0.505, y: 0.59, w: 0.085, h: 0.21 },
-    erro5: { x: 0.677, y: 0.55, w: 0.145, h: 0.145 }, 
+    erro5: { x: 0.677, y: 0.55, w: 0.145, h: 0.145 },
     erro6: { x: 0.395, y: 0.85, w: 0.235, h: 0.14 },
-    erro7: { x: 0.499, y: 0.510, w: 0.06, h: 0.05 }, 
+    erro7: { x: 0.499, y: 0.510, w: 0.06, h: 0.05 },
   };
 
   function atualizarHint() {
@@ -1102,40 +1146,44 @@ export function initCena2() {
   erroOk?.addEventListener("click", confirmarErroModal);
 
   function marcarErro(erroId, ev) {
-    if (errosClicados.has(erroId)) return;
+  if (errosClicados.has(erroId)) return;
 
-    errosClicados.add(erroId);
-    errosEncontrados += 1;
+  errosClicados.add(erroId);
+  errosEncontrados += 1;
 
-    pontos += (PESO_ERRO[erroId] || 1) * PONTOS_POR_ERRO;
+  // ✅ som ao confirmar e marcar o X
+  sfx("check2", { volume: 0.50 });
 
-    const hs = hotspots[erroId];
-    if (hs) {
-      const xNode = document.createElement("div");
-      xNode.className = "erro-x";
-      xNode.textContent = "X";
-      hs.appendChild(xNode);
+  pontos += (PESO_ERRO[erroId] || 1) * PONTOS_POR_ERRO;
 
-      const rect = hs.getBoundingClientRect();
-      const cx = ev ? ev.clientX - rect.left : rect.width / 2;
-      const cy = ev ? ev.clientY - rect.top : rect.height / 2;
+  const hs = hotspots[erroId];
+  if (hs) {
+    const xNode = document.createElement("div");
+    xNode.className = "erro-x";
+    xNode.textContent = "X";
+    hs.appendChild(xNode);
 
-      requestAnimationFrame(() => {
-        const w = xNode.offsetWidth || 0;
-        const h = xNode.offsetHeight || 0;
-        xNode.style.left = cx - w / 2 + "px";
-        xNode.style.top = cy - h / 2 + "px";
-      });
+    const rect = hs.getBoundingClientRect();
+    const cx = ev ? ev.clientX - rect.left : rect.width / 2;
+    const cy = ev ? ev.clientY - rect.top : rect.height / 2;
 
-      hs.style.pointerEvents = "none";
-    }
+    requestAnimationFrame(() => {
+      const w = xNode.offsetWidth || 0;
+      const h = xNode.offsetHeight || 0;
+      xNode.style.left = cx - w / 2 + "px";
+      xNode.style.top = cy - h / 2 + "px";
+    });
 
-    atualizarHint();
-
-    if (errosEncontrados >= TOTAL_ERROS) {
-      mostrarResultado();
-    }
+    hs.style.pointerEvents = "none";
   }
+
+  atualizarHint();
+
+  if (errosEncontrados >= TOTAL_ERROS) {
+    mostrarResultado();
+  }
+}
+
 
   function handleClick(erroId, ev) {
     if (errosClicados.has(erroId)) return;
@@ -1240,7 +1288,6 @@ export function initCena2() {
 
     const maxPontos = TOTAL_ERROS * PONTOS_POR_ERRO;
 
-    // Ranking agora NÃO depende de tempo (somente precisão / misclicks)
     let ranking = "Bronze";
     let texto = `Cliques fora: ${misclicks}.`;
 
@@ -1266,13 +1313,18 @@ export function initCena2() {
     if (resPont) resPont.textContent = `Pontuação: ${pontos}/${maxPontos} pontos`;
     if (resRank) resRank.textContent = `Ranking: ${ranking}. ${texto}`;
 
+    // ✅ no ranking: para a trilha e toca vitória
+    bgmLock(true);
+    const venceu = (misclicks <= 5);
+    sfx(venceu ? "vitoria" : "derrota", { volume: 0.95 });
+
     overlayRes.classList.add("visible");
     btnNext && (btnNext.disabled = false);
-  } //  FECHA mostrarResultado (isso estava faltando)
+  }
 
-  // ========= BOTÕES DO RESULTADO / PRÓXIMA =========
   btnFecharRes?.addEventListener("click", () => {
     overlayRes?.classList.remove("visible");
+    bgmUnlockAndResume();
   });
 
   btnNext?.addEventListener("click", () => {
@@ -1280,7 +1332,6 @@ export function initCena2() {
     window.location.href = PROXIMA_FASE_URL;
   });
 
-  // ========= REINICIAR CENA 2 =========
   btnReiniciar?.addEventListener("click", () => {
     pararFogosLoop();
     overlayRes?.classList.remove("visible");
@@ -1293,14 +1344,14 @@ export function initCena2() {
 
     errosClicados.clear();
 
-    // limpa os X e reativa hotspots
     Object.values(hotspots).forEach((hs) => {
       hs.style.pointerEvents = "auto";
       hs.querySelectorAll(".erro-x").forEach((n) => n.remove());
     });
 
     hint.textContent = defaultHintText;
-
     aplicarHotspots();
+
+    bgmUnlockAndResume();
   });
-} //  FECHA initCena2
+} // ✅ FECHA initCena2

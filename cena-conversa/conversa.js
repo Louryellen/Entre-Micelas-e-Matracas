@@ -5,6 +5,9 @@
 
    ALTERAÇÃO (pedido): embaralhar a ordem das escolhas (choices) aleatoriamente,
    sem mudar absolutamente nada nos diálogos.
+
+   ALTERAÇÃO (pedido): inserir conversa.mp3 como trilha sonora (BGM) desta cena,
+   com desbloqueio de áudio por gesto do usuário, e pausa/retorno durante o vídeo.
 */
 
 (() => {
@@ -356,7 +359,7 @@
 
   // ===== NOVO: subtítulo dinâmico durante o vídeo
   const SUBTITLE_DEFAULT = el.subtitleCena?.textContent || "Conversa com a Comunidade";
-  const SUBTITLE_VIDEO   = "Campanha de conscientização e divulgação da oficina de sabão"; 
+  const SUBTITLE_VIDEO   = "Campanha de conscientização e divulgação da oficina de sabão";
 
   // =========================
   // HOTSPOTS NORMALIZADOS (0..1) RELATIVOS À IMAGEM
@@ -420,6 +423,56 @@
     if (el.hint) el.hint.textContent = text;
   }
 
+  // =====================
+  // ÁUDIO — BGM (trilha da conversa)
+  // =====================
+  const AUDIO_BASE = (() => {
+    // Base relativo ao próprio arquivo JS (robusto mesmo em subpastas)
+    const url = document.currentScript?.src || location.href;
+    return new URL(".", url);
+  })();
+
+  const AUDIO = {
+    // Coloque o arquivo em: audios/conversa.mp3 (relativo ao conversa.js)
+    bgm: new URL("../audios/conversa.mp3", AUDIO_BASE).href,
+  };
+
+  const EMM_AUDIO = {
+    unlocked: false,
+    bgmEl: null,
+    wasPlaying: false, // usado para pausar/retomar durante o vídeo
+  };
+
+  function safePlay(audioEl) {
+    const p = audioEl.play();
+    if (p?.catch) p.catch(() => {});
+  }
+
+  function initBgm() {
+    if (EMM_AUDIO.bgmEl) return;
+
+    const a = new Audio(AUDIO.bgm);
+    a.loop = true;
+    a.preload = "auto";
+    a.volume = 0.20; // ajuste aqui (0 a 1)
+
+    EMM_AUDIO.bgmEl = a;
+
+    // tenta autoplay (pode ser bloqueado; depois desbloqueia no primeiro gesto)
+    safePlay(a);
+  }
+
+  function unlockAudioOnce() {
+    if (EMM_AUDIO.unlocked) return;
+    EMM_AUDIO.unlocked = true;
+
+    if (EMM_AUDIO.bgmEl) safePlay(EMM_AUDIO.bgmEl);
+  }
+
+  // desbloqueia no primeiro gesto do usuário
+  window.addEventListener("pointerdown", unlockAudioOnce, { once: true, capture: true });
+  window.addEventListener("keydown", unlockAudioOnce, { once: true, capture: true });
+
   // =========================
   // VÍDEO FINAL COMO "CENA" (TELA CHEIA)
   // =========================
@@ -431,6 +484,12 @@
   }
 
   function enterVideoMode() {
+    // pausa o BGM para não competir com o áudio do vídeo
+    if (EMM_AUDIO.bgmEl) {
+      EMM_AUDIO.wasPlaying = !EMM_AUDIO.bgmEl.paused;
+      try { EMM_AUDIO.bgmEl.pause(); } catch {}
+    }
+
     document.body.classList.add("is-fullscreen-video");
     el.scene?.classList.add("video-mode");
 
@@ -451,6 +510,12 @@
   }
 
   function exitVideoMode() {
+    // retoma o BGM ao sair do vídeo
+    if (EMM_AUDIO.bgmEl && EMM_AUDIO.wasPlaying) {
+      EMM_AUDIO.wasPlaying = false;
+      safePlay(EMM_AUDIO.bgmEl);
+    }
+
     document.body.classList.remove("is-fullscreen-video");
     el.scene?.classList.remove("video-mode");
 
@@ -942,6 +1007,9 @@
   }
 
   function startConversation() {
+    // ajuda a destravar o áudio no clique do botão
+    unlockAudioOnce();
+
     state.activeThread = "agua";
     state.reputation = 0;
 
@@ -1030,6 +1098,9 @@
     if (el.bg.complete && el.bg.naturalWidth > 0) scheduleLayout();
   }
   window.addEventListener("resize", scheduleLayout);
+
+  // inicia trilha sonora (autoplay pode falhar; destrava no primeiro gesto)
+  initBgm();
 
   scheduleLayout();
 })();

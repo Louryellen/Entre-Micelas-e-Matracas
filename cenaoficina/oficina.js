@@ -84,6 +84,170 @@
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const rand = (min, max) => min + Math.random() * (max - min);
 
+  // =========================
+  // ÁUDIO (NOVO) — trilha + efeitos por evento
+  // =========================
+  const AUDIO = (() => {
+    const resolved = new Map(); // file -> url resolvida (quando der certo)
+    let unlocked = false;
+
+    // Para evitar spam de som de erro
+    let lastErrorSfxAt = 0;
+
+    function candidatesFor(file) {
+      // tenta caminhos comuns (raiz / subpasta de cena)
+      return [
+        `../audios/${file}`,
+        `../../audios/${file}`,
+        `audios/${file}`,
+        `/audios/${file}`,
+      ];
+    }
+
+    function makeUrl(path) {
+      return new URL(path, location.href).href;
+    }
+
+    function safePlay(el) {
+      const p = el.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+
+    function unlockOnce() {
+      unlocked = true;
+      // tenta retomar bgm se existir e estiver pausada por bloqueio
+      if (loops.bgm && loops.bgm.el && loops.bgm.el.paused) safePlay(loops.bgm.el);
+    }
+
+    window.addEventListener("pointerdown", unlockOnce, { once: true, capture: true });
+    window.addEventListener("keydown", unlockOnce, { once: true, capture: true });
+
+    function makeAudio(file, { loop = false, volume = 0.6 } = {}) {
+      const el = new Audio();
+      el.loop = !!loop;
+      el.preload = "auto";
+      el.volume = clamp(volume, 0, 1);
+
+      const cached = resolved.get(file);
+      const list = cached ? [cached] : candidatesFor(file).map(makeUrl);
+
+      const state = { el, file, list, idx: 0 };
+
+      const tryNext = () => {
+        if (state.idx >= state.list.length) {
+          console.warn(`[audio] não encontrei ${file} nos caminhos candidatos.`);
+          return;
+        }
+        const url = state.list[state.idx++];
+        el.src = url;
+        el.load();
+      };
+
+      el.addEventListener("canplay", () => {
+        // memoriza a url que funcionou
+        if (el.src) resolved.set(file, el.src);
+      });
+
+      el.addEventListener("error", () => {
+        tryNext();
+      });
+
+      // primeiro load
+      tryNext();
+      return state;
+    }
+
+    const loops = {
+      bgm: null,
+      chama: null,
+      tempo: null,
+      colher: null,
+      subindo: null,
+    };
+
+    function ensureLoop(key, file, volume) {
+      if (loops[key] && loops[key].el) return loops[key];
+      loops[key] = makeAudio(file, { loop: true, volume });
+      return loops[key];
+    }
+
+    function loopPlay(key, file, volume) {
+      const a = ensureLoop(key, file, volume);
+      if (!unlocked) return; // só tenta tocar depois do gesto
+      safePlay(a.el);
+    }
+
+    function loopStop(key) {
+      const a = loops[key];
+      if (!a || !a.el) return;
+      try { a.el.pause(); } catch {}
+      try { a.el.currentTime = 0; } catch {}
+    }
+
+    function loopPause(key) {
+      const a = loops[key];
+      if (!a || !a.el) return;
+      try { a.el.pause(); } catch {}
+    }
+
+    function loopResume(key) {
+      const a = loops[key];
+      if (!a || !a.el) return;
+      if (!unlocked) return;
+      safePlay(a.el);
+    }
+
+    function setLoopVolume(key, vol) {
+      const a = loops[key];
+      if (!a || !a.el) return;
+      a.el.volume = clamp(vol, 0, 1);
+    }
+
+    function stopAllLoops() {
+      Object.keys(loops).forEach(loopStop);
+    }
+
+    function playSfx(file, { volume = 0.8, cooldownMs = 0, throttleKey = "" } = {}) {
+      if (!unlocked) return;
+
+      // throttle simples (principalmente para errar.mp3)
+      if (cooldownMs > 0) {
+        const now = Date.now();
+        if (throttleKey === "errar") {
+          if (now - lastErrorSfxAt < cooldownMs) return;
+          lastErrorSfxAt = now;
+        }
+      }
+
+      const one = makeAudio(file, { loop: false, volume });
+      // garante reset
+      try { one.el.currentTime = 0; } catch {}
+      safePlay(one.el);
+    }
+
+    return {
+      unlockOnce,
+      loopPlay,
+      loopStop,
+      loopPause,
+      loopResume,
+      setLoopVolume,
+      stopAllLoops,
+      playSfx,
+    };
+  })();
+
+  // volumes sugeridos
+  const VOL = {
+    bgm: 0.20,
+    chama: 0.25,
+    tempo: 0.55,
+    colher: 0.55,
+    subindo: 0.55,
+    vitoria: 0.60,
+    errar: 0.85,
+  };
+
   // Ajuste do “balão” (toast): maior e um pouco mais alto
   function tuneToastUI() {
     toast.style.fontSize = "18px";
@@ -276,7 +440,7 @@
     "Medir Água",
     "Ordem segura (NaOH na água)",
     "Adicionar solução ao óleo lentamente",
-    "Adicionar detergente (proporção por 1 L)",
+    "Adicionar Desinfetante (proporção por 1 L)",
     "Resfriar para 25–30°C (aguardar)",
     "Adicionar corante e óleo essencial (voláteis)",
     "Verter (molde)",
@@ -394,11 +558,23 @@
       this.cool.active = false;
       if (this.cool.raf) cancelAnimationFrame(this.cool.raf);
       this.cool.raf = null;
+
+      // 🔊 para som do relógio
+      AUDIO.loopStop("tempo");
     },
 
     // ✅ FINAL: Parabéns sem “caixa” e overlay bem transparente
     openCongratsPopup() {
       modalLocked = true;
+
+      // 🔊 garante que não ficou nenhum loop tocando
+      AUDIO.loopStop("chama");
+      AUDIO.loopStop("tempo");
+      AUDIO.loopStop("colher");
+      AUDIO.loopStop("subindo");
+
+      // 🔊 toca vitória
+      AUDIO.playSfx("vitoria.mp3", { volume: VOL.vitoria });
 
       // Detecta elementos “chrome” do modal de forma tolerante ao seu HTML
       const modalCard =
@@ -555,6 +731,12 @@
       this.stopStir();
       this.stopFireworks();
 
+      // 🔊 garante loops off (exceto bgm)
+      AUDIO.loopStop("chama");
+      AUDIO.loopStop("tempo");
+      AUDIO.loopStop("colher");
+      AUDIO.loopStop("subindo");
+
       // garante que o modal volte ao normal, caso tenha sido alterado no final
       modalLocked = false;
       modal.style.background = "";
@@ -616,6 +798,11 @@
       this.started = true;
       btnStart.disabled = true;
       btnStart.textContent = "Em jogo";
+
+      // 🔊 destrava áudio e inicia trilha desta cena
+      AUDIO.unlockOnce();
+      AUDIO.loopPlay("bgm", "trilha7.mp3", VOL.bgm);
+
       this.newLot();
     },
 
@@ -650,7 +837,15 @@
       chipErrors.textContent = `Erros: ${this.errors}`;
     },
 
-    fail(msg) { this.errors += 1; this.updateUI(); showToast(msg, "bad"); },
+    fail(msg) {
+      this.errors += 1;
+      this.updateUI();
+      showToast(msg, "bad");
+
+      // 🔊 som de erro (para cálculos/proporções e demais falhas)
+      AUDIO.playSfx("errar.mp3", { volume: VOL.errar, cooldownMs: 260, throttleKey: "errar" });
+    },
+
     ok(msg) { showToast(msg, "good"); },
 
     highlightStep() {
@@ -867,6 +1062,9 @@
 
       this.stopHeat();
 
+      // 🔊 som do aquecimento (loop durante esta etapa)
+      AUDIO.loopPlay("chama", "chama.mp3", VOL.chama);
+
       const massFactor = clamp(this.lotOil / 1000, 0.65, 1.25);
       const ambient = rand(23, 29);
 
@@ -1000,6 +1198,10 @@
         if (read >= BOIL_TEMP) {
           this.heat.active = false;
           closeModal();
+
+          // 🔊 para chama ao falhar
+          AUDIO.loopStop("chama");
+
           this.fail("Temperatura passou demais: ferveu. Controle a chama com mais calma.");
           this.setInstruction(STEPS[this.step], "Clique no fogão e tente manter 55–60°C.");
           return;
@@ -1008,6 +1210,10 @@
         if (this.heat.overSec > OVER_LIMIT_SEC) {
           this.heat.active = false;
           closeModal();
+
+          // 🔊 para chama ao falhar
+          AUDIO.loopStop("chama");
+
           this.fail("Passou de 60°C por tempo demais. Ajuste a chama e tente novamente.");
           this.setInstruction(STEPS[this.step], "Clique no fogão e tente manter 55–60°C.");
           return;
@@ -1024,6 +1230,10 @@
         if (this.heat.inBandSec >= NEED_SEC) {
           this.heat.active = false;
           closeModal();
+
+          // 🔊 para chama ao concluir faixa ideal
+          AUDIO.loopStop("chama");
+
           this.ok("Temperatura estabilizada (55–60°C).");
 
           this.step = 4;
@@ -1045,6 +1255,9 @@
       this.heat.active = false;
       if (this.heat.raf) cancelAnimationFrame(this.heat.raf);
       this.heat.raf = null;
+
+      // 🔊 para chama ao fechar/encerrar
+      AUDIO.loopStop("chama");
     },
 
     // Etapa 4: Mexer
@@ -1061,7 +1274,11 @@
       const NEED = 12.0;
 
       const loop = (now) => {
-        if (!this.started || this.step !== 4) return;
+        if (!this.started || this.step !== 4) {
+          // 🔊 garante som de colher parado se sair da etapa
+          AUDIO.loopStop("colher");
+          return;
+        }
 
         const dt = Math.min(0.06, (now - this.stir.last) / 1000);
         this.stir.last = now;
@@ -1073,6 +1290,10 @@
 
         if (this.stir.progress >= 1) {
           this.stopStir();
+
+          // 🔊 para colher ao terminar
+          AUDIO.loopStop("colher");
+
           this.ok("Purificação concluída (mexido por 2 min).");
 
           this.step = 5;
@@ -1093,6 +1314,9 @@
       if (this.stir.raf) cancelAnimationFrame(this.stir.raf);
       this.stir.raf = null;
       this.stir.holding = false;
+
+      // 🔊 garante parar
+      AUDIO.loopStop("colher");
     },
 
     // Etapas 5/6: Medir
@@ -1365,7 +1589,7 @@
         this.updateUI();
         this.lockHotspots();
         this.highlightStep();
-        this.setInstruction(STEPS[this.step], "Agora calcule e adicione o detergente: clique no frasco.");
+        this.setInstruction(STEPS[this.step], "Agora calcule e adicione o desinfetante: clique no frasco.");
       });
 
       $("optFast").addEventListener("click", () => {
@@ -1394,21 +1618,21 @@
       });
     },
 
-    // Etapa 9: Detergente
+    // Etapa 9: Desinfetante
     openAddDetergent() {
       const target = Math.round((this.lotOil / 1000) * DETERG.perLiter);
 
       openModal(
-        "Detergente — Dosagem",
+        "Desinfetante — Dosagem",
         "A proporção é 40 mL por 1 L de óleo. Calcule para a sua quantidade.",
         `
           <div class="mini">
-            Proporção: <b>${DETERG.perLiter} mL</b> de detergente para <b>1 L</b> de óleo.
+            Proporção: <b>${DETERG.perLiter} mL</b> de desinfetante para <b>1 L</b> de óleo.
             <br>Sua quantidade: <b>${this.lotOil} mL</b>.
           </div>
 
           <div class="field" style="margin-top:10px">
-            <label class="mini">Quanto de detergente (mL) você vai adicionar?</label>
+            <label class="mini">Quanto de desinfetante (mL) você vai adicionar?</label>
             <input class="input" id="inDet" inputmode="numeric" placeholder="Ex.: ${decoyMlSmall(target)}" value="">
           </div>
 
@@ -1433,11 +1657,11 @@
         const ok = Math.abs(v - target) <= DETERG.tol;
         if (!ok) {
           this.fail("Dosagem incorreta. Refaça o cálculo e tente novamente.");
-          this.setInstruction(STEPS[this.step], "Clique no frasco e ajuste a dosagem do detergente.");
+          this.setInstruction(STEPS[this.step], "Clique no frasco e ajuste a dosagem do desinfetante.");
           return;
         }
 
-        this.ok("Detergente adicionado.");
+        this.ok("Desinfetante adicionado.");
 
         // ✅ Agora vem o RESFRIAMENTO (25–30°C) antes de corante/óleo essencial
         this.step = 10;
@@ -1456,7 +1680,12 @@
       modalLocked = true;
       btnClose.style.display = "none";
 
-      this.stopCoolDown();
+      // 🔊 som do relógio durante a contagem
+      this.stopCoolDown(); // reseta timers/raf e garante estado limpo
+
+// 🔊 som do relógio durante a contagem (agora não é mais interrompido)
+AUDIO.loopPlay("tempo", "tempo.mp3", VOL.tempo);
+
       this.cool.active = true;
       this.cool.last = performance.now();
       this.cool.startTemp = rand(38, 52);
@@ -1599,6 +1828,10 @@
 
         if (raw >= 1) {
           this.cool.active = false;
+
+          // 🔊 para tempo quando termina
+          AUDIO.loopStop("tempo");
+
           btnOk.disabled = false;
           btnOk.textContent = "Continuar (25–30°C)";
           return;
@@ -1611,6 +1844,7 @@
 
       btnOk.addEventListener("click", () => {
         this.stopCoolDown();
+
         modalLocked = false;
         btnClose.style.display = "";
         closeModal();
@@ -1722,17 +1956,55 @@
       const nudge = $("pourNudge");
       const confirm = $("pourConfirm");
 
-      const sync = () => (v.textContent = `${Number(r.value)}%`);
+      let lastVal = Number(r.value);
+      let moveTimer = null;
+
+      const stopSubindoSoon = () => {
+  if (moveTimer) clearTimeout(moveTimer);
+  moveTimer = setTimeout(() => {
+    // melhor que stop: não reseta o áudio toda hora
+    AUDIO.loopPause("subindo");
+  }, 550);
+};
+
+
+      const sync = () => {
+        const cur = Number(r.value);
+        v.textContent = `${cur}%`;
+
+        // 🔊 subindo.mp3: toca enquanto está mexendo (e preferencialmente subindo)
+        if (cur > lastVal) {
+          AUDIO.loopPlay("subindo", "subindo.mp3", VOL.subindo);
+          stopSubindoSoon();
+        } else {
+          // se estiver descendo/parado, não mantém
+          stopSubindoSoon();
+        }
+
+        lastVal = cur;
+      };
+
       r.addEventListener("input", sync);
+      r.addEventListener("pointerdown", () => {
+        AUDIO.loopPlay("subindo", "subindo.mp3", VOL.subindo);
+        stopSubindoSoon();
+      });
+      window.addEventListener("pointerup", () => stopSubindoSoon(), { passive: true });
+
       sync();
 
       nudge.addEventListener("click", () => {
-        r.value = String(clamp(Number(r.value) + (Math.random() > 0.5 ? 2 : -2), 0, 100));
+        const next = clamp(Number(r.value) + (Math.random() > 0.5 ? 2 : -2), 0, 100);
+        r.value = String(next);
         sync();
       });
 
       confirm.addEventListener("click", () => {
         const val = Number(r.value);
+
+        // 🔊 para subindo ao confirmar
+        AUDIO.loopStop("subindo");
+
         closeModal();
 
         if (val < 85 || val > 95) {
@@ -1810,31 +2082,46 @@
   if (hs.colheres) {
     hs.colheres.addEventListener("pointerdown", () => {
       if (!game.started || game.step !== 4) return;
+
+      // 🔊 colher.mp3: inicia quando aperta
+      AUDIO.loopPlay("colher", "colher.mp3", VOL.colher);
+
       game.stir.holding = true;
     });
 
     window.addEventListener("pointerup", () => {
       if (!game.started || game.step !== 4) return;
+
       game.stir.holding = false;
+
+      // 🔊 para quando solta
+      AUDIO.loopStop("colher");
     });
 
     hs.colheres.addEventListener("pointerleave", () => {
       if (!game.started || game.step !== 4) return;
+
       game.stir.holding = false;
+
+      // 🔊 para quando sai
+      AUDIO.loopStop("colher");
     });
   }
 
   // init
   tuneToastUI();
-  function applyCompactMode(){
-  const h = window.innerHeight;
-  const compact = h < 820; // ajuste o corte se quiser
 
-  document.documentElement.classList.toggle("ui-compact", compact);
-}
+  function applyCompactMode() {
+    const h = window.innerHeight;
+    const compact = h < 820; // ajuste o corte se quiser
+    document.documentElement.classList.toggle("ui-compact", compact);
+  }
 
-window.addEventListener("resize", applyCompactMode);
-applyCompactMode();
+  window.addEventListener("resize", applyCompactMode);
+  applyCompactMode();
+
+  // 🔊 prepara bgm (não vai tocar até ter gesto/clicar em "Começar")
+  // Mantemos o start real no game.start()
 
   game.reset();
 })();

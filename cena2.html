@@ -6,7 +6,7 @@
   <title>Jogo dos 7 Erros</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body data-scene="cena3">
+<body data-scene="cena3" data-bgm="trilha3">
 <header>
   <div>
     <div class="title">Entre Micelas e Matracas</div>
@@ -70,12 +70,12 @@
     <p id="resultadoRanking"></p>
 
     <div class="resultado-actions">
-      <button class="btn btn-ghost" id="btnFecharResultado">Tentar novamente</button>
       <button class="btn" id="btnIrProximaFase">Realizar a Coleta</button>
     </div>
   </div>
 </div>
-
+<script src="./audio.js"></script>
+<script src="./sfx.js"></script>
 <script type="module">
   import { initCena2 } from "./engine.js";
 

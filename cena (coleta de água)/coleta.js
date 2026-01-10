@@ -234,7 +234,7 @@ function drawZones() {
 const points = [
   { id: "p1", x: 38, y: 44, collected: false, label: "Ponto 1 — margem central" },
   { id: "p2", x: 58, y: 30, collected: false, label: "Ponto 2 — trecho médio" },
-  { id: "p3", x: 70, y: 47.5, collected: false, label: "Ponto 3 — trecho superior" },
+  { id: "p3", x: 73, y: 47.5, collected: false, label: "Ponto 3 — trecho superior" },
 ];
 
 const pointEls = new Map();
