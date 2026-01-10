@@ -309,17 +309,27 @@
         /* ===== BLOCO TINTAS (APÓS O GATE FINAL, SEM ENTRAR NO FLUXO PRINCIPAL) ===== */
         aTintas: {
           speaker: "Moradores",
-          text: "Você pode ajudar a gente com a produção de tinta? A gente está sem tinta aqui na comunidade.",
+          text: "Não sei se você notou os enfeites, mas estamos em época de festa junina.", 
           next: "aTintasResp",
         },
 
         aTintasResp: {
           speaker: "Pesquisadora",
           text:
-            "Sim, posso ajudar, claro!\n\nDá pra fazer tinta usando pigmentos naturais do dia a dia, como urucum, cúrcuma e repolho roxo.\n\nA ideia é extrair a cor (com água morna, álcool ou água com um pouquinho de vinagre, dependendo do pigmento) e misturar com um “ligante” simples para fixar melhor (por exemplo: cola branca escolar, goma, ou uma mistura bem fina de farinha e água, dependendo do que vocês tiverem).\n\nSe vocês toparem, a gente organiza uma oficina rápida: separar os pigmentos, testar a intensidade da cor e ver qual mistura funciona melhor para o que vocês precisam.",
-          next: "a4", // (não mexi no diálogo) -> será interceptado quando estiver no pós-gate
+            "Ah, sim, eu notei. Está tudo muito bonito! Eu amo o Bumba Meu Boi.",
+          next: "a6", 
         },
-        /* ===== FIM TINTAS ===== */
+         a6: {
+          speaker: "Moradores",
+          text: "Então… é justamente por isso que a gente queria falar com você. Aqui na comunidade estamos sem tintas. E nós precisamos pintar e renovar as roupas do bumba meu boi, você poderia nos ajudar?. E já que você ama o bumba meu boi, o que acha de participar?",
+          next: "a7", // botão "Continuar" aparece automaticamente
+        },
+
+        a7: {
+          speaker: "Pesquisadora",
+          text: "Sério?!, eu adoraria participar! E sobre a tinta, dá pra fazer tinta usando pigmentos naturais do dia a dia, como urucum, cúrcuma e repolho roxo. A ideia é extrair a cor (com água morna, álcool ou água com um pouquinho de vinagre, dependendo do pigmento) e misturar com um “ligante” simples para fixar melhor (por exemplo: cola branca escolar, goma, ou uma mistura bem fina de farinha e água, dependendo do que vocês tiverem). Se vocês toparem, a gente organiza uma oficina rápida: separar os pigmentos, testar a intensidade da cor e ver qual mistura funciona melhor para o que vocês precisam.",
+          next: "a4", // continua para o final normal (gate/vídeo)
+        },
       },
     },
   };

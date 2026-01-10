@@ -7,7 +7,7 @@
 (() => {
   "use strict";
 
-  const END_URL = "fim.html";
+  const END_URL = "creditos.html";
   const FINAL_VIDEO_SRC = "antes.mp4"; // se estiver em assets, use: "assets/antes.mp4"
   const STORAGE_KEY = "emm_relatorio_igarape_v2";
 
