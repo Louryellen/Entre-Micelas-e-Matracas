@@ -24,15 +24,22 @@ export function typeInto(node, text, speed = 18, done) {
 // Debug email icon (Cena 0)
 (function () {
   let show = false;
+
   document.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "g") {
-      show = !show;
-      const icon = document.getElementById("emailIcon");
-      if (!icon) return;
-      icon.classList.toggle("active", show);
-    }
+    if (e.key.toLowerCase() !== "g") return;
+
+    show = !show;
+
+    const icon = document.getElementById("emailIcon");
+    if (!icon) return;
+
+    icon.classList.toggle("active", show);
+
+    // toca notificação quando o ícone aparece
+    if (show) window.EMM_SFX?.play("notify", { volume: 0.85 });
   });
 })();
+
 
 // =====================
 // CENA 0
@@ -133,6 +140,7 @@ Atenciosamente,
 Coordenação de Extensão – UFMA`;
 
   function openMail() {
+    window.EMM_SFX?.play("email", { volume: 0.9 });
     hint.style.display = "none";
     const vw = window.innerWidth;
     const vh = window.innerHeight;

@@ -47,7 +47,8 @@
       justify-content: center;
       align-items: center;
 
-      width: min(700px, calc(100vw - 48px));
+      width: min(900px, calc(100vw - 48px)); /* ↑ um pouco maior p/ 3 botões */
+      flex-wrap: wrap; /* se a tela apertar, quebra linha */
     }
 
     .btn{
@@ -87,7 +88,13 @@
       background: linear-gradient(180deg, rgba(255,180,0,.18), rgba(255,80,0,.10));
     }
 
-    /* Modal "Sobre" */
+    /* NOVO: estilo do botão Instruções */
+    .btn.tertiary{
+      border-color: rgba(180,140,255,.28);
+      background: linear-gradient(180deg, rgba(180,140,255,.18), rgba(90,80,255,.10));
+    }
+
+    /* Modal "Sobre" e "Instruções" */
     .modal{
       position: fixed;
       inset: 0;
@@ -137,8 +144,9 @@
       font-weight: 800;
     }
 
-    /* Texto do sobre (JUSTIFICADO) */
-    .sobre-body p{
+    /* Texto (JUSTIFICADO) */
+    .sobre-body p,
+    .inst-body p{
       margin: 0 0 10px 0;
       line-height: 1.6;
       font-size: 15px;
@@ -148,6 +156,17 @@
       text-justify: inter-word;
       hyphens: auto;
     }
+
+    /* Lista das instruções */
+    .inst-body ul{
+      margin: 8px 0 0 18px;
+      padding: 0;
+      color: rgba(255,255,255,.92);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .inst-body li{ margin: 6px 0; }
 
     /* Bloco separado para créditos */
     .sobre-meta{
@@ -163,7 +182,7 @@
       line-height: 1.5;
       font-size: 15px;
       color: rgba(255,255,255,.92);
-      text-align: left; /* créditos não ficam justificados */
+      text-align: left;
       word-break: break-word;
     }
 
@@ -183,11 +202,37 @@
   <main class="screen" role="main" aria-label="Tela inicial">
     <div class="menu" aria-label="Menu">
       <button class="btn primary" id="btnIniciar" type="button">Iniciar Jogo</button>
+      <button class="btn tertiary" id="btnInstrucoes" type="button">Instruções</button>
       <button class="btn secondary" id="btnSobre" type="button">Sobre</button>
     </div>
   </main>
 
-  <!-- MODAL -->
+  <!-- MODAL: INSTRUÇÕES -->
+  <div class="modal" id="modalInst" role="dialog" aria-modal="true" aria-labelledby="tituloInst">
+    <div class="modal-card">
+      <div class="modal-title">
+        <h2 id="tituloInst">Instruções</h2>
+        <button class="close" id="btnFecharInst" type="button" aria-label="Fechar">×</button>
+      </div>
+
+      <div class="inst-body">
+        <p>
+          Nesta experiência, você irá investigar a possível poluição hídrica de um igarapé e tomar decisões ao longo das cenas.
+          Suas escolhas influenciam o andamento da narrativa e o desfecho final.
+        </p>
+
+        <ul>
+          <li><strong>Interaja com os cenários:</strong> clique nos itens, áreas e personagens para avançar.</li>
+          <li><strong>Leia as dicas do HUD:</strong> elas orientam o objetivo de cada etapa.</li>
+          <li><strong>Responda com atenção:</strong> algumas cenas têm escolhas e outras pedem um pequeno parecer.</li>
+          <li><strong>Reiniciar:</strong> caso necessário, use o botão de reinício disponível nas cenas.</li>
+          <li><strong>Som:</strong> se houver áudio, ele pode iniciar após o primeiro clique/tecla (regra do navegador).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SOBRE -->
   <div class="modal" id="modalSobre" role="dialog" aria-modal="true" aria-labelledby="tituloSobre">
     <div class="modal-card">
       <div class="modal-title">
@@ -216,6 +261,8 @@
     </div>
   </div>
 
+  <script src="audio.js" defer></script>
+  
   <script>
     (function () {
       "use strict";
@@ -223,32 +270,57 @@
       const $ = (id) => document.getElementById(id);
 
       const btnIniciar = $("btnIniciar");
+      const btnInstrucoes = $("btnInstrucoes");
       const btnSobre = $("btnSobre");
-      const modal = $("modalSobre");
+
+      const modalSobre = $("modalSobre");
       const btnFechar = $("btnFechar");
+
+      const modalInst = $("modalInst");
+      const btnFecharInst = $("btnFecharInst");
 
       btnIniciar.addEventListener("click", () => {
         window.location.href = "jogo.html";
       });
 
       btnSobre.addEventListener("click", () => {
-        modal.classList.add("open");
+        modalSobre.classList.add("open");
         btnFechar.focus();
       });
 
-      function closeModal(){
-        modal.classList.remove("open");
-      }
-
-      btnFechar.addEventListener("click", closeModal);
-
-      modal.addEventListener("click", (e) => {
-        if (e.target === modal) closeModal();
+      btnInstrucoes.addEventListener("click", () => {
+        modalInst.classList.add("open");
+        btnFecharInst.focus();
       });
 
+      function closeModal(modalEl){
+        modalEl.classList.remove("open");
+      }
+
+      btnFechar.addEventListener("click", () => closeModal(modalSobre));
+      btnFecharInst.addEventListener("click", () => closeModal(modalInst));
+
+      // clicar no fundo fecha
+      modalSobre.addEventListener("click", (e) => {
+        if (e.target === modalSobre) closeModal(modalSobre);
+      });
+
+      modalInst.addEventListener("click", (e) => {
+        if (e.target === modalInst) closeModal(modalInst);
+      });
+
+      // ESC fecha o que estiver aberto (prioridade: Instruções)
       window.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && modal.classList.contains("open")) {
-          closeModal();
+        if (e.key !== "Escape") return;
+
+        if (modalInst.classList.contains("open")) {
+          closeModal(modalInst);
+          btnInstrucoes.focus();
+          return;
+        }
+
+        if (modalSobre.classList.contains("open")) {
+          closeModal(modalSobre);
           btnSobre.focus();
         }
       });
