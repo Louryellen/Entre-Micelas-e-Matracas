@@ -72,7 +72,7 @@
       box-shadow: 0 10px 22px rgba(0,0,0,.28);
       text-shadow: 0 2px 10px rgba(0,0,0,.55);
 
-      transition: transform .12s ease, filter .12s ease, background .12s ease;
+      transition: transform .12s ease, filter .12s ease, background .12s ease, opacity .12s ease;
     }
 
     .btn:hover{ filter: brightness(1.06); }
@@ -92,6 +92,14 @@
     .btn.tertiary{
       border-color: rgba(180,140,255,.28);
       background: linear-gradient(180deg, rgba(180,140,255,.18), rgba(90,80,255,.10));
+    }
+
+    /* ✅ Estado desabilitado */
+    .btn:disabled{
+      opacity: .45;
+      cursor: not-allowed;
+      filter: grayscale(.25);
+      transform: none;
     }
 
     /* Modal "Sobre" e "Instruções" */
@@ -116,6 +124,10 @@
       -webkit-backdrop-filter: blur(10px);
       padding: 18px;
       color: #fff;
+
+      /* ✅ permite scroll dentro do modal */
+      max-height: 80vh;
+      overflow: auto;
     }
 
     .modal-title{
@@ -168,6 +180,19 @@
 
     .inst-body li{ margin: 6px 0; }
 
+    /* ✅ Ações das instruções */
+    .inst-actions{
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .inst-foot{
+      margin: 10px 0 0 0;
+      color: rgba(255,255,255,.75);
+      font-size: 13px;
+    }
+
     /* Bloco separado para créditos */
     .sobre-meta{
       margin-top: 14px;
@@ -201,9 +226,10 @@
 <body>
   <main class="screen" role="main" aria-label="Tela inicial">
     <div class="menu" aria-label="Menu">
-      <button class="btn primary" id="btnIniciar" type="button">Iniciar Jogo</button>
+      <!-- ✅ Bloqueados até ler instruções -->
+      <button class="btn primary" id="btnIniciar" type="button" disabled aria-disabled="true">Iniciar Jogo</button>
       <button class="btn tertiary" id="btnInstrucoes" type="button">Instruções</button>
-      <button class="btn secondary" id="btnSobre" type="button">Sobre</button>
+      <button class="btn secondary" id="btnSobre" type="button" disabled aria-disabled="true">Sobre</button>
     </div>
   </main>
 
@@ -229,6 +255,14 @@
           <li><strong>Reiniciar:</strong> caso necessário, use o botão de reinício disponível nas cenas.</li>
           <li><strong>Som:</strong> se houver áudio, ele pode iniciar após o primeiro clique/tecla (regra do navegador).</li>
         </ul>
+
+        <!-- ✅ Confirmação só libera depois de rolar até o fim -->
+        <div class="inst-actions">
+          <button class="btn tertiary" id="btnLiInst" type="button" disabled aria-disabled="true">
+            Li as instruções
+          </button>
+        </div>
+        <p class="inst-foot" id="instFoot">Role até o final para habilitar.</p>
       </div>
     </div>
   </div>
@@ -263,7 +297,7 @@
   </div>
 
   <script src="audio.js" defer></script>
-  
+
   <script>
     (function () {
       "use strict";
@@ -280,18 +314,52 @@
       const modalInst = $("modalInst");
       const btnFecharInst = $("btnFecharInst");
 
+      const btnLiInst = $("btnLiInst");
+      const instFoot = $("instFoot");
+      const instCard = modalInst?.querySelector(".modal-card");
+
+      // ===== Gate: só libera depois de ler instruções =====
+      const KEY = "emm_instrucoes_lidas_v1";
+
+      function setLocked(isLocked){
+        btnIniciar.disabled = isLocked;
+        btnSobre.disabled = isLocked;
+
+        btnIniciar.setAttribute("aria-disabled", String(isLocked));
+        btnSobre.setAttribute("aria-disabled", String(isLocked));
+      }
+
+      function unlock(){
+        try { localStorage.setItem(KEY, "1"); } catch(_) {}
+        setLocked(false);
+      }
+
+      const already = (() => {
+        try { return localStorage.getItem(KEY) === "1"; } catch(_) { return false; }
+      })();
+
+      setLocked(!already);
+
+      // Iniciar jogo
       btnIniciar.addEventListener("click", () => {
+        if (btnIniciar.disabled) return;
         window.location.href = "jogo.html";
       });
 
+      // Sobre
       btnSobre.addEventListener("click", () => {
+        if (btnSobre.disabled) return;
         modalSobre.classList.add("open");
         btnFechar.focus();
       });
 
+      // Instruções
       btnInstrucoes.addEventListener("click", () => {
         modalInst.classList.add("open");
         btnFecharInst.focus();
+
+        // ao abrir, checa se já está no fim (conteúdo curto em telas grandes)
+        requestAnimationFrame(checkScrollEnd);
       });
 
       function closeModal(modalEl){
@@ -325,6 +393,39 @@
           btnSobre.focus();
         }
       });
+
+      // ===== Lógica: rolar até o final habilita "Li as instruções" =====
+      function atScrollEnd(el){
+        if (!el) return false;
+        const eps = 2; // tolerância
+        return (el.scrollTop + el.clientHeight) >= (el.scrollHeight - eps);
+      }
+
+      function checkScrollEnd(){
+        if (already) return;
+        if (!instCard) return;
+
+        if (atScrollEnd(instCard)) {
+          btnLiInst.disabled = false;
+          btnLiInst.setAttribute("aria-disabled", "false");
+          if (instFoot) instFoot.textContent = "Agora você pode confirmar.";
+        } else {
+          btnLiInst.disabled = true;
+          btnLiInst.setAttribute("aria-disabled", "true");
+          if (instFoot) instFoot.textContent = "Role até o final para habilitar.";
+        }
+      }
+
+      instCard?.addEventListener("scroll", checkScrollEnd, { passive: true });
+
+      // botão final de confirmação
+      btnLiInst?.addEventListener("click", () => {
+        if (btnLiInst.disabled) return;
+        unlock();
+        closeModal(modalInst);
+        btnIniciar.focus();
+      });
+
     })();
   </script>
 </body>

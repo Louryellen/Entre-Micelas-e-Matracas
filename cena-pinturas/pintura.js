@@ -299,13 +299,13 @@
     // urucum
     return {
       name: "URUCUM",
-      phMin: 2.0,
-      phMax: 4.0,
+      phMin: 4.0,
+      phMax: 5.0,
       concMin: 15,
       concMax: 25,
       requireMeio: "oleo",
       recommendedMeio: "oleo",
-      text: "Meio oleoso + pH 2,0–4,0 + C 15–25 g/L (urucum)"
+      text: "Meio oleoso + pH 4,0–5,0 + C 15–25 g/L (urucum)"
     };
   }
 
@@ -925,8 +925,7 @@
   // =========================
   function openFinalVideoScene() {
     // para trilhas antes do vídeo
-    AUDIO.loopStop("bgm");
-    AUDIO.loopStop("rank");
+   AUDIO.stopAllLoops();
 
     // evita duplicar
     const existing = document.querySelector(".video-scene");
