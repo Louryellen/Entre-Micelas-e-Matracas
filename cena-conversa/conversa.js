@@ -321,7 +321,7 @@
         },
          a6: {
           speaker: "Moradores",
-          text: "Então… é justamente por isso que a gente queria falar com você. Aqui na comunidade estamos sem tintas. E nós precisamos pintar e renovar as roupas do bumba meu boi, você poderia nos ajudar?. E já que você ama o bumba meu boi, o que acha de participar?",
+          text: "Então… é justamente por isso que a gente queria falar com você. Aqui na comunidade estamos sem tintas. E nós precisamos pintar e renovar as roupas do bumba meu boi, você poderia nos ajudar? E já que você ama o bumba meu boi, o que acha de participar?",
           next: "a7", // botão "Continuar" aparece automaticamente
         },
 
