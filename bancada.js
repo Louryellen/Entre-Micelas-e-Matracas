@@ -1259,21 +1259,19 @@ function bindDiagnosis(){
       // próxima amostra
       state.samples.idx += 1;
 
-      // FINAL: mostra ficha final
+      // FINAL: mostra ficha final (SEM redirecionar sozinho)
       if (state.samples.idx >= SAMPLE_ORDER.length){
-        if (stabLabel) stabLabel.textContent = "Todas as amostras finalizadas. Gerando ficha final...";
+        if (stabLabel) stabLabel.textContent = "Todas as amostras finalizadas. Ficha final disponível.";
         if (diagBox) diagBox.hidden = true;
 
         setTimeout(() => {
           showFinalSheetModal();
-
-          // >>> FIX: redireciona corretamente para a conversa
-          setHint("Ficha final disponível. Indo para a conversa...");
-          setTimeout(() => { window.location.href = NEXT_SCENE_URL; }, 2500);
+          setHint("Ficha final disponível. Role para ver tudo e clique em “Avançar” quando quiser continuar.");
         }, 120);
 
         return;
       }
+
 
       // reseta rep para a próxima amostra e vai direto medir (o descarte já foi feito antes do diagnóstico)
       state.samples.rep = 0;

@@ -584,4 +584,18 @@ body{
   --gap: 14px;
 }
 
+#btnNextScene{
+  flex: 0 0 auto;      /* para de esticar */
+  width: auto;         /* largura natural */
+  min-width: 220px;    /* ajuste como quiser (ex: 180–260px) */
+  padding: 14px 18px;   /* diminui “altura/largura” */
+  font-size: 14px;
+  justify-content: center;    /* diminui o texto */
+}
+
+.actions{
+  justify-content: center;
+}
+
+
 

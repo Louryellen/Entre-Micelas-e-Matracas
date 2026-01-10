@@ -76,6 +76,110 @@
   const NEXT_AFTER_VIDEO_URL = new URL("../relatorio/relatorio.html", window.location.href).href;
 
   // =========================
+  // ÁUDIO — trilha + sfx
+  // =========================
+  const AUDIO = (() => {
+    let unlocked = false;
+
+    function clamp01(n) { return Math.max(0, Math.min(1, n)); }
+
+    function safePlay(el) {
+      try {
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch (_) {}
+    }
+
+    function unlockOnce() {
+      unlocked = true;
+
+      // se alguma BGM/loop existir, tenta tocar após gesto
+      Object.values(loops).forEach((a) => {
+        if (a?.el && a.el.paused) safePlay(a.el);
+      });
+    }
+
+    // destrava no primeiro gesto
+    window.addEventListener("pointerdown", unlockOnce, { once: true, capture: true });
+    window.addEventListener("keydown", unlockOnce, { once: true, capture: true });
+
+    function candidatesFor(file) {
+      return [
+        `../audios/${file}`,
+        `../../audios/${file}`,
+        `audios/${file}`,
+        `/audios/${file}`,
+      ];
+    }
+
+    function makeUrl(path) {
+      return new URL(path, location.href).href;
+    }
+
+    function makeAudio(file, { loop = false, volume = 0.6 } = {}) {
+      const el = new Audio();
+      el.loop = !!loop;
+      el.preload = "auto";
+      el.volume = clamp01(volume);
+
+      const list = candidatesFor(file).map(makeUrl);
+      let idx = 0;
+
+      const tryNext = () => {
+        if (idx >= list.length) {
+          console.warn(`[audio] não encontrei ${file} nos caminhos candidatos.`);
+          return;
+        }
+        el.src = list[idx++];
+        try { el.load(); } catch (_) {}
+      };
+
+      el.addEventListener("error", tryNext);
+      tryNext();
+
+      return { el, file };
+    }
+
+    const loops = {}; // { bgm: {el,...}, rank:{el,...}, ... }
+
+    function loopPlay(key, file, volume) {
+      if (!loops[key]) loops[key] = makeAudio(file, { loop: true, volume });
+      loops[key].el.volume = clamp01(volume);
+      safePlay(loops[key].el);
+    }
+
+    function loopStop(key) {
+      const a = loops[key];
+      if (!a?.el) return;
+      try { a.el.pause(); } catch {}
+      try { a.el.currentTime = 0; } catch {}
+    }
+
+    function stopAllLoops() {
+      Object.keys(loops).forEach(loopStop);
+    }
+
+    function playSfx(file, { volume = 0.9 } = {}) {
+      // se estiver bloqueado, não toca (sem quebrar)
+      if (!unlocked) return;
+      const one = makeAudio(file, { loop: false, volume });
+      try { one.el.currentTime = 0; } catch {}
+      safePlay(one.el);
+    }
+
+    return { unlockOnce, loopPlay, loopStop, stopAllLoops, playSfx };
+  })();
+
+  // volumes sugeridos
+  const VOL = {
+    bgm: 0.18,
+    errar: 0.85,
+    vitoria: 0.95,
+    tinta: 0.95,
+    rank: 0.22,
+  };
+
+  // =========================
   // UTIL
   // =========================
   function clamp(n, a, b) {
@@ -195,13 +299,13 @@
     // urucum
     return {
       name: "URUCUM",
-      phMin: 4.0,
-      phMax: 7.0,
+      phMin: 2.0,
+      phMax: 4.0,
       concMin: 15,
       concMax: 25,
       requireMeio: "oleo",
       recommendedMeio: "oleo",
-      text: "Meio oleoso + pH 4,0–7,0 + C 15–25 g/L (urucum)"
+      text: "Meio oleoso + pH 2,0–4,0 + C 15–25 g/L (urucum)"
     };
   }
 
@@ -816,12 +920,14 @@
   }
 
   // =========================
-  // VÍDEO FINAL (estilo 2ª foto)
-  // - mantém o HEADER (topbar)
-  // - esconde stagebar + main
-  // - cria uma “tela” grande com o vídeo
+  // VÍDEO FINAL
+  // - PARA a abertura.mp3 e a música do ranking (se existir)
   // =========================
   function openFinalVideoScene() {
+    // para trilhas antes do vídeo
+    AUDIO.loopStop("bgm");
+    AUDIO.loopStop("rank");
+
     // evita duplicar
     const existing = document.querySelector(".video-scene");
     if (existing) {
@@ -872,6 +978,13 @@
     if (state.winShown) return;
     state.winShown = true;
 
+    // Ao abrir o "ranking"/vitória: corta a trilha da cena
+    AUDIO.loopStop("bgm");
+
+    // Se você tiver uma música do ranking, coloque o arquivo "ranking.mp3" na pasta audios/
+    // Se não existir, só vai tentar e falhar silenciosamente.
+    AUDIO.loopPlay("rank", "ranking.mp3", VOL.rank);
+
     if (achievement) {
       achievement.hidden = true;
       achievement.textContent = "";
@@ -907,6 +1020,11 @@
     function cleanup() {
       fx?.stop?.();
       document.removeEventListener("keydown", onKey);
+
+      // quando sair do "ranking", corta a música do ranking
+      AUDIO.loopStop("rank");
+
+      // não retoma a trilha desta cena (fim da fase)
       overlay.remove();
     }
 
@@ -984,6 +1102,9 @@
     if (!concOk || !phOk || !meioOk) {
       state.errors += 1;
 
+      // 🔊 som de erro
+      AUDIO.playSfx("errar.mp3", { volume: VOL.errar });
+
       let msgBad = "";
       if (!concOk) {
         msgBad = `Concentração fora da faixa. Mantenha entre ${t.concMin} e ${t.concMax} g/L.`;
@@ -1015,6 +1136,9 @@
     const hex = readHexFromSwatch() || "#999999";
     drawFitCanvas(hex, 0.98);
 
+    // 🔊 som de “pintura” ao acertar/aplicar
+    AUDIO.playSfx("tinta.mp3", { volume: VOL.tinta });
+
     const doneCount = Object.values(state.tasksDone).filter(Boolean).length;
 
     if (doneCount < 3) {
@@ -1026,6 +1150,9 @@
       showToast(msgFinal, "good");
       if (topbarText) topbarText.textContent = msgFinal;
       logDiary("Conclusão: repolho roxo, cúrcuma e urucum finalizados.");
+
+      // 🔊 som de vitória
+      AUDIO.playSfx("vitoria.mp3", { volume: VOL.vitoria });
 
       showWinPopup();
     }
@@ -1053,6 +1180,10 @@
   // =========================
   function init() {
     btnReiniciar?.addEventListener("click", () => location.reload());
+
+    // 🔊 trilha sonora desta cena (abertura.mp3)
+    // (se o browser bloquear autoplay, toca assim que houver interação)
+    AUDIO.loopPlay("bgm", "abertura.mp3", VOL.bgm);
 
     applySliderLabels();
 
@@ -1143,6 +1274,9 @@
     btnPintar?.addEventListener("click", () => {
       const oldText = btnPintar.textContent;
       try {
+        // tentativa de "destravamento" no primeiro clique útil
+        AUDIO.unlockOnce();
+
         btnPintar.disabled = true;
         btnPintar.textContent = "Aplicando...";
         validateAndApply();

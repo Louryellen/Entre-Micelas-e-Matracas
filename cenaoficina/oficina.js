@@ -85,7 +85,7 @@
   const rand = (min, max) => min + Math.random() * (max - min);
 
   // =========================
-  // ÁUDIO (NOVO) — trilha + efeitos por evento
+  // ÁUDIO — trilha + efeitos por evento
   // =========================
   const AUDIO = (() => {
     const resolved = new Map(); // file -> url resolvida (quando der certo)
@@ -110,7 +110,7 @@
 
     function safePlay(el) {
       const p = el.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
+      if (p && typeof p.catch === "function") p.catch(() => { });
     }
 
     function unlockOnce() {
@@ -180,14 +180,14 @@
     function loopStop(key) {
       const a = loops[key];
       if (!a || !a.el) return;
-      try { a.el.pause(); } catch {}
-      try { a.el.currentTime = 0; } catch {}
+      try { a.el.pause(); } catch { }
+      try { a.el.currentTime = 0; } catch { }
     }
 
     function loopPause(key) {
       const a = loops[key];
       if (!a || !a.el) return;
-      try { a.el.pause(); } catch {}
+      try { a.el.pause(); } catch { }
     }
 
     function loopResume(key) {
@@ -221,7 +221,7 @@
 
       const one = makeAudio(file, { loop: false, volume });
       // garante reset
-      try { one.el.currentTime = 0; } catch {}
+      try { one.el.currentTime = 0; } catch { }
       safePlay(one.el);
     }
 
@@ -573,7 +573,10 @@
       AUDIO.loopStop("colher");
       AUDIO.loopStop("subindo");
 
-      // 🔊 toca vitória
+      // ✅ NOVO: para a trilha (bgm) quando abrir o ranking/final
+      AUDIO.loopStop("bgm");
+
+      // 🔊 toca vitória (fica só o som)
       AUDIO.playSfx("vitoria.mp3", { volume: VOL.vitoria });
 
       // Detecta elementos “chrome” do modal de forma tolerante ao seu HTML
@@ -679,9 +682,8 @@
               </div>
             </div>
 
-            <div class="actions" style="margin-top:14px">
-              <button class="btn-secondary" id="btnAgain" type="button">Reiniciar</button>
-              <button class="btn" id="btnNextScene" type="button">Avançar</button>
+            <div class="actions actions-final" style="margin-top:14px">
+              <button class="btn" id="btnNextScene" type="button">Ir para produção de tinta</button>
             </div>
           </div>
         `
@@ -1683,8 +1685,8 @@
       // 🔊 som do relógio durante a contagem
       this.stopCoolDown(); // reseta timers/raf e garante estado limpo
 
-// 🔊 som do relógio durante a contagem (agora não é mais interrompido)
-AUDIO.loopPlay("tempo", "tempo.mp3", VOL.tempo);
+      // 🔊 som do relógio durante a contagem (agora não é mais interrompido)
+      AUDIO.loopPlay("tempo", "tempo.mp3", VOL.tempo);
 
       this.cool.active = true;
       this.cool.last = performance.now();
@@ -1960,13 +1962,12 @@ AUDIO.loopPlay("tempo", "tempo.mp3", VOL.tempo);
       let moveTimer = null;
 
       const stopSubindoSoon = () => {
-  if (moveTimer) clearTimeout(moveTimer);
-  moveTimer = setTimeout(() => {
-    // melhor que stop: não reseta o áudio toda hora
-    AUDIO.loopPause("subindo");
-  }, 550);
-};
-
+        if (moveTimer) clearTimeout(moveTimer);
+        moveTimer = setTimeout(() => {
+          // melhor que stop: não reseta o áudio toda hora
+          AUDIO.loopPause("subindo");
+        }, 550);
+      };
 
       const sync = () => {
         const cur = Number(r.value);
@@ -2120,8 +2121,6 @@ AUDIO.loopPlay("tempo", "tempo.mp3", VOL.tempo);
   window.addEventListener("resize", applyCompactMode);
   applyCompactMode();
 
-  // 🔊 prepara bgm (não vai tocar até ter gesto/clicar em "Começar")
   // Mantemos o start real no game.start()
-
   game.reset();
 })();
